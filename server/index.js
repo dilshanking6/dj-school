@@ -40,7 +40,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // API Routes
-app.get('/api/status', (req, res) => {
+app.get('/', (req, res) => {
   res.json({ status: 'Digital Janta Pro API is running', version: '1.0.0' });
 });
 
