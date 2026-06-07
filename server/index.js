@@ -16,8 +16,11 @@ const io = new Server(server, {
   }
 });
 
+app.set('socketio', io);
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes.js'));
@@ -59,7 +62,15 @@ io.on('connection', (socket) => {
   });
 });
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });

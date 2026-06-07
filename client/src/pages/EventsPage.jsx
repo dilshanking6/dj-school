@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Bell, Calendar, Loader2, Plus, Send } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
+import { socket } from '../api/socket';
 
 const EventsPage = () => {
   const { user } = useContext(AuthContext);
@@ -33,29 +35,50 @@ const EventsPage = () => {
 
   useEffect(() => {
     if (user) loadData();
+
+    socket.on('new_event', (event) => {
+      setEvents(prev => [...prev, event].sort((a, b) => String(a.date).localeCompare(String(b.date))));
+      toast.success('New event published!');
+    });
+
+    socket.on('new_announcement', (ann) => {
+      if (ann.audience === 'All' || ann.audience === user?.role) {
+        setAnnouncements(prev => [ann, ...prev]);
+        toast.success('New announcement received!');
+      }
+    });
+
+    return () => {
+      socket.off('new_event');
+      socket.off('new_announcement');
+    };
   }, [user?.role]);
 
   const createEvent = async (e) => {
     e.preventDefault();
+    const loadingToast = toast.loading('Publishing event...');
     try {
       await axios.post('/api/school/events', { ...eventForm, createdBy: user.id });
       setEventForm({ title: '', date: '', time: '', venue: '', description: '' });
       setShowEvent(false);
-      await loadData();
+      toast.success('Event published successfully!', { id: loadingToast });
+      // loadData(); // No need to load data manually, socket will handle it
     } catch (err) {
-      alert('Event create failed');
+      toast.error('Event creation failed', { id: loadingToast });
     }
   };
 
   const createAnnouncement = async (e) => {
     e.preventDefault();
+    const loadingToast = toast.loading('Publishing announcement...');
     try {
       await axios.post('/api/school/announcements', { ...announcementForm, createdBy: user.id });
       setAnnouncementForm({ title: '', message: '', audience: 'All' });
       setShowAnnouncement(false);
-      await loadData();
+      toast.success('Announcement published successfully!', { id: loadingToast });
+      // loadData(); // Socket will handle it
     } catch (err) {
-      alert('Announcement create failed');
+      toast.error('Announcement creation failed', { id: loadingToast });
     }
   };
 

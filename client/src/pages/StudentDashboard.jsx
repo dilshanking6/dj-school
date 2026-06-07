@@ -22,7 +22,7 @@ const StudentHome = () => {
         const res = await axios.get(`/api/school/dashboard?role=student&userId=${user.id}&className=${user.class}`);
         setDashboard(res.data);
       } catch (err) {
-        console.error('Dashboard load failed', err);
+        // Dashboard silently fails if sheet not ready
       }
     };
     if (user) loadDashboard();

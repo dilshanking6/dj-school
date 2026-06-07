@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { BookOpen, Download, Plus, FileText, Loader2, Search, Trash2, Paperclip } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { socket } from '../api/socket';
 
 const NotesPage = () => {
   const { user } = useContext(AuthContext);
@@ -11,7 +13,16 @@ const NotesPage = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
   
-  const [formData, setFormData] = useState({ title: '', subject: '', className: user?.class || 'All', fileUrl: '', type: 'note', description: '', fileName: '', fileData: '' });
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    subject: '', 
+    className: user?.role === 'teacher' ? 'All' : (user?.class || 'All'), 
+    fileUrl: '', 
+    type: 'note', 
+    description: '', 
+    fileName: '', 
+    fileData: '' 
+  });
 
   const fileToDataUrl = (file) => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -22,7 +33,9 @@ const NotesPage = () => {
 
   const fetchNotes = async () => {
     try {
-      const res = await axios.get(`/api/notes/class/${user?.class || 'All'}`);
+      const isAdminOrTeacher = user?.role === 'teacher' || user?.role === 'principal' || user?.role === 'admin';
+      const endpoint = isAdminOrTeacher ? '/api/notes/all' : `/api/notes/class/${user?.class || 'All'}`;
+      const res = await axios.get(endpoint);
       setNotes(res.data);
     } catch (err) {
       console.error('Failed to fetch notes');
@@ -33,11 +46,25 @@ const NotesPage = () => {
 
   useEffect(() => {
     fetchNotes();
+
+    socket.on('new_note', (note) => {
+      const noteClass = String(note.className || '').toLowerCase();
+      const userClass = String(user?.class || '').toLowerCase();
+      
+      if (noteClass === 'all' || noteClass === userClass) {
+        setNotes(prev => [note, ...prev]);
+        toast.success(`New ${note.type} shared: ${note.title}`);
+      }
+    });
+
+    return () => {
+      socket.off('new_note');
+    };
   }, [user?.class]);
 
   const handleAddNote = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    const loadingToast = toast.loading('Sharing material...');
     try {
       await axios.post('/api/notes', {
         teacherId: user.id,
@@ -45,10 +72,20 @@ const NotesPage = () => {
         ...formData
       });
       setShowAdd(false);
-      setFormData({ title: '', subject: '', className: user?.class || 'All', fileUrl: '', type: 'note', description: '', fileName: '', fileData: '' });
-      fetchNotes();
+      setFormData({ 
+        title: '', 
+        subject: '', 
+        className: user?.role === 'teacher' ? 'All' : (user?.class || 'All'), 
+        fileUrl: '', 
+        type: 'note', 
+        description: '', 
+        fileName: '', 
+        fileData: '' 
+      });
+      toast.success('Material shared successfully!', { id: loadingToast });
+      // fetchNotes(); // Socket handles it
     } catch (err) {
-      alert('Failed to share note');
+      toast.error('Failed to share material', { id: loadingToast });
     } finally {
       setLoading(false);
     }
@@ -57,8 +94,8 @@ const NotesPage = () => {
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 350000) {
-      alert('Please upload a file smaller than 350 KB for Google Sheets storage.');
+    if (file.size > 10000) {
+      toast.error('File too large for Google Sheets! Max 10KB allowed. Please upload to Google Drive and paste the Link instead.');
       e.target.value = '';
       return;
     }
@@ -68,11 +105,13 @@ const NotesPage = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this note?')) return;
+    const loadingToast = toast.loading('Deleting note...');
     try {
       await axios.delete(`/api/notes/${id}`);
-      fetchNotes();
+      setNotes(prev => prev.filter(n => n.id !== id));
+      toast.success('Note deleted successfully', { id: loadingToast });
     } catch (err) {
-      alert('Failed to delete note');
+      toast.error('Failed to delete note', { id: loadingToast });
     }
   };
 

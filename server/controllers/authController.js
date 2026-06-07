@@ -10,12 +10,21 @@ const parseJson = (value, fallback = {}) => {
   }
 };
 
+const rowsWithoutHeader = (rows) => {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
+  const firstRow = rows[0];
+  const isHeader = String(firstRow[0]).toLowerCase().includes('name') || 
+                   String(firstRow[1]).toLowerCase().includes('email') || 
+                   !String(firstRow[1] || '').includes('@');
+  return isHeader ? rows.slice(1) : rows;
+};
+
 const login = async (req, res) => {
   try {
     const { email, password, role, phone, otp } = req.body;
     
-    const rows = await getSheetData('Users') || [];
-    const usersRows = rows.slice(1);
+    const allRows = await getSheetData('Users') || [];
+    const usersRows = rowsWithoutHeader(allRows);
 
     let userRow;
     if (phone) {
@@ -45,9 +54,14 @@ const login = async (req, res) => {
     const user = {
       id: userRow[6],
       name: userRow[0],
+      firstName: userRow[12] || userRow[0].split(' ')[0],
+      lastName: userRow[13] || userRow[0].split(' ')[1] || '',
       email: userRow[1],
       role: userRow[3],
       class: userRow[4],
+      section: userRow[14] || 'A',
+      motherName: userRow[15] || '',
+      fatherName: userRow[16] || '',
       avatar: userRow[7] || null,
       phone: userRow[8],
       status: detail.status || 'active'
@@ -63,11 +77,13 @@ const login = async (req, res) => {
 const register = async (req, res) => {
   try {
     const { 
-      name, email, password, role, phone, 
-      className, rollNumber, subject, 
+      firstName, lastName, email, password, role, phone, 
+      className, section, motherName, fatherName,
+      rollNumber, subject, avatar,
       isClassTeacher, classesHandled, degree, experience 
     } = req.body;
     
+    const name = `${firstName} ${lastName}`.trim();
     const hashedPassword = await bcrypt.hash(password, 10);
     const id = Date.now().toString();
     
@@ -75,7 +91,8 @@ const register = async (req, res) => {
     
     await appendSheetData('Users', [
       name, email, hashedPassword, role, className || 'N/A', 
-      detail, id, '', phone, subject || 'N/A', degree || 'N/A', experience || '0'
+      detail, id, avatar || '', phone, subject || 'N/A', degree || 'N/A', experience || '0',
+      firstName, lastName, section || 'A', motherName || '', fatherName || ''
     ]);
     
     res.status(201).json({ message: 'User registered successfully' });

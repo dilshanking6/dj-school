@@ -27,7 +27,16 @@ const listRooms = async (req, res) => {
     const rooms = rowsWithoutHeader(roomRows)
       .filter((row) => {
         if (!row[0]) return false;
+        
+        // Private rooms should only be visible to their members
+        if (row[2] === 'private') {
+          const roomMembers = members.filter((m) => m[0] === row[0]);
+          return roomMembers.some((m) => m[1] === userId);
+        }
+
+        // Public rooms restricted by class
         if (row[3] && row[3] !== 'All' && className && row[3] !== className && role === 'student') return false;
+        
         return true;
       })
       .map((row) => {
@@ -43,8 +52,28 @@ const listRooms = async (req, res) => {
 
 const createRoom = async (req, res) => {
   try {
-    const { name, type, className, rank, createdBy, createdByName, role } = req.body;
+    const { name, type, className, rank, createdBy, createdByName, role, targetUserId, targetUserName } = req.body;
     if (!name || !createdBy) return res.status(400).json({ error: 'Room name and creator are required' });
+    
+    // If private, check if it already exists
+    if (type === 'private' && targetUserId) {
+      const [roomRows, memberRows] = await Promise.all([
+        getSheetData('ChatRooms'),
+        getSheetData('RoomMembers')
+      ]);
+      const members = rowsWithoutHeader(memberRows);
+      const rooms = rowsWithoutHeader(roomRows).filter(r => r[2] === 'private');
+      
+      for (const room of rooms) {
+        const roomMembers = members.filter(m => m[0] === room[0]);
+        const hasMe = roomMembers.some(m => m[1] === createdBy);
+        const hasThem = roomMembers.some(m => m[1] === targetUserId);
+        if (hasMe && hasThem) {
+          return res.json({ success: true, room: toRoom(room, 2, true) });
+        }
+      }
+    }
+
     const id = makeId('ROOM');
     await appendSheetData('ChatRooms', [
       id,
@@ -56,8 +85,16 @@ const createRoom = async (req, res) => {
       createdByName || '',
       new Date().toISOString()
     ]);
-    await appendSheetData('RoomMembers', [id, createdBy, createdByName || '', role || 'member', new Date().toISOString()]);
-    res.status(201).json({ success: true, room: { id, name, type: type || 'public', className: className || 'All', members: 1, joined: true } });
+    
+    // Add creator
+    await appendSheetData('RoomMembers', [id, createdBy, createdByName || '', role || 'admin', new Date().toISOString()]);
+    
+    // Add target user if private
+    if (type === 'private' && targetUserId) {
+      await appendSheetData('RoomMembers', [id, targetUserId, targetUserName || '', 'member', new Date().toISOString()]);
+    }
+
+    res.status(201).json({ success: true, room: { id, name, type: type || 'public', className: className || 'All', members: targetUserId ? 2 : 1, joined: true } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

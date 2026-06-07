@@ -10,25 +10,41 @@ async function getSheetData(sheetName) {
       action: 'read',
       sheetName: sheetName
     }, { timeout: 10000 });
-    return response.data;
+    
+    console.log(`Read from ${sheetName} raw length:`, response.data && response.data.data ? response.data.data.length : (Array.isArray(response.data) ? response.data.length : 'N/A'));
+    
+    // If the response is an object with a data property, return that data
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    
+    // Otherwise return the data as is (assuming it's an array)
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error(`Error reading ${sheetName}:`, error.message);
-    return []; // Return empty array instead of null to prevent map errors
+    return []; 
   }
 }
 
 async function appendSheetData(sheetName, values) {
   try {
     if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL is not defined in .env');
-    await axios.post(APPS_SCRIPT_URL, {
+    const response = await axios.post(APPS_SCRIPT_URL, {
       action: 'append',
       sheetName: sheetName,
       values: values
     }, { timeout: 10000 });
+    
+    console.log(`Append to ${sheetName} response:`, response.data);
+    
+    if (response.data && response.data.error) {
+      throw new Error(response.data.error);
+    }
+    
     return true;
   } catch (error) {
     console.error(`Error appending to ${sheetName}:`, error.message);
-    throw new Error('Database Connection Error. Please check Google Sheets setup.');
+    throw new Error(`Database Error: ${error.message}`);
   }
 }
 

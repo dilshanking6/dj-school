@@ -8,6 +8,12 @@ const submitComplaint = async (req, res) => {
     const status = 'pending'; // pending, accepted, rejected, resolved
     
     await appendSheetData('Complaints', [date, studentId, studentName, subject, description, status, id]);
+    
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('new_complaint', { date, studentId, studentName, subject, description, status, id });
+    }
+
     res.status(201).json({ success: true, message: 'Complaint submitted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -65,6 +71,12 @@ const updateComplaintStatus = async (req, res) => {
     updatedRow[5] = status;
 
     await updateSheetData('Complaints', id, updatedRow);
+
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('complaint_status_updated', { id, status });
+    }
+
     res.json({ success: true, message: `Complaint ${status} successfully` });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -11,6 +11,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import TermsPage from './pages/TermsPage';
 import Navbar from './components/Navbar';
 import AIAssistant from './components/AIAssistant';
+import { Toaster } from 'react-hot-toast';
 
 const ProtectedRoute = ({ children, role, loginPath = '/login' }) => {
   const { user, loading } = React.useContext(AuthContext);
@@ -23,6 +24,7 @@ const ProtectedRoute = ({ children, role, loginPath = '/login' }) => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <Router>
         <div className="min-h-screen bg-background text-white font-sans">
           <Navbar />

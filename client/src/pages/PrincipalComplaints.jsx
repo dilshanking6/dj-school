@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HelpCircle, CheckCircle, XCircle, Loader2, User } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { socket } from '../api/socket';
 
 const PrincipalComplaints = () => {
   const [complaints, setComplaints] = useState([]);
@@ -20,14 +22,25 @@ const PrincipalComplaints = () => {
 
   useEffect(() => {
     fetchAllComplaints();
+
+    socket.on('new_complaint', (comp) => {
+      setComplaints(prev => [comp, ...prev]);
+      toast.success(`New complaint from ${comp.studentName}`);
+    });
+
+    return () => {
+      socket.off('new_complaint');
+    };
   }, []);
 
   const handleStatusUpdate = async (id, status) => {
+    const loadingToast = toast.loading(`Updating status to ${status}...`);
     try {
       await axios.patch(`/api/complaints/${id}/status`, { status });
-      fetchAllComplaints();
+      setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+      toast.success(`Complaint ${status} successfully`, { id: loadingToast });
     } catch (err) {
-      alert('Failed to update status');
+      toast.error('Failed to update status', { id: loadingToast });
     }
   };
 

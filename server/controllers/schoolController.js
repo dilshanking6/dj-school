@@ -1,6 +1,16 @@
 const { getSheetData, appendSheetData, updateSheetData } = require('../utils/googleSheets');
 
-const rowsWithoutHeader = (rows) => (Array.isArray(rows) ? rows.slice(1) : []);
+const rowsWithoutHeader = (rows) => {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
+  
+  // If first row has "Name" or "Email" or doesn't have an "@" in index 1, assume it's a header
+  const firstRow = rows[0];
+  const isHeader = String(firstRow[0]).toLowerCase().includes('name') || 
+                   String(firstRow[1]).toLowerCase().includes('email') || 
+                   !String(firstRow[1] || '').includes('@');
+  
+  return isHeader ? rows.slice(1) : rows;
+};
 const makeId = (prefix) => `${prefix}${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
 const parseJson = (value, fallback = {}) => {
@@ -26,6 +36,11 @@ const toUser = (row) => {
     subject: row[9] || '',
     degree: row[10] || '',
     experience: row[11] || '',
+    firstName: row[12] || '',
+    lastName: row[13] || '',
+    section: row[14] || 'A',
+    motherName: row[15] || '',
+    fatherName: row[16] || '',
     status: detail.status || 'active'
   };
 };
@@ -88,9 +103,9 @@ const getDashboard = async (req, res) => {
       ? Math.round(resultPercentages.reduce((sum, value) => sum + value, 0) / resultPercentages.length)
       : null;
 
-    const classScope = className && className !== 'N/A' ? className : undefined;
+    const classScope = className && className !== 'N/A' ? String(className) : undefined;
     const classHomework = notes.filter((row) => {
-      const noteClass = row[5];
+      const noteClass = String(row[5]);
       const type = row[8] || 'note';
       return type === 'homework' && (!classScope || noteClass === classScope || noteClass === 'All');
     });
@@ -156,11 +171,40 @@ const getDashboard = async (req, res) => {
 const listUsers = async (req, res) => {
   try {
     const { role, className } = req.query;
+    console.log('--- ATTEMPTING TO LIST USERS ---');
+    console.log(`Query Params -> Role: ${role}, Class: ${className}`);
+    
     let users = await getUsers();
-    if (role) users = users.filter((u) => u.role === role);
-    if (className) users = users.filter((u) => u.class === className);
+    console.log(`Total users in DB: ${users.length}`);
+
+    // Log first few users for debugging
+    if (users.length > 0) {
+      console.log('Sample User [0]:', JSON.stringify(users[0]));
+    }
+
+    if (role) {
+      users = users.filter((u) => {
+        const match = String(u.role).toLowerCase() === String(role).toLowerCase();
+        if (!match) console.log(`Role Mismatch: User ${u.name} has role ${u.role}, looking for ${role}`);
+        return match;
+      });
+    }
+    
+    if (className) {
+      users = users.filter((u) => {
+        const uClass = String(u.class || '').trim().toLowerCase();
+        const targetClass = String(className).trim().toLowerCase();
+        const match = uClass === targetClass || uClass === 'all' || targetClass === 'n/a';
+        if (!match) console.log(`Class Mismatch: User ${u.name} is in class ${uClass}, looking for ${targetClass}`);
+        return match;
+      });
+    }
+    
+    console.log(`Final count after filtering: ${users.length}`);
+    console.log('--- END LIST USERS ---');
     res.json(users.map(({ detail, ...user }) => user));
   } catch (error) {
+    console.error('listUsers error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -276,6 +320,12 @@ const createEvent = async (req, res) => {
     const { title, date, time, venue, description, createdBy } = req.body;
     const id = makeId('EVT');
     await appendSheetData('Events', [id, title, date, time, venue, description, createdBy, new Date().toISOString()]);
+    
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('new_event', { id, title, date, time, venue, description, createdAt: new Date().toISOString() });
+    }
+
     res.status(201).json({ success: true, id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -305,6 +355,12 @@ const createAnnouncement = async (req, res) => {
     const { title, message, audience, createdBy } = req.body;
     const id = makeId('ANN');
     await appendSheetData('Announcements', [id, title, message, audience || 'All', createdBy, new Date().toISOString()]);
+    
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('new_announcement', { id, title, message, audience, createdAt: new Date().toISOString() });
+    }
+
     res.status(201).json({ success: true, id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -315,7 +371,7 @@ const getAnnouncements = async (req, res) => {
   try {
     const { audience } = req.query;
     let rows = rowsWithoutHeader(await getSheetData('Announcements'));
-    if (audience) rows = rows.filter((row) => row[3] === 'All' || row[3] === audience);
+    if (audience) rows = rows.filter((row) => String(row[3]) === 'All' || String(row[3]) === String(audience));
     res.json(rows.map((row) => ({
       id: row[0],
       title: row[1],

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Award, Loader2, Plus, Save } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const ResultsPage = () => {
   const { user } = useContext(AuthContext);
@@ -44,6 +45,7 @@ const ResultsPage = () => {
     e.preventDefault();
     const student = students.find((item) => item.id === form.studentId);
     setSaving(true);
+    const loadingToast = toast.loading('Uploading result...');
     try {
       await axios.post('/api/school/results', {
         className,
@@ -55,11 +57,12 @@ const ResultsPage = () => {
         exam: form.exam,
         uploadedBy: user.id
       });
+      toast.success('Result uploaded successfully!', { id: loadingToast });
       setForm({ studentId: '', subject: '', marks: '', total: '', exam: '' });
       setShowForm(false);
       await loadData();
     } catch (err) {
-      alert(err.response?.data?.error || 'Result upload failed');
+      toast.error(err.response?.data?.error || 'Result upload failed', { id: loadingToast });
     } finally {
       setSaving(false);
     }

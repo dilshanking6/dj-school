@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, Send, Clock, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { socket } from '../api/socket';
 
 const ComplaintsPage = () => {
   const { user } = useContext(AuthContext);
@@ -10,7 +12,6 @@ const ComplaintsPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({ subject: '', description: '' });
-  const [message, setMessage] = useState('');
 
   const fetchComplaints = async () => {
     try {
@@ -25,23 +26,32 @@ const ComplaintsPage = () => {
 
   useEffect(() => {
     fetchComplaints();
+
+    socket.on('complaint_status_updated', (data) => {
+      setComplaints(prev => prev.map(c => c.id === data.id ? { ...c, status: data.status } : c));
+      toast.success(`Complaint status updated to ${data.status}`);
+    });
+
+    return () => {
+      socket.off('complaint_status_updated');
+    };
   }, [user.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const loadingToast = toast.loading('Submitting complaint...');
     try {
       await axios.post('/api/complaints', {
         studentId: user.id,
         studentName: user.name,
         ...formData
       });
-      setMessage('Complaint submitted successfully!');
+      toast.success('Complaint submitted successfully!', { id: loadingToast });
       setFormData({ subject: '', description: '' });
       fetchComplaints();
-      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      alert('Failed to submit complaint');
+      toast.error('Failed to submit complaint', { id: loadingToast });
     } finally {
       setSubmitting(false);
     }
@@ -68,11 +78,6 @@ const ComplaintsPage = () => {
         <div className="lg:col-span-1">
           <div className="glass-effect p-8 rounded-[2.5rem] border border-white/5 sticky top-24">
             <h2 className="text-xl font-bold mb-6">Submit New Complaint</h2>
-            {message && (
-              <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-sm flex items-center gap-2">
-                <CheckCircle size={16} /> {message}
-              </div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Subject</label>
