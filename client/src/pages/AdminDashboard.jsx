@@ -54,28 +54,28 @@ const AdminHome = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="glass-effect p-6 rounded-3xl border border-white/5">
-          <div className="flex items-center gap-3 mb-4 text-gray-500 font-bold text-xs uppercase tracking-widest">
-            <Users size={16} /> Total Users
+          <div className="flex items-center gap-3 mb-4 text-gray-400 font-bold text-xs uppercase tracking-widest">
+            <Users size={16} /> Total Students
           </div>
-          <p className="text-4xl font-black">{stats.totalUsers ?? 0}</p>
-        </div>
-        <div className="glass-effect p-6 rounded-3xl border border-white/5">
-          <div className="flex items-center gap-3 mb-4 text-emerald-500 font-bold text-xs uppercase tracking-widest">
-            <Activity size={16} /> Server Status
-          </div>
-          <p className="text-4xl font-black text-emerald-500">Live</p>
+          <p className="text-4xl font-black">{stats.students ?? 0}</p>
         </div>
         <div className="glass-effect p-6 rounded-3xl border border-white/5">
           <div className="flex items-center gap-3 mb-4 text-amber-500 font-bold text-xs uppercase tracking-widest">
-            <Database size={16} /> DB Usage
+            <Users size={16} /> Total Teachers
           </div>
-          <p className="text-4xl font-black text-amber-500">{stats.ratings ?? 0}</p>
+          <p className="text-4xl font-black text-amber-500">{stats.teachers ?? 0}</p>
+        </div>
+        <div className="glass-effect p-6 rounded-3xl border border-white/5">
+          <div className="flex items-center gap-3 mb-4 text-emerald-500 font-bold text-xs uppercase tracking-widest">
+            <Database size={16} /> Total Admins
+          </div>
+          <p className="text-4xl font-black text-emerald-500">{stats.admins ?? 0}</p>
         </div>
         <div className="glass-effect p-6 rounded-3xl border border-white/5">
           <div className="flex items-center gap-3 mb-4 text-primary font-bold text-xs uppercase tracking-widest">
-            <Activity size={16} /> Uptime
+            <Activity size={16} /> Total Users
           </div>
-          <p className="text-4xl font-black text-primary">{stats.serverUptimeSeconds ?? 0}s</p>
+          <p className="text-4xl font-black text-primary">{stats.totalUsers ?? 0}</p>
         </div>
       </div>
 
@@ -88,13 +88,13 @@ const AdminHome = () => {
               <input value={search} onChange={(e) => setSearch(e.target.value)} type="text" placeholder="Search system users..." className="bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 outline-none focus:border-primary/50 text-sm" />
             </div>
           </div>
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
             {['student', 'teacher', 'principal', 'admin'].map((item) => (
-              <button key={item} onClick={() => setRole(item)} className={`px-4 py-2 rounded-xl text-xs font-black uppercase ${role === item ? 'bg-primary text-white' : 'bg-white/5 text-gray-400'}`}>{item}</button>
+              <button key={item} onClick={() => setRole(item)} className={`px-4 py-2 rounded-xl text-xs font-black uppercase whitespace-nowrap ${role === item ? 'bg-primary text-white' : 'bg-white/5 text-gray-400'}`}>{item}</button>
             ))}
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
             {filteredUsers.length === 0 ? (
               <p className="text-gray-500">No users found.</p>
             ) : filteredUsers.map((item) => (
@@ -103,14 +103,20 @@ const AdminHome = () => {
                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all"><Users size={20} /></div>
                   <div>
                     <span className="font-bold">{item.name}</span>
-                    <p className="text-xs text-gray-500">{item.email} - {item.status}</p>
+                    <p className="text-xs text-gray-500">{item.email} - Class: {item.class || 'N/A'}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${item.status === 'banned' ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                    {item.status}
+                  </span>
+                  <a href={`/admin/chat?userId=${item.id}`} className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all">
+                    <MessageSquare size={14} />
+                  </a>
                   {item.status === 'banned' ? (
-                    <button onClick={() => setStatus(item.id, 'active')} className="px-4 py-2 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg flex items-center gap-2"><RotateCcw size={14} /> Unban</button>
+                    <button onClick={() => setStatus(item.id, 'active')} className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg"><RotateCcw size={14} /></button>
                   ) : (
-                    <button onClick={() => setStatus(item.id, 'banned')} className="px-4 py-2 bg-rose-500/10 text-rose-400 text-xs font-bold rounded-lg flex items-center gap-2"><Ban size={14} /> Ban</button>
+                    <button onClick={() => setStatus(item.id, 'banned')} className="p-2 bg-rose-500/10 text-rose-400 rounded-lg"><Ban size={14} /></button>
                   )}
                 </div>
               </div>
@@ -119,32 +125,31 @@ const AdminHome = () => {
         </div>
 
         <div className="glass-effect p-8 rounded-[2.5rem] border border-white/5">
-          <h2 className="text-xl font-bold mb-6">System Health</h2>
+          <h2 className="text-xl font-bold mb-6 text-primary">Class-wise Students</h2>
           <div className="space-y-6">
-            <div>
-              <div className="flex justify-between text-xs font-bold mb-2">
-                <span className="text-gray-500">Students</span>
-                <span>{stats.students ?? 0}</span>
+            {stats.classWiseStudents && Object.entries(stats.classWiseStudents).sort().map(([cls, count]) => (
+              <div key={cls}>
+                <div className="flex justify-between text-xs font-bold mb-2">
+                  <span className="text-gray-400 uppercase tracking-tighter">Class {cls}</span>
+                  <span className="text-primary">{count} Students</span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${(count / stats.students) * 100}%` }}></div>
+                </div>
               </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-full rounded-full"></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-xs font-bold mb-2">
-                <span className="text-gray-500">Teachers</span>
-                <span>{stats.teachers ?? 0}</span>
-              </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 w-full rounded-full"></div>
-              </div>
-            </div>
+            ))}
+            
             <div className="pt-6 border-t border-white/5">
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4">Live Logs</p>
-              <div className="space-y-2 font-mono text-[10px] text-gray-500">
-                <p className="flex items-center gap-2"><CheckCircle size={10} className="text-emerald-500" /> API connected</p>
-                <p className="flex items-center gap-2"><CheckCircle size={10} className="text-emerald-500" /> Google Sheets bridge active</p>
-                <p className="flex items-center gap-2"><CheckCircle size={10} className="text-primary" /> Uptime {stats.serverUptimeSeconds ?? 0}s</p>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4">Portal Overview</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <p className="text-xs text-gray-500 mb-1">Events</p>
+                  <p className="text-xl font-black">{stats.activeEvents ?? 0}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <p className="text-xs text-gray-500 mb-1">Complaints</p>
+                  <p className="text-xl font-black">{stats.totalComplaints ?? 0}</p>
+                </div>
               </div>
             </div>
           </div>

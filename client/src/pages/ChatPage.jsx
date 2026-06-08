@@ -6,13 +6,6 @@ import { AuthContext } from '../context/AuthContext';
 import { socket } from '../api/socket';
 import { toast } from 'react-hot-toast';
 
-const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(reader.result);
-  reader.onerror = reject;
-  reader.readAsDataURL(file);
-});
-
 const ChatPage = () => {
   const { user } = useContext(AuthContext);
   const [rooms, setRooms] = useState([]);
@@ -21,22 +14,36 @@ const ChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSaving] = useState(false);
-  const [teachers, setTeachers] = useState([]);
-  const [showTeacherSearch, setShowTeacherSearch] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [showUserSearch, setShowUserSearch] = useState(false);
   const [showGroupCreate, setShowGroupCreate] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [searchTeacherTerm, setSearchTeacherTerm] = useState('');
+  const [searchUserTerm, setSearchUserTerm] = useState('');
 
   const scrollRef = useRef();
 
   const loadData = async () => {
     try {
-      const [roomsRes, teacherRes] = await Promise.all([
+      const queryParams = new URLSearchParams(window.location.search);
+      const targetUserId = queryParams.get('userId');
+
+      const [roomsRes, usersRes] = await Promise.all([
         axios.get(`/api/chatrooms?userId=${user.id}&className=${user.class}&role=${user.role}`),
-        axios.get('/api/auth/teachers')
+        axios.get('/api/school/users')
       ]);
-      setRooms(roomsRes.data);
-      setTeachers(teacherRes.data);
+      
+      const fetchedRooms = roomsRes.data;
+      const fetchedUsers = usersRes.data.filter(u => u.id !== user.id);
+      
+      setRooms(fetchedRooms);
+      setAllUsers(fetchedUsers);
+
+      if (targetUserId) {
+        const targetUser = fetchedUsers.find(u => u.id === targetUserId);
+        if (targetUser) {
+          startPrivateChat(targetUser);
+        }
+      }
     } catch (err) {
       console.error('Failed to load chat data');
     } finally {
@@ -99,16 +106,40 @@ const ChatPage = () => {
     }
   };
 
-  const startPrivateChat = async (teacher) => {
-    const loadingToast = toast.loading(`Connecting with ${teacher.name}...`);
+  const deleteMessage = async (msgId) => {
+    if (!window.confirm('Delete this message?')) return;
+    try {
+      await axios.delete(`/api/messages/${msgId}`);
+      setMessages(prev => prev.filter(m => m.id !== msgId));
+      toast.success('Message deleted');
+    } catch (err) {
+      toast.error('Failed to delete message');
+    }
+  };
+
+  const deleteRoom = async (e, roomId) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this entire chat?')) return;
+    try {
+      await axios.delete(`/api/chatrooms/${roomId}`);
+      setRooms(prev => prev.filter(r => r.id !== roomId));
+      if (activeRoom?.id === roomId) setActiveRoom(null);
+      toast.success('Chat deleted');
+    } catch (err) {
+      toast.error('Failed to delete chat');
+    }
+  };
+
+  const startPrivateChat = async (targetUser) => {
+    const loadingToast = toast.loading(`Connecting with ${targetUser.name}...`);
     try {
       const res = await axios.post('/api/chatrooms', {
-        name: `Chat with ${teacher.name}`,
+        name: `Chat with ${targetUser.name}`,
         type: 'private',
         createdBy: user.id,
         createdByName: user.name,
-        targetUserId: teacher.id,
-        targetUserName: teacher.name
+        targetUserId: targetUser.id,
+        targetUserName: targetUser.name
       });
       const room = res.data.room;
       setRooms((prev) => {
@@ -116,7 +147,7 @@ const ChatPage = () => {
         return [room, ...prev];
       });
       setActiveRoom(room);
-      setShowTeacherSearch(false);
+      setShowUserSearch(false);
       toast.success('Connected!', { id: loadingToast });
     } catch (err) {
       toast.error('Failed to start chat', { id: loadingToast });
@@ -166,23 +197,23 @@ const ChatPage = () => {
     }
   };
 
-  const filteredTeachers = teachers.filter(t => 
-    t.name.toLowerCase().includes(searchTeacherTerm.toLowerCase()) ||
-    t.subject.toLowerCase().includes(searchTeacherTerm.toLowerCase())
+  const filteredUsers = allUsers.filter(u => 
+    u.name.toLowerCase().includes(searchUserTerm.toLowerCase()) ||
+    String(u.role).toLowerCase().includes(searchUserTerm.toLowerCase()) ||
+    String(u.class || '').toLowerCase().includes(searchUserTerm.toLowerCase())
   );
 
   return (
     <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-background">
-      {/* Sidebar */}
       <div className="w-80 md:w-96 border-r border-white/5 flex flex-col glass-effect">
         <div className="p-6">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-black">Messages</h1>
             <div className="flex gap-2">
               <button 
-                onClick={() => setShowTeacherSearch(true)}
+                onClick={() => setShowUserSearch(true)}
                 className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all"
-                title="Search Teacher"
+                title="Find People"
               >
                 <Search size={20} />
               </button>
@@ -234,6 +265,9 @@ const ChatPage = () => {
                     {room.type} • {room.members} members
                   </p>
                 </div>
+                {(user?.role === 'admin' || room.createdBy === user?.id) && (
+                  <button onClick={(e) => deleteRoom(e, room.id)} className={`p-2 rounded-lg transition-all ${activeRoom?.id === room.id ? 'hover:bg-white/20 text-white/50 hover:text-white' : 'hover:bg-rose-500/10 text-gray-600 hover:text-rose-500'}`}><Trash2 size={14} /></button>
+                )}
                 {!room.joined && (
                   <div className="bg-accent px-2 py-1 rounded-lg text-[8px] font-black uppercase text-white">Join</div>
                 )}
@@ -243,11 +277,9 @@ const ChatPage = () => {
         </div>
       </div>
 
-      {/* Chat Area */}
       <div className="flex-1 flex flex-col relative bg-background/50">
         {activeRoom ? (
           <>
-            {/* Header */}
             <div className="p-6 border-b border-white/5 flex items-center justify-between glass-effect">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary"><Users size={20} /></div>
@@ -260,24 +292,26 @@ const ChatPage = () => {
               </div>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-8 space-y-6">
               {messages.map((msg, idx) => {
                 const isMe = msg.senderId === user.id;
                 return (
-                  <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] ${isMe ? 'order-2' : ''}`}>
+                  <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                    <div className={`max-w-[70%] ${isMe ? 'order-2' : ''} relative`}>
                       {!isMe && (
                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 ml-2">
                           {msg.senderName} • {msg.senderRole}
                         </p>
                       )}
-                      <div className={`p-4 rounded-3xl ${
+                      <div className={`p-4 rounded-3xl group/msg flex items-start gap-3 ${
                         isMe 
                           ? 'bg-primary text-white rounded-tr-none' 
                           : 'bg-white/5 border border-white/10 text-gray-200 rounded-tl-none'
                       }`}>
-                        <p className="text-sm leading-relaxed">{msg.message}</p>
+                        <p className="text-sm leading-relaxed flex-1">{msg.message}</p>
+                        {(isMe || user?.role === 'admin') && (
+                          <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover/msg:opacity-100 p-1 hover:bg-black/10 rounded transition-all text-white/50 hover:text-white"><Trash2 size={12} /></button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -286,7 +320,6 @@ const ChatPage = () => {
               <div ref={scrollRef} />
             </div>
 
-            {/* Input */}
             <div className="p-6 glass-effect">
               <form onSubmit={sendMessage} className="relative flex items-center gap-4 bg-white/5 p-2 pl-6 rounded-[2rem] border border-white/10 focus-within:border-primary/50 transition-all">
                 <input 
@@ -317,17 +350,16 @@ const ChatPage = () => {
               Connect with teachers, students, and groups in real-time. Select a chat to start communicating.
             </p>
             <button 
-              onClick={() => setShowTeacherSearch(true)}
+              onClick={() => setShowUserSearch(true)}
               className="mt-10 px-8 py-4 bg-primary rounded-[1.5rem] font-black text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-lg shadow-primary/20"
             >
-              <Search size={18} /> Search Teacher
+              <Search size={18} /> Find People
             </button>
           </div>
         )}
 
-        {/* Teacher Search Modal */}
         <AnimatePresence>
-          {showTeacherSearch && (
+          {showUserSearch && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -336,37 +368,39 @@ const ChatPage = () => {
                 className="glass-effect p-8 rounded-[3rem] border border-white/10 shadow-2xl w-full max-w-lg"
               >
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-black">Search Teacher</h2>
-                  <button onClick={() => setShowTeacherSearch(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X /></button>
+                  <h2 className="text-2xl font-black">Find People</h2>
+                  <button onClick={() => setShowUserSearch(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X /></button>
                 </div>
                 <div className="relative mb-6">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                   <input 
                     type="text" 
-                    placeholder="Search by name or subject..." 
-                    value={searchTeacherTerm}
-                    onChange={(e) => setSearchTeacherTerm(e.target.value)}
+                    placeholder="Search students or teachers..." 
+                    value={searchUserTerm}
+                    onChange={(e) => setSearchUserTerm(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 outline-none focus:border-primary/50 transition-all font-bold text-sm"
                   />
                 </div>
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                  {filteredTeachers.map(teacher => (
+                  {filteredUsers.map(u => (
                     <button 
-                      key={teacher.id}
-                      onClick={() => startPrivateChat(teacher)}
+                      key={u.id}
+                      onClick={() => startPrivateChat(u)}
                       className="w-full flex items-center gap-4 p-4 rounded-3xl bg-white/5 border border-white/5 hover:border-primary/30 hover:bg-white/10 transition-all text-left group"
                     >
                       <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
                         <User size={24} />
                       </div>
                       <div>
-                        <p className="font-black">{teacher.name}</p>
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">{teacher.subject} • {teacher.degree}</p>
+                        <p className="font-black">{u.name}</p>
+                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">
+                          {u.role} {u.class && u.class !== 'N/A' ? `• Class ${u.class}` : ''} {u.subject ? `• ${u.subject}` : ''}
+                        </p>
                       </div>
                     </button>
                   ))}
-                  {filteredTeachers.length === 0 && (
-                    <p className="text-center text-gray-500 py-10 font-bold uppercase text-[10px] tracking-widest">No teachers found.</p>
+                  {filteredUsers.length === 0 && (
+                    <p className="text-center text-gray-500 py-10 font-bold uppercase text-[10px] tracking-widest">No users found.</p>
                   )}
                 </div>
               </motion.div>
@@ -374,7 +408,6 @@ const ChatPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Group Create Modal */}
         <AnimatePresence>
           {showGroupCreate && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">

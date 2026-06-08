@@ -15,15 +15,11 @@ const TeacherRatingPage = () => {
 
   const fetchTeachers = async () => {
     try {
-      const res = await axios.post('/api/auth/list-teachers'); // Need to implement this endpoint
+      const res = await axios.get('/api/auth/teachers');
       setTeachers(res.data);
     } catch (err) {
-      // Mock teachers if API fails
-      setTeachers([
-        { id: 'T001', name: 'Mr. A.K. Singh', subject: 'Math' },
-        { id: 'T002', name: 'Mrs. S. Parween', subject: 'Science' },
-        { id: 'T003', name: 'Mr. Rajesh Kumar', subject: 'CS' },
-      ]);
+      console.error('Failed to fetch real teachers', err);
+      setTeachers([]);
     } finally {
       setLoading(false);
     }
@@ -75,12 +71,21 @@ const TeacherRatingPage = () => {
                   selectedTeacher?.id === t.id ? 'bg-primary/20 border-primary' : 'glass-effect border-white/5 hover:border-white/10'
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-primary"><User /></div>
-                  <div>
-                    <h4 className="font-bold">{t.name}</h4>
-                    <p className="text-xs text-gray-500 font-black uppercase tracking-widest">{t.subject}</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-primary"><User /></div>
+                    <div>
+                      <h4 className="font-bold">{t.name}</h4>
+                      <p className="text-xs text-gray-500 font-black uppercase tracking-widest">{t.subject}</p>
+                    </div>
                   </div>
+                  <a 
+                    href={`/student/chat?userId=${t.id}`}
+                    onClick={(e) => e.stopPropagation()} 
+                    className="p-3 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg"
+                  >
+                    <MessageSquare size={18} />
+                  </a>
                 </div>
               </motion.div>
             ))}

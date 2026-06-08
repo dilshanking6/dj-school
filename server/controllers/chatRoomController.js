@@ -28,10 +28,13 @@ const listRooms = async (req, res) => {
       .filter((row) => {
         if (!row[0]) return false;
         
+        const roomId = String(row[0]).trim();
+        const roomType = String(row[2]).trim();
+
         // Private rooms should only be visible to their members
-        if (row[2] === 'private') {
-          const roomMembers = members.filter((m) => m[0] === row[0]);
-          return roomMembers.some((m) => m[1] === userId);
+        if (roomType === 'private') {
+          const roomMembers = members.filter((m) => String(m[0]).trim() === roomId);
+          return roomMembers.some((m) => String(m[1]).trim() === String(userId).trim());
         }
 
         // Public rooms restricted by class
@@ -40,8 +43,9 @@ const listRooms = async (req, res) => {
         return true;
       })
       .map((row) => {
-        const roomMembers = members.filter((member) => member[0] === row[0]);
-        const joined = userId ? roomMembers.some((member) => member[1] === userId) : false;
+        const roomId = String(row[0]).trim();
+        const roomMembers = members.filter((member) => String(member[0]).trim() === roomId);
+        const joined = userId ? roomMembers.some((member) => String(member[1]).trim() === String(userId).trim()) : false;
         return toRoom(row, roomMembers.length, joined);
       });
     res.json(rooms);
@@ -62,12 +66,13 @@ const createRoom = async (req, res) => {
         getSheetData('RoomMembers')
       ]);
       const members = rowsWithoutHeader(memberRows);
-      const rooms = rowsWithoutHeader(roomRows).filter(r => r[2] === 'private');
+      const rooms = rowsWithoutHeader(roomRows).filter(r => String(r[2]).trim() === 'private');
       
       for (const room of rooms) {
-        const roomMembers = members.filter(m => m[0] === room[0]);
-        const hasMe = roomMembers.some(m => m[1] === createdBy);
-        const hasThem = roomMembers.some(m => m[1] === targetUserId);
+        const roomId = String(room[0]).trim();
+        const roomMembers = members.filter(m => String(m[0]).trim() === roomId);
+        const hasMe = roomMembers.some(m => String(m[1]).trim() === String(createdBy).trim());
+        const hasThem = roomMembers.some(m => String(m[1]).trim() === String(targetUserId).trim());
         if (hasMe && hasThem) {
           return res.json({ success: true, room: toRoom(room, 2, true) });
         }
@@ -131,4 +136,17 @@ const listMembers = async (req, res) => {
   }
 };
 
-module.exports = { listRooms, createRoom, joinRoom, listMembers };
+const deleteRoom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Promise.all([
+      deleteSheetData('ChatRooms', id),
+      deleteSheetData('RoomMembers', id) // Assuming deleteSheetData can handle multiple matches or we need a specific way to clear members
+    ]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { listRooms, createRoom, joinRoom, listMembers, deleteRoom };

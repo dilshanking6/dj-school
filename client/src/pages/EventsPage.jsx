@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, Calendar, Loader2, Plus, Send } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, Calendar, Loader2, Plus, Send, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -62,7 +62,7 @@ const EventsPage = () => {
       setEventForm({ title: '', date: '', time: '', venue: '', description: '' });
       setShowEvent(false);
       toast.success('Event published successfully!', { id: loadingToast });
-      // loadData(); // No need to load data manually, socket will handle it
+      loadData();
     } catch (err) {
       toast.error('Event creation failed', { id: loadingToast });
     }
@@ -76,9 +76,31 @@ const EventsPage = () => {
       setAnnouncementForm({ title: '', message: '', audience: 'All' });
       setShowAnnouncement(false);
       toast.success('Announcement published successfully!', { id: loadingToast });
-      // loadData(); // Socket will handle it
+      loadData();
     } catch (err) {
       toast.error('Announcement creation failed', { id: loadingToast });
+    }
+  };
+
+  const deleteEvent = async (id) => {
+    if (!window.confirm('Delete this event?')) return;
+    try {
+      await axios.delete(`/api/school/events/${id}`);
+      setEvents(prev => prev.filter(e => e.id !== id));
+      toast.success('Event deleted');
+    } catch (err) {
+      toast.error('Delete failed');
+    }
+  };
+
+  const deleteAnnouncement = async (id) => {
+    if (!window.confirm('Delete this notice?')) return;
+    try {
+      await axios.delete(`/api/school/announcements/${id}`);
+      setAnnouncements(prev => prev.filter(a => a.id !== id));
+      toast.success('Notice deleted');
+    } catch (err) {
+      toast.error('Delete failed');
     }
   };
 
@@ -127,9 +149,16 @@ const EventsPage = () => {
             <h2 className="text-xl font-bold mb-4">Announcements</h2>
             <div className="space-y-4">
               {announcements.length === 0 ? <div className="glass-effect p-8 rounded-2xl text-gray-500">No announcements yet.</div> : announcements.map((item) => (
-                <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-effect p-6 rounded-[2rem] border border-white/5">
-                  <p className="text-xs text-primary font-black uppercase tracking-widest">{item.audience}</p>
-                  <h3 className="text-xl font-bold mt-2">{item.title}</h3>
+                <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-effect p-6 rounded-[2rem] border border-white/5 group relative">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-xs text-primary font-black uppercase tracking-widest">{item.audience}</p>
+                    {(user?.role === 'admin' || item.createdBy === user?.id) && (
+                      <button onClick={() => deleteAnnouncement(item.id)} className="p-2 text-rose-500 opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 rounded-xl transition-all">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-bold">{item.title}</h3>
                   <p className="text-sm text-gray-400 mt-3">{item.message}</p>
                 </motion.div>
               ))}
@@ -139,9 +168,9 @@ const EventsPage = () => {
             <h2 className="text-xl font-bold mb-4">Events</h2>
             <div className="space-y-4">
               {events.length === 0 ? <div className="glass-effect p-8 rounded-2xl text-gray-500">No events yet.</div> : events.map((event) => (
-                <motion.div key={event.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-effect p-6 rounded-[2rem] border border-white/5">
+                <motion.div key={event.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-effect p-6 rounded-[2rem] border border-white/5 group relative">
                   <div className="flex justify-between gap-4">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-xl font-bold">{event.title}</h3>
                       <p className="text-sm text-gray-400 mt-2">{event.description}</p>
                     </div>
@@ -149,6 +178,11 @@ const EventsPage = () => {
                       <p className="font-bold text-primary">{event.date}</p>
                       <p className="text-gray-500">{event.time}</p>
                       <p className="text-gray-500">{event.venue}</p>
+                      {(user?.role === 'admin' || event.createdBy === user?.id) && (
+                        <button onClick={() => deleteEvent(event.id)} className="mt-4 p-2 text-rose-500 opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 rounded-xl transition-all inline-block">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>

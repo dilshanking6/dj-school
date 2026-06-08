@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getSheetData, appendSheetData, updateSheetData } = require('../utils/googleSheets');
+const { getSheetData, appendSheetData, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
 
 const parseJson = (value, fallback = {}) => {
   try {
@@ -146,7 +146,7 @@ const listTeachers = async (req, res) => {
   try {
     const rows = await getSheetData('Users') || [];
     const teachers = rows.slice(1)
-      .filter(row => row[3] === 'teacher')
+      .filter(row => String(row[3]).toLowerCase().trim() === 'teacher')
       .map(row => ({
         id: row[6],
         name: row[0],
@@ -177,4 +177,14 @@ const setupAdmin = async (req, res) => {
   }
 };
 
-module.exports = { login, register, changePassword, updateProfileSettings, listTeachers, setupAdmin };
+const deleteAccount = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await deleteSheetData('Users', userId);
+    res.json({ success: true, message: 'Account deleted permanently' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { login, register, changePassword, updateProfileSettings, listTeachers, setupAdmin, deleteAccount };

@@ -18,24 +18,33 @@ const LandingPage = () => {
   const statsRef = useRef(null);
   const { user } = useContext(AuthContext);
   const [topTeachers, setTopTeachers] = useState([]);
+  const [portalStats, setPortalStats] = useState({
+    students: 0,
+    teachers: 0,
+    courses: 0,
+    successRate: 0
+  });
+  const [allRealTeachers, setAllRealTeachers] = useState([]);
 
   useEffect(() => {
-    const fetchTop = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('/api/ratings/top');
-        setTopTeachers(res.data.slice(0, 3));
+        const [teachersRes, statsRes, allTeachersRes] = await Promise.all([
+          axios.get('/api/ratings/top'),
+          axios.get('/api/school/portal-stats'),
+          axios.get('/api/auth/teachers')
+        ]);
+        setTopTeachers(teachersRes.data.slice(0, 3));
+        setPortalStats(statsRes.data);
+        setAllRealTeachers(allTeachersRes.data.slice(0, 3));
       } catch (err) {
-        console.log('No real ratings yet');
+        console.log('Error fetching portal data');
       }
     };
-    fetchTop();
+    fetchData();
   }, []);
 
-  const displayTeachers = topTeachers.length > 0 ? topTeachers : [
-    { name: 'Mr. A.K. Singh', subject: 'Math', avg: '5.0', count: 10 },
-    { name: 'Mrs. S. Parween', subject: 'Science', avg: '4.9', count: 8 },
-    { name: 'Mr. Rajesh Kumar', subject: 'CS', avg: '4.8', count: 12 }
-  ];
+  const displayTeachers = topTeachers.length > 0 ? topTeachers : allRealTeachers;
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -173,10 +182,10 @@ const LandingPage = () => {
       <section ref={statsRef} className="py-20 bg-secondary/30 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { label: 'Students', target: 5000, suffix: '+' },
-            { label: 'Teachers', target: 200, suffix: '+' },
-            { label: 'Courses', target: 100, suffix: '+' },
-            { label: 'Success Rate', target: 95, suffix: '%' },
+            { label: 'Students', target: portalStats.students, suffix: '+' },
+            { label: 'Teachers', target: portalStats.teachers, suffix: '+' },
+            { label: 'Courses', target: portalStats.courses, suffix: '+' },
+            { label: 'Success Rate', target: portalStats.successRate, suffix: '%' },
           ].map((stat, i) => (
             <div key={i} className="text-center">
               <div className="text-4xl lg:text-6xl font-black text-primary mb-2">
