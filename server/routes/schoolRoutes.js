@@ -10,7 +10,10 @@ const {
   createEvent,
   getEvents,
   createAnnouncement,
-  getAnnouncements
+  getAnnouncements,
+  deleteAnnouncement,
+  deleteEvent,
+  getPortalStats
 } = require('../controllers/schoolController');
 
 const router = express.Router();
@@ -24,7 +27,10 @@ router.post('/results', uploadResult);
 router.get('/results', getResults);
 router.post('/events', createEvent);
 router.get('/events', getEvents);
+router.delete('/events/:id', deleteEvent);
 router.post('/announcements', createAnnouncement);
 router.get('/announcements', getAnnouncements);
+router.delete('/announcements/:id', deleteAnnouncement);
+router.get('/portal-stats', getPortalStats);
 
 module.exports = router;

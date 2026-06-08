@@ -50,15 +50,25 @@ async function appendSheetData(sheetName, values) {
 
 async function deleteSheetData(sheetName, id) {
   try {
+    if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL is not defined in .env');
+    console.log(`[DEBUG] Attempting to delete ID: ${id} from sheet: ${sheetName}`);
+    
     const response = await axios.post(APPS_SCRIPT_URL, {
       action: 'delete',
       sheetName: sheetName,
       id: id
-    });
+    }, { timeout: 10000 });
+    
+    console.log(`Delete from ${sheetName} response:`, response.data);
+    
+    if (response.data && response.data.error) {
+      throw new Error(response.data.error);
+    }
+    
     return response.data;
   } catch (error) {
     console.error(`Error deleting from ${sheetName}:`, error.message);
-    return null;
+    throw new Error(`Delete Error: ${error.message}`);
   }
 }
 
