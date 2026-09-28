@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>PDF रिवीज़न — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#0891b2,#155e75)">
+  <h1 data-i18n="ppdf_title">📄 PDF रिवीज़न लाइब्रेरी</h1>
+  <p data-i18n="ppdf_desc">18 PDF — प्रश्न बैंक + उत्तर कुंजियाँ। किसी पर click करो → नए टैब में असली किताब की तरह page-by-page खुलेगा</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="pdf-grid" id="pdfGrid"></div>
+  </div>
+</section>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script>
+const PDF_LIBRARY = [
+  { file:"Hindi_JAC_Board_Question_Bank.pdf", title:"हिन्दी प्रश्न बैंक", desc:"पिछले 5 साल के प्रश्न" },
+  { file:"English_JAC_Board_Question_Bank.pdf", title:"English Question Bank", desc:"Previous 5 years" },
+  { file:"Mathematics_JAC_Board_Question_Bank.pdf", title:"गणित प्रश्न बैंक", desc:"पिछले 5 साल के प्रश्न" },
+  { file:"Science_JAC_Board_Question_Bank.pdf", title:"विज्ञान प्रश्न बैंक", desc:"भौतिक + रसायन + जीव" },
+  { file:"History_Itihaas_Question_Bank.pdf", title:"इतिहास प्रश्न बैंक", desc:"पिछले 5 साल के प्रश्न" },
+  { file:"Geography_Bhugol_Question_Bank.pdf", title:"भूगोल प्रश्न बैंक", desc:"पिछले 5 साल के प्रश्न" },
+  { file:"Civics_Rajneeti_Question_Bank.pdf", title:"राजनीति विज्ञान प्रश्न बैंक", desc:"पिछले 5 साल के प्रश्न" },
+  { file:"Economics_Arthshastra_Question_Bank.pdf", title:"अर्थशास्त्र प्रश्न बैंक", desc:"पिछले 5 साल के प्रश्न" },
+  { file:"Hindi_Answer_Key.pdf", title:"हिन्दी उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"English_Answer_Key.pdf", title:"English Answer Key", desc:"All answers" },
+  { file:"Mathematics_Answer_Key.pdf", title:"गणित उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"Science_Answer_Key.pdf", title:"विज्ञान उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"History_Itihaas_Answer_Key.pdf", title:"इतिहास उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"Geography_Bhugol_Answer_Key.pdf", title:"भूगोल उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"Civics_Rajneeti_Answer_Key.pdf", title:"राजनीति उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"Economics_Arthshastra_Answer_Key.pdf", title:"अर्थशास्त्र उत्तर कुंजी", desc:"सभी उत्तर" },
+  { file:"Frequency_Analysis_Previous_5_Years.pdf", title:"फ्रीक्वेंसी विश्लेषण", desc:"पिछले 5 साल का विश्लेषण" },
+  { file:"Swatantrata_Diwas_Anchoring_Script(2).pdf", title:"स्वतंत्रता दिवस स्क्रिप्ट", desc:"Anchoring script" }
+];
+
+function renderPdfGrid() {
+  const grid = document.getElementById('pdfGrid');
+  grid.innerHTML = PDF_LIBRARY.map(p => `
+    <div class="pdf-card" onclick="openPdf('${p.file}', '${p.title.replace(/'/g, "\\'")}')">
+      <div class="pdf-icon">📄</div>
+      <div>
+        <h3>${p.title}</h3>
+        <p>${p.desc}</p>
+      </div>
+    </div>`).join('');
+}
+
+function openPdf(file, title) {
+  const url = 'pdfs/' + file;
+  // Open in a new tab — Chrome's built-in PDF viewer shows it page-by-page
+  // like a real book (zoom, thumbnails, next/prev). iframes block PDFs on file://.
+  const w = window.open(url, '_blank');
+  if (!w) {
+    // popup blocked -> navigate this tab
+    window.location.href = url;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', renderPdfGrid);
+</script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

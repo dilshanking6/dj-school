@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>विषय पेज — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" id="pageHero" style="background:linear-gradient(120deg,#6366f1,#8b5cf6)">
+  <h1>📚 विषय</h1>
+  <p>ई-लाइब्रेरी</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="tabs" id="subjectTabs">
+      <button class="tab active" data-tab="overview" onclick="switchTab('overview',this)">📖 अध्याय</button>
+      <button class="tab" data-tab="quiz" onclick="switchTab('quiz',this)">📝 क्विज़</button>
+      <button class="tab" data-tab="notes" onclick="switchTab('notes',this)">📝 नोट्स</button>
+      <button class="tab" data-tab="formulas" onclick="switchTab('formulas',this)">🧮 फॉर्मूले</button>
+    </div>
+
+    <!-- Overview : chapters -->
+    <div id="tab-overview" class="tab-panel">
+      <div class="callout callout-info mb-20" id="overviewHeader"></div>
+      <div class="subjects-grid" id="chaptersGrid"></div>
+    </div>
+
+    <!-- Quiz tab : quick start -->
+    <div id="tab-quiz" class="tab-panel" style="display:none">
+      <div class="quiz-setup" style="display:block">
+        <div class="setup-row">
+          <label>अध्याय चुनें</label>
+          <select id="quizChapter"></select>
+        </div>
+        <div class="setup-row">
+          <label>मोड चुनें</label>
+          <select id="quizModeSel">
+            <option value="mcq">✅ MCQ</option>
+            <option value="write">✍️ लिखने वाला</option>
+            <option value="mixed">🎲 मिक्स</option>
+          </select>
+        </div>
+        <div class="setup-row">
+          <label>प्रश्नों की संख्या</label>
+          <div class="qty-buttons">
+            <button class="qty-btn" data-n="10">10</button>
+            <button class="qty-btn" data-n="20">20</button>
+            <button class="qty-btn" data-n="50">50</button>
+            <button class="qty-btn active" data-n="100">100</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-big" onclick="startSubjectQuiz()">🚀 क्विज़ शुरू करें</button>
+      </div>
+    </div>
+
+    <!-- Notes tab -->
+    <div id="tab-notes" class="tab-panel" style="display:none">
+      <div id="notesContainer"></div>
+    </div>
+
+    <!-- Formulas tab -->
+    <div id="tab-formulas" class="tab-panel" style="display:none">
+      <div id="formulasContainer"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/notes.js"></script>
+<script src="js/formulas.js"></script>
+<script src="js/common.js"></script>
+<script>
+let CURRENT_SUBJECT = null;
+const CHAPTER_COLORS = ['#6366f1','#f59e0b','#22c55e','#8b5cf6','#0d9488','#dc2626','#ea580c','#0891b2','#e11d48','#7048e8','#16a34a','#f97316','#eab308','#db2777','#2563eb'];
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('#subjectTabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('tab-' + tab).style.display = 'block';
+}
+
+function loadSubject() {
+  const s = getURLParam('subject') || 'hindi';
+  if (!SUBJECTS[s]) { location.href = 'subjects.html'; return; }
+  CURRENT_SUBJECT = s;
+  const sub = SUBJECTS[s];
+  const qty = (QUESTION_DATA[s] && QUESTION_DATA[s].questions) ? QUESTION_DATA[s].questions.length : 0;
+
+  document.getElementById('pageHero').style.background = `linear-gradient(120deg,${sub.color},#6366f1)`;
+  document.getElementById('pageHero').innerHTML = `<h1>${sub.emoji} ${sub.name}</h1><p>${sub.desc}</p><div class="hero-buttons" style="margin-top:18px">
+    <button class="btn btn-primary" onclick="location.href='quiz.html?subject=${s}'">📝 क्विज़ दें</button>
+    <button class="btn btn-secondary" onclick="location.href='notes.html?subject=${s}'">📖 नोट्स</button>
+    ${FORMULA_DATA[s] ? `<button class="btn btn-accent" onclick="location.href='formulas.html?subject=${s}'">🧮 फॉर्मूले</button>` : ''}
+  </div>`;
+  document.title = sub.name + ' — JAC 10th Study Hub';
+
+  // Overview header
+  document.getElementById('overviewHeader').innerHTML = `${sub.emoji} <b>${sub.name}</b> — कुल ${qty} प्रश्न, ${(QUESTION_DATA[s].chapters||[]).length} अध्याय। नीचे अध्याय चुनकर क्विज़ दें।`;
+
+  // Chapters grid
+  const chapters = QUESTION_DATA[s].chapters || [];
+  const grid = document.getElementById('chaptersGrid');
+  grid.innerHTML = `
+    <div class="subject-card" style="border:3px solid ${sub.color}" onclick="startChapterQuiz('all')">
+      <div class="card-icon" style="background:${sub.color}">📚</div>
+      <h3>पूरी बुक (सभी अध्याय)</h3>
+      <p>${qty} प्रश्न</p>
+      <button class="btn btn-primary btn-card" onclick="event.stopPropagation();startChapterQuiz('all')">शुरू करें →</button>
+    </div>` +
+    chapters.map((c,i) => `
+    <div class="subject-card" style="border:3px solid ${sub.color}" onclick="startChapterQuiz('${c}')">
+      <div class="card-icon" style="background:${CHAPTER_COLORS[i%CHAPTER_COLORS.length]}">${i+1}</div>
+      <h3 style="font-size:16px">${c}</h3>
+      <button class="btn btn-card" style="background:${sub.color};color:#fff" onclick="event.stopPropagation();startChapterQuiz('${c}')">क्विज़ →</button>
+    </div>`).join('');
+
+  // Quiz chapter select
+  const sel = document.getElementById('quizChapter');
+  sel.innerHTML = '<option value="all">📚 सभी अध्याय</option>' + chapters.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  // Notes
+  renderSubjectNotes('notesContainer', s);
+
+  // Formulas
+  if (FORMULA_DATA[s]) renderFormulaSection('formulasContainer', s);
+  else document.getElementById('tab-formulas').style.display = 'none';
+}
+
+function startChapterQuiz(ch) {
+  const s = CURRENT_SUBJECT;
+  if (ch === 'all') { location.href = 'quiz.html?subject=' + s; return; }
+  location.href = 'quiz.html?subject=' + s + '&chapter=' + encodeURIComponent(ch);
+}
+
+function startSubjectQuiz() {
+  const s = CURRENT_SUBJECT;
+  const ch = document.getElementById('quizChapter').value;
+  const mode = document.getElementById('quizModeSel').value;
+  location.href = 'quiz.html?subject=' + s + '&chapter=' + encodeURIComponent(ch) + '&mode=' + mode;
+}
+
+document.addEventListener('DOMContentLoaded', loadSubject);
+</script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>आवर्त सारणी — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#0d9488,#05645c)">
+  <h1 data-i18n="pp_title">🧪 आवर्त सारणी (Periodic Table)</h1>
+  <p data-i18n="pp_desc">हर तत्व पर click करें — नाम, हिंदी नाम, इलेक्ट्रॉन विन्यास, गलनांक/क्वथनांक, प्रयोग 🌡️ slider घुमाकर देखो कौन पिघलता है</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="periodic-wrap" id="periodicContainer"></div>
+    <div id="elemInfo" style="margin-top:24px"></div>
+    <div class="section-header mt-20" style="margin-top:44px">
+      <h2>📋 महत्वपूर्ण तत्वों की सूची</h2>
+      <p>कक्षा 10 के बोर्ड परीक्षा के लिए सभी आवश्यक तत्व</p>
+    </div>
+    <div id="elementList"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script src="js/periodic.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  renderPeriodicTable(document.getElementById('periodicContainer'), document.getElementById('elemInfo'));
+  renderAllElementsList(document.getElementById('elementList'));
+});
+</script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

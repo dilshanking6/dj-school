@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { motion } from 'framer-motion';
-import { BookOpen, Download, Plus, FileText, Loader2, Search, Trash2, Paperclip } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, Download, Plus, FileText, Loader2, Search, Trash2, Paperclip, X } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { socket } from '../api/socket';
+import useSocket from '../hooks/useSocket';
+
+const STAFF = ['teacher', 'principal', 'admin'];
+const field = 'w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-base outline-none transition-colors placeholder:text-slate-500 focus:border-primary/50';
+const label = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500';
+const card = 'glass-effect rounded-3xl border border-white/5 p-5 sm:p-6';
+
+const emptyForm = (className) => ({
+  title: '', subject: '', className, fileUrl: '', type: 'note', description: '', fileName: '', fileData: ''
+});
 
 const NotesPage = () => {
   const { user } = useContext(AuthContext);
@@ -12,33 +21,19 @@ const NotesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
-  
-  const [formData, setFormData] = useState({ 
-    title: '', 
-    subject: '', 
-    className: user?.role === 'teacher' ? 'All' : (user?.class || 'All'), 
-    fileUrl: '', 
-    type: 'note', 
-    description: '', 
-    fileName: '', 
-    fileData: '' 
-  });
+  const [formData, setFormData] = useState(emptyForm('All'));
 
-  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  const socket = useSocket();
+  const canShare = STAFF.includes(user?.role);
 
   const fetchNotes = async () => {
+    setLoading(true);
     try {
-      const isAdminOrTeacher = user?.role === 'teacher' || user?.role === 'principal' || user?.role === 'admin';
-      const endpoint = isAdminOrTeacher ? '/api/notes/all' : `/api/notes/class/${user?.class || 'All'}`;
+      const endpoint = canShare ? '/api/notes/all' : `/api/notes/class/${user?.class || 'All'}`;
       const res = await axios.get(endpoint);
-      setNotes(res.data);
+      setNotes(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Failed to fetch notes');
+      toast.error(err.response?.data?.error || 'Material could not be loaded');
     } finally {
       setLoading(false);
     }
@@ -46,254 +41,304 @@ const NotesPage = () => {
 
   useEffect(() => {
     fetchNotes();
+  }, [user?.id, user?.role]);
 
-    socket.on('new_note', (note) => {
+  useEffect(() => {
+    if (!canShare) setFormData((prev) => ({ ...prev, className: user?.class || 'All' }));
+  }, [user?.class, canShare]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const onNote = (note) => {
       const noteClass = String(note.className || '').toLowerCase();
       const userClass = String(user?.class || '').toLowerCase();
-      
-      if (noteClass === 'all' || noteClass === userClass) {
-        setNotes(prev => [note, ...prev]);
+      if (canShare || noteClass === 'all' || noteClass === userClass) {
+        setNotes((prev) => [note, ...prev]);
         toast.success(`New ${note.type} shared: ${note.title}`);
       }
-    });
-
-    return () => {
-      socket.off('new_note');
     };
-  }, [user?.class]);
 
-  const handleAddNote = async (e) => {
-    e.preventDefault();
-    const loadingToast = toast.loading('Sharing material...');
+    socket.on('new_note', onNote);
+    return () => socket.off('new_note', onNote);
+  }, [socket, user?.class, canShare]);
+
+  const handleAddNote = async (event) => {
+    event.preventDefault();
+    const loadingToast = toast.loading('Sharing material');
     try {
-      await axios.post('/api/notes', {
-        teacherId: user.id,
-        teacherName: user.name,
-        ...formData
-      });
+      await axios.post('/api/notes', formData);
       setShowAdd(false);
-      setFormData({ 
-        title: '', 
-        subject: '', 
-        className: user?.role === 'teacher' ? 'All' : (user?.class || 'All'), 
-        fileUrl: '', 
-        type: 'note', 
-        description: '', 
-        fileName: '', 
-        fileData: '' 
-      });
-      toast.success('Material shared successfully!', { id: loadingToast });
-      // fetchNotes(); // Socket handles it
+      setFormData(emptyForm(canShare ? 'All' : user?.class || 'All'));
+      toast.success('Material shared', { id: loadingToast });
     } catch (err) {
-      toast.error('Failed to share material', { id: loadingToast });
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.error || 'Material could not be shared', { id: loadingToast });
     }
   };
 
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
+  const handleFile = (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > 10000) {
-      toast.error('File too large for Google Sheets! Max 10KB allowed. Please upload to Google Drive and paste the Link instead.');
-      e.target.value = '';
+      toast.error('Inline uploads are limited to 10 KB. Share a Google Drive link instead.');
+      event.target.value = '';
       return;
     }
-    const fileData = await fileToDataUrl(file);
-    setFormData({ ...formData, fileName: file.name, fileData });
+    const reader = new FileReader();
+    reader.onload = () => setFormData((prev) => ({ ...prev, fileName: file.name, fileData: reader.result }));
+    reader.onerror = () => toast.error('That file could not be read');
+    reader.readAsDataURL(file);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this note?')) return;
-    const loadingToast = toast.loading('Deleting note...');
+    if (!window.confirm('Delete this material?')) return;
+    const loadingToast = toast.loading('Deleting material');
     try {
       await axios.delete(`/api/notes/${id}`);
-      setNotes(prev => prev.filter(n => n.id !== id));
-      toast.success('Note deleted successfully', { id: loadingToast });
+      setNotes((prev) => prev.filter((note) => note.id !== id));
+      toast.success('Material deleted', { id: loadingToast });
     } catch (err) {
-      toast.error('Failed to delete note', { id: loadingToast });
+      toast.error(err.response?.data?.error || 'Material could not be deleted', { id: loadingToast });
     }
   };
 
-  const filteredNotes = notes.filter(n => 
-    n.title.toLowerCase().includes(search.toLowerCase()) || 
-    n.subject.toLowerCase().includes(search.toLowerCase())
+  const term = search.trim().toLowerCase();
+  const filteredNotes = notes.filter(
+    (note) =>
+      !term ||
+      String(note.title || '').toLowerCase().includes(term) ||
+      String(note.subject || '').toLowerCase().includes(term)
   );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-        <h1 className="text-3xl font-black flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary"><BookOpen /></div>
-          Study Notes & Material
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="flex items-center gap-3 text-2xl font-black sm:gap-4 sm:text-3xl">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+            <BookOpen size={24} />
+          </span>
+          Study material
         </h1>
 
-        <div className="flex gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search notes..." 
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={17} />
+            <input
+              type="search"
+              placeholder="Search material"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-primary/50 transition-all text-sm"
+              className={`${field} pl-11`}
             />
           </div>
-          {user?.role === 'teacher' && (
-            <button 
+          {canShare && (
+            <button
               onClick={() => setShowAdd(true)}
-              className="px-6 py-3 bg-primary rounded-2xl font-bold text-sm flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-primary/20"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-sm font-bold text-white"
             >
-              <Plus size={18} /> Share Note
+              <Plus size={18} />
+              Share material
             </button>
           )}
         </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" size={40} /></div>
+        <div className="flex justify-center py-20">
+          <Loader2 className="animate-spin text-primary" size={34} />
+        </div>
       ) : filteredNotes.length === 0 ? (
-        <div className="text-center py-20 glass-effect rounded-[3rem] border border-white/5">
-          <FileText className="mx-auto text-gray-600 mb-4" size={48} />
-          <p className="text-gray-500">No notes found for your class yet.</p>
+        <div className={`${card} py-16 text-center`}>
+          <FileText className="mx-auto mb-4 text-slate-600" size={44} />
+          <p className="text-sm text-slate-500">No material has been shared for your class yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <motion.div 
+            <motion.article
               key={note.id}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-effect p-6 rounded-[2rem] border border-white/5 group hover:border-primary/30 transition-all relative"
+              className="glass-effect flex flex-col rounded-3xl border border-white/5 p-5 transition-colors hover:border-primary/25"
             >
-              <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-6 text-gray-400 group-hover:text-primary transition-colors">
-                <FileText size={24} />
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-slate-400">
+                <FileText size={22} />
               </div>
-              <h3 className="font-bold text-lg mb-1">{note.title}</h3>
-              <p className="text-primary text-xs font-black uppercase tracking-widest mb-4">{note.subject} - {note.type}</p>
-              {note.description && <p className="text-sm text-gray-400 mb-4">{note.description}</p>}
-              
-              <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center text-[10px] font-bold">
-                    {note.teacherName[0]}
-                  </div>
-                  <span className="text-[10px] text-gray-500 font-bold uppercase">{note.teacherName}</span>
+
+              <h3 className="font-bold">{note.title}</h3>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                {note.subject} · {note.type}
+              </p>
+              {note.description && (
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-400">{note.description}</p>
+              )}
+
+              <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">
+                    {(note.teacherName || 'T').charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate text-[10px] font-bold uppercase text-slate-500">
+                    {note.teacherName || 'Teacher'}
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  {user?.role === 'teacher' && (
-                    <button onClick={() => handleDelete(note.id)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors">
-                      <Trash2 size={16} />
+
+                <div className="flex shrink-0 gap-2">
+                  {canShare && (
+                    <button
+                      onClick={() => handleDelete(note.id)}
+                      className="rounded-lg p-2 text-rose-400 transition-colors hover:bg-rose-500/10"
+                      aria-label={`Delete ${note.title}`}
+                    >
+                      <Trash2 size={15} />
                     </button>
                   )}
-                  {(note.fileData || note.fileUrl) && <a 
-                    href={note.fileData || note.fileUrl} 
-                    download={note.fileData ? note.fileName : undefined}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
-                  >
-                    <Download size={16} />
-                  </a>}
+                  {(note.fileData || note.fileUrl) && (
+                    <a
+                      href={note.fileData || note.fileUrl}
+                      download={note.fileData ? note.fileName : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-primary/10 p-2 text-primary transition-colors hover:bg-primary hover:text-white"
+                      aria-label={`Open ${note.title}`}
+                    >
+                      <Download size={15} />
+                    </a>
+                  )}
                 </div>
               </div>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
       )}
 
-      {/* Add Note Modal */}
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-effect p-10 rounded-[3rem] border border-white/10 shadow-2xl w-full max-w-lg"
-          >
-            <h2 className="text-2xl font-black mb-8">Share New Note</h2>
-            <form onSubmit={handleAddNote} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Title</label>
-                <input 
-                  type="text" 
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  placeholder="e.g. Chapter 1: Chemical Reactions"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 transition-all"
-                  required
-                />
+      <AnimatePresence>
+        {showAdd && canShare && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/85 backdrop-blur-sm sm:items-center sm:p-4">
+            <motion.form
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              onSubmit={handleAddNote}
+              className="glass-effect max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-white/10 p-6 shadow-2xl sm:max-w-lg sm:rounded-3xl sm:p-7"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-black">Share material</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowAdd(false)}
+                  className="rounded-xl p-2 transition-colors hover:bg-white/10"
+                  aria-label="Close"
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Subject</label>
-                  <input 
-                    type="text" 
-                    value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    placeholder="e.g. Chemistry"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 transition-all"
+
+              <div className="space-y-4">
+                <div>
+                  <label className={label} htmlFor="note-title">Title</label>
+                  <input
+                    id="note-title"
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g. Chapter 1: Chemical Reactions"
+                    className={field}
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Class</label>
-                  <select 
-                    value={formData.className}
-                    onChange={(e) => setFormData({...formData, className: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 transition-all appearance-none"
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={label} htmlFor="note-subject">Subject</label>
+                    <input
+                      id="note-subject"
+                      type="text"
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      placeholder="e.g. Chemistry"
+                      className={field}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className={label} htmlFor="note-type">Type</label>
+                    <select
+                      id="note-type"
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className={field}
+                    >
+                      <option value="note">Note</option>
+                      <option value="homework">Homework</option>
+                      <option value="assignment">Assignment</option>
+                    </select>
+                  </div>
+                </div>
+
+                {user?.role === 'teacher' && (
+                  <div>
+                    <label className={label} htmlFor="note-class">Class</label>
+                    <select
+                      id="note-class"
+                      value={formData.className}
+                      onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                      className={field}
+                    >
+                      {['All', '9', '10', '11', '12'].map((item) => (
+                        <option key={item} value={item}>{item === 'All' ? 'All classes' : `Class ${item}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className={label} htmlFor="note-description">Description</label>
+                  <textarea
+                    id="note-description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Instructions for students"
+                    rows={3}
+                    className={`${field} resize-none`}
+                  />
+                </div>
+
+                <div>
+                  <label className={label} htmlFor="note-url">Google Drive link</label>
+                  <input
+                    id="note-url"
+                    type="url"
+                    value={formData.fileUrl}
+                    onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
+                    placeholder="https://drive.google.com/..."
+                    className={field}
+                  />
+                </div>
+
+                <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-primary/40">
+                  <Paperclip size={18} className="text-primary" />
+                  <span className="truncate text-sm font-bold">{formData.fileName || 'Attach a file (max 10 KB)'}</span>
+                  <input type="file" className="hidden" onChange={handleFile} />
+                </label>
+
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdd(false)}
+                    className="flex-1 rounded-2xl glass-effect py-3.5 text-sm font-bold transition-colors hover:bg-white/10"
                   >
-                    <option value="All" className="bg-background">All Classes</option>
-                    <option value="9" className="bg-background">Class 9</option>
-                    <option value="10" className="bg-background">Class 10</option>
-                    <option value="11" className="bg-background">Class 11</option>
-                    <option value="12" className="bg-background">Class 12</option>
-                  </select>
+                    Cancel
+                  </button>
+                  <button type="submit" className="flex-1 rounded-2xl bg-primary py-3.5 text-sm font-bold text-white">
+                    Share
+                  </button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Material Type</label>
-                <select 
-                  value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 transition-all appearance-none"
-                >
-                  <option value="note" className="bg-background">Note</option>
-                  <option value="homework" className="bg-background">Homework</option>
-                  <option value="assignment" className="bg-background">Assignment</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Instructions or note details"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 transition-all resize-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">File URL</label>
-                <input 
-                  type="url" 
-                  value={formData.fileUrl}
-                  onChange={(e) => setFormData({...formData, fileUrl: e.target.value})}
-                  placeholder="https://drive.google.com/..."
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 transition-all"
-                />
-              </div>
-              <label className="flex items-center justify-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:border-primary/40 transition-all">
-                <Paperclip size={18} className="text-primary" />
-                <span className="text-sm font-bold">{formData.fileName || 'Upload small file to Google Sheets'}</span>
-                <input type="file" className="hidden" onChange={handleFile} />
-              </label>
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-4 glass-effect rounded-2xl font-bold hover:bg-white/10 transition-all">Cancel</button>
-                <button type="submit" className="flex-1 py-4 bg-primary rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all">Share Now</button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+            </motion.form>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

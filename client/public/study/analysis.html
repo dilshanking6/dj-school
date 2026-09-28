@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>मेरा रिज़ल्ट — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#7048e8,#5f3dc4)">
+  <h1 data-i18n="pa_title">📊 मेरा रिज़ल्ट / विश्लेषण</h1>
+  <p data-i18n="pa_desc">किस विषय में कितना स्कोर? कौन सा अध्याय weak? कैसे सुधारें?</p>
+</div>
+
+<section class="section">
+  <div class="container" id="analysisWrap">
+
+    <div class="analysis-header" style="margin-bottom:20px">
+      <h3>विषयवार प्रदर्शन (Subject-wise Performance)</h3>
+    </div>
+    <div id="subjectBars" class="subject-bars" style="margin-bottom:30px"></div>
+
+    <div class="analysis-header" style="margin-bottom:20px">
+      <h3>कौन से अध्याय में सुधार चाहिए? (Weak Chapters)</h3>
+    </div>
+    <div id="weakChapters" class="weak-chapters" style="margin-bottom:30px"></div>
+
+    <div class="analysis-header" style="margin-bottom:20px">
+      <h3>💡 आपके लिए सुझाव (Suggestions)</h3>
+    </div>
+    <div id="suggestions" class="suggestions" style="margin-bottom:30px"></div>
+
+    <div class="analysis-actions">
+      <button class="btn btn-danger" onclick="clearAllResults()">🗑️ सभी रिज़ल्ट हटाएं</button>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

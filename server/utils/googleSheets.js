@@ -1,90 +1,142 @@
 const axios = require('axios');
-require('dotenv').config();
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+// Env lazily read hota hai, taaki module load order se behaviour na badle.
+// Apps Script cold start me 15-25s lag sakte hain, isliye read timeout
+// generous rakha gaya hai. Override karne ke liye SHEET_READ_TIMEOUT set karo.
+const appsScriptUrl = () => process.env.APPS_SCRIPT_URL;
+const readTimeout = () => Number(process.env.SHEET_READ_TIMEOUT || 30000);
+const writeTimeout = () => Number(process.env.SHEET_WRITE_TIMEOUT || 30000);
+
+class SheetError extends Error {
+  constructor(message, cause) {
+    super(message);
+    this.name = 'SheetError';
+    this.status = 502;
+    this.cause = cause;
+  }
+}
+
+// Apps Script cold start aur shared-quota spikes par read fail hota hai.
+// Ye wo errors hain jo retry se theek ho sakte hain (timeout / unreachable /
+// quota-ki reject). Ek baar reject = seedha error nahi, retry karo.
+const RETRYABLE = [
+  'Storage service timed out. Please try again.',
+  'Storage service is unreachable',
+  'Storage service rejected the request'
+];
+const isRetryable = (error) =>
+  error instanceof SheetError && RETRYABLE.includes(error.message);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Idempotent read par bounded retry with backoff.
+ * Apps Script free quota me shared spike common hai, isliye 2 extra
+ * attempts lena reliability bahut badhata hai aur duplicate likhta nahi.
+ */
+const withRetry = async (fn, { attempts, baseDelay }) => {
+  let lastError;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!isRetryable(error) || i === attempts - 1) throw error;
+      // jitter taaki saare clients ek saath retry na karein
+      const wait = baseDelay * 2 ** i + Math.floor(Math.random() * 400);
+      await sleep(wait);
+    }
+  }
+  throw lastError;
+};
+
+const post = async (payload, timeout) => {
+  const url = appsScriptUrl();
+  if (!url) {
+    throw new SheetError('Storage service is not configured. Add APPS_SCRIPT_URL to the server environment.');
+  }
+
+  let response;
+  try {
+    response = await axios.post(url, payload, { timeout });
+  } catch (error) {
+    if (error.response) {
+      throw new SheetError('Storage service rejected the request', error);
+    }
+    if (error.code === 'ECONNABORTED') {
+      throw new SheetError('Storage service timed out. Please try again.', error);
+    }
+    throw new SheetError('Storage service is unreachable', error);
+  }
+
+  if (response.data && response.data.error) {
+    throw new SheetError(String(response.data.error), null);
+  }
+
+  return response.data;
+};
+
+const extractRows = (data) => {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.data)) return data.data;
+  if (data && Array.isArray(data.values)) return data.values;
+  if (data && Array.isArray(data.rows)) return data.rows;
+  return [];
+};
+
+// Apps Script reads hamesha network hota hai (cold start slow). Ek hi second
+// me multiple requests Users/Attendance baar-baar fetch karte hain (dashboard,
+// roster, markAttendance keya keya). Ek chhota TTL cache rakha hai — har
+// write (append/update/delete) par peeche ka cache turant khaali ho jata hai,
+// isliye data kabhi bekar purana nahi rehta. Cache jo data deta hai wo uth
+// hi vaise ka vaise hota hai jaisa aaj tak tha — sirf lag kam hota hai.
+const cacheTTL = () => Number(process.env.SHEET_CACHE_TTL_MS || 8000);
+const cache = new Map(); // sheetName -> { ts, data }
+
+const bustSheetCache = (sheetName) => {
+  if (cache.has(sheetName)) cache.delete(sheetName);
+};
 
 async function getSheetData(sheetName) {
-  try {
-    if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL is not defined in .env');
-    const response = await axios.post(APPS_SCRIPT_URL, {
-      action: 'read',
-      sheetName: sheetName
-    }, { timeout: 10000 });
-    
-    console.log(`Read from ${sheetName} raw length:`, response.data && response.data.data ? response.data.data.length : (Array.isArray(response.data) ? response.data.length : 'N/A'));
-    
-    // If the response is an object with a data property, return that data
-    if (response.data && response.data.data && Array.isArray(response.data.data)) {
-      return response.data.data;
-    }
-    
-    // Otherwise return the data as is (assuming it's an array)
-    return Array.isArray(response.data) ? response.data : [];
-  } catch (error) {
-    console.error(`Error reading ${sheetName}:`, error.message);
-    return []; 
-  }
+  const hit = cache.get(sheetName);
+  if (hit && Date.now() - hit.ts < cacheTTL()) return hit.data;
+
+  const attempts = Number(process.env.SHEET_READ_ATTEMPTS || 3);
+  const data = await withRetry(
+    () => post({ action: 'read', sheetName }, readTimeout()),
+    { attempts, baseDelay: 700 }
+  );
+  const rows = extractRows(data);
+  cache.set(sheetName, { ts: Date.now(), data: rows });
+  return rows;
 }
 
 async function appendSheetData(sheetName, values) {
-  try {
-    if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL is not defined in .env');
-    const response = await axios.post(APPS_SCRIPT_URL, {
-      action: 'append',
-      sheetName: sheetName,
-      values: values
-    }, { timeout: 10000 });
-    
-    console.log(`Append to ${sheetName} response:`, response.data);
-    
-    if (response.data && response.data.error) {
-      throw new Error(response.data.error);
-    }
-    
-    return true;
-  } catch (error) {
-    console.error(`Error appending to ${sheetName}:`, error.message);
-    throw new Error(`Database Error: ${error.message}`);
-  }
-}
-
-async function deleteSheetData(sheetName, id) {
-  try {
-    if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL is not defined in .env');
-    console.log(`[DEBUG] Attempting to delete ID: ${id} from sheet: ${sheetName}`);
-    
-    const response = await axios.post(APPS_SCRIPT_URL, {
-      action: 'delete',
-      sheetName: sheetName,
-      id: id
-    }, { timeout: 10000 });
-    
-    console.log(`Delete from ${sheetName} response:`, response.data);
-    
-    if (response.data && response.data.error) {
-      throw new Error(response.data.error);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error(`Error deleting from ${sheetName}:`, error.message);
-    throw new Error(`Delete Error: ${error.message}`);
-  }
+  await post({ action: 'append', sheetName, values }, writeTimeout());
+  bustSheetCache(sheetName);
+  return true;
 }
 
 async function updateSheetData(sheetName, id, values) {
-  try {
-    const response = await axios.post(APPS_SCRIPT_URL, {
-      action: 'update',
-      sheetName: sheetName,
-      id: id,
-      values: values
-    });
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating ${sheetName}:`, error.message);
-    return null;
-  }
+  await post({ action: 'update', sheetName, id, values }, writeTimeout());
+  bustSheetCache(sheetName);
+  return true;
 }
 
-module.exports = { getSheetData, appendSheetData, deleteSheetData, updateSheetData };
+async function deleteSheetData(sheetName, id) {
+  await post({ action: 'delete', sheetName, id }, writeTimeout());
+  bustSheetCache(sheetName);
+  return true;
+}
+
+const storageConfigured = () => Boolean(appsScriptUrl());
+
+module.exports = {
+  getSheetData,
+  appendSheetData,
+  updateSheetData,
+  deleteSheetData,
+  bustSheetCache,
+  storageConfigured,
+  SheetError
+};

@@ -1,123 +1,177 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, CheckCircle, XCircle, Loader2, User } from 'lucide-react';
+import { HelpCircle, CheckCircle, XCircle, Loader2, User, Inbox } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { socket } from '../api/socket';
+import useSocket from '../hooks/useSocket';
+
+const STATUS_STYLES = {
+  pending: 'bg-amber-500/10 border-amber-500/20 text-amber-500',
+  accepted: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500',
+  resolved: 'bg-primary/10 border-primary/20 text-primary',
+  rejected: 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+};
+
+const ACTIONS = {
+  pending: [
+    { status: 'accepted', label: 'Accept', icon: CheckCircle, tone: 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' },
+    { status: 'rejected', label: 'Reject', icon: XCircle, tone: 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white' }
+  ],
+  accepted: [
+    { status: 'resolved', label: 'Mark resolved', icon: CheckCircle, tone: 'bg-primary/10 text-primary hover:bg-primary hover:text-white' }
+  ]
+};
 
 const PrincipalComplaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [busyId, setBusyId] = useState(null);
 
-  const fetchAllComplaints = async () => {
+  const socket = useSocket();
+
+  const fetchAllComplaints = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await axios.get('/api/complaints/all');
-      setComplaints(res.data);
+      setComplaints(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Failed to fetch complaints');
+      toast.error(err.response?.data?.error || 'Complaints could not be loaded');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAllComplaints();
+  }, [fetchAllComplaints]);
 
-    socket.on('new_complaint', (comp) => {
-      setComplaints(prev => [comp, ...prev]);
-      toast.success(`New complaint from ${comp.studentName}`);
-    });
+  useEffect(() => {
+    if (!socket) return undefined;
 
-    return () => {
-      socket.off('new_complaint');
+    const onNew = (complaint) => {
+      setComplaints((prev) => [complaint, ...prev.filter((c) => c.id !== complaint.id)]);
+      toast(`New complaint from ${complaint.studentName}`);
     };
-  }, []);
+
+    socket.on('new_complaint', onNew);
+    return () => socket.off('new_complaint', onNew);
+  }, [socket]);
 
   const handleStatusUpdate = async (id, status) => {
-    const loadingToast = toast.loading(`Updating status to ${status}...`);
+    setBusyId(id);
+    const loadingToast = toast.loading(`Marking as ${status}`);
     try {
       await axios.patch(`/api/complaints/${id}/status`, { status });
-      setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
-      toast.success(`Complaint ${status} successfully`, { id: loadingToast });
+      setComplaints((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+      toast.success(`Complaint marked ${status}`, { id: loadingToast });
     } catch (err) {
-      toast.error('Failed to update status', { id: loadingToast });
+      toast.error(err.response?.data?.error || 'Status could not be updated', { id: loadingToast });
+    } finally {
+      setBusyId(null);
     }
   };
 
+  const filtered =
+    filter === 'all' ? complaints : complaints.filter((c) => c.status === filter);
+
+  const tabs = ['all', 'pending', 'accepted', 'resolved', 'rejected'];
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-black mb-8 flex items-center gap-4">
-        <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary"><HelpCircle /></div>
-        Student Complaints Management
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <h1 className="mb-6 flex items-center gap-3 text-2xl font-black sm:mb-8 sm:gap-4 sm:text-3xl">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+          <HelpCircle size={24} />
+        </span>
+        Complaints
       </h1>
 
+      <div className="mb-5 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+        {tabs.map((tab) => {
+          const count = tab === 'all' ? complaints.length : complaints.filter((c) => c.status === tab).length;
+          return (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold capitalize transition-colors ${
+                filter === tab
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+              }`}
+            >
+              {tab} <span className="opacity-70">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" size={40} /></div>
-      ) : complaints.length === 0 ? (
-        <div className="text-center py-20 glass-effect rounded-[3rem] border border-white/5">
-          <p className="text-gray-500">No complaints filed yet.</p>
+        <div className="flex justify-center py-20">
+          <Loader2 className="animate-spin text-primary" size={34} />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="glass-effect rounded-3xl border border-white/5 px-5 py-16 text-center">
+          <Inbox className="mx-auto mb-4 text-slate-600" size={44} />
+          <p className="text-sm text-slate-500">No complaints to show right now.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {complaints.map((comp) => (
-            <motion.div 
-              key={comp.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="glass-effect p-8 rounded-[2.5rem] border border-white/5"
+        <div className="space-y-3">
+          {filtered.map((complaint) => (
+            <motion.article
+              key={complaint.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-effect rounded-3xl border border-white/5 p-5 sm:p-6"
             >
-              <div className="flex flex-col md:flex-row justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-gray-500"><User size={20} /></div>
-                    <div>
-                      <h4 className="font-bold">{comp.studentName}</h4>
-                      <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Student ID: {comp.studentId}</p>
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-slate-400">
+                      <User size={18} />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="truncate font-bold">{complaint.studentName}</h3>
+                      <p className="truncate text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
+                        {complaint.studentId}
+                      </p>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{comp.subject}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed mb-4">{comp.description}</p>
-                  <p className="text-[10px] text-gray-500 font-bold italic">{new Date(comp.date).toLocaleString()}</p>
+
+                  <h4 className="text-base font-bold">{complaint.subject}</h4>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{complaint.description}</p>
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
+                    {new Date(complaint.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </p>
                 </div>
 
-                <div className="flex flex-col gap-3 min-w-[200px]">
-                  <div className={`text-center py-2 rounded-xl text-[10px] font-black uppercase border mb-2 ${
-                    comp.status === 'pending' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
-                    comp.status === 'accepted' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                    comp.status === 'rejected' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
-                    'bg-primary/10 border-primary/20 text-primary'
-                  }`}>
-                    Current Status: {comp.status}
-                  </div>
+                <div className="w-full shrink-0 lg:w-52">
+                  <span
+                    className={`mb-3 block rounded-xl border px-3 py-2 text-center text-[10px] font-bold uppercase ${
+                      STATUS_STYLES[complaint.status] || STATUS_STYLES.pending
+                    }`}
+                  >
+                    {complaint.status}
+                  </span>
 
-                  {comp.status === 'pending' && (
-                    <>
-                      <button 
-                        onClick={() => handleStatusUpdate(comp.id, 'accepted')}
-                        className="w-full py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                  <div className="space-y-2">
+                    {(ACTIONS[complaint.status] || []).map(({ status, label, icon: Icon, tone }) => (
+                      <button
+                        key={status}
+                        onClick={() => handleStatusUpdate(complaint.id, status)}
+                        disabled={busyId === complaint.id}
+                        className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-colors disabled:opacity-50 ${tone}`}
                       >
-                        <CheckCircle size={16} /> Accept Complaint
+                        {busyId === complaint.id ? <Loader2 className="animate-spin" size={16} /> : <Icon size={16} />}
+                        {label}
                       </button>
-                      <button 
-                        onClick={() => handleStatusUpdate(comp.id, 'rejected')}
-                        className="w-full py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                      >
-                        <XCircle size={16} /> Reject Complaint
-                      </button>
-                    </>
-                  )}
-                  
-                  {comp.status === 'accepted' && (
-                    <button 
-                      onClick={() => handleStatusUpdate(comp.id, 'resolved')}
-                      className="w-full py-3 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                    >
-                      <CheckCircle size={16} /> Mark as Resolved
-                    </button>
-                  )}
+                    ))}
+                    {!ACTIONS[complaint.status] && (
+                      <p className="pt-1 text-center text-[11px] text-slate-500">This complaint is closed.</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
       )}

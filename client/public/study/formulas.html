@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>फॉर्मूले — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#8b5cf6,#6d28d9)">
+  <h1 data-i18n="pf_title">🧮 सभी फॉर्मूले एक ही पेज पर</h1>
+  <p data-i18n="pf_desc">गणित (पूरा) + त्रिकोणमिति सारणी + भौतिक विज्ञान + रसायन विज्ञान</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="tabs" id="formulaTabs">
+      <button class="tab active" data-subject="maths" onclick="showFormula('maths', this)">➕ गणित</button>
+      <button class="tab" data-subject="physics" onclick="showFormula('physics', this)">⚡ भौतिक विज्ञान</button>
+      <button class="tab" data-subject="chemistry" onclick="showFormula('chemistry', this)">🧪 रसायन विज्ञान</button>
+    </div>
+
+    <div id="formulasContainer"></div>
+
+    <div class="section-header mt-20" style="margin-top:40px">
+      <h2>📐 त्रिकोणमिति सारणी (Trigonometry Table)</h2>
+      <p>0°, 30°, 45°, 60°, 90° के सभी मान</p>
+    </div>
+    <div id="trigContainer"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script src="js/formulas.js"></script>
+<script>
+function showFormula(subject, btn) {
+  document.querySelectorAll('#formulaTabs .tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderFormulaSection('formulasContainer', subject);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fromURL = getURLParam('subject');
+  const target = ['maths','physics','chemistry'].includes(fromURL) ? fromURL : 'maths';
+  const btn = document.querySelector('#formulaTabs [data-subject="' + target + '"]');
+  showFormula(target, btn);
+  renderTrigTable(document.getElementById('trigContainer'));
+});
+</script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

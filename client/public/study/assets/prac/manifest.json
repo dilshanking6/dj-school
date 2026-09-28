@@ -1,0 +1,15 @@
+[
+  { "slug": "heart", "file": "heart.png", "source": "File:Heart diagram-en.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "brain", "file": "brain.png", "source": "File:Cerebrum lobes.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "eye", "file": "eye.png", "source": "File:Schematic diagram of the human eye en.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "ear", "file": "ear.png", "source": "File:Anatomy of the Human Ear.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "kidney", "file": "kidney.png", "source": "File:KidneyStructures PioM.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "neuron", "file": "neuron.png", "source": "File:Neuron.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "lungs", "file": "lungs.png", "source": "File:Respiratory system complete en.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "digestive", "file": "digestive.png", "source": "File:Digestive system diagram en.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "flower", "file": "flower.png", "source": "File:Daffodil flower in section, labelled.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "plant", "file": "plant.png", "source": "File:Plant Anatomy.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "leaf", "file": "leaf.png", "source": "File:Layers of a Leaf.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "animalcell", "file": "animalcell.png", "source": "File:Animal cell structure en.svg", "license": "CC BY-SA (Wikimedia Commons)" },
+  { "slug": "plantcell", "file": "plantcell.png", "source": "File:Plant_cell_structure-en.svg", "license": "CC BY-SA (Wikimedia Commons)" }
+]

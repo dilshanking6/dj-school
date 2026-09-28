@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>क्विज़ — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#f59e0b,#f97316)">
+  <h1 data-i18n="pq_title">📝 क्विज़ मोड</h1>
+  <p data-i18n="pq_desc">Option पर click करते ही पता चलेगा — सही या गलत! चुना हुआ विकल्प lock हो जाएगा</p>
+</div>
+
+<section class="section">
+  <div class="container">
+
+    <!-- Mode selection -->
+    <div class="quiz-mode-select" id="quizModeSelect" style="margin-bottom:20px">
+      <h3>क्विज़ का तरीका चुनें:</h3>
+      <div class="mode-buttons">
+        <button class="mode-btn" data-mode="mcq" onclick="selectQuizMode('mcq')">✅ MCQ<br><small>4 विकल्प — तुरंत सही/गलत</small></button>
+        <button class="mode-btn" data-mode="write" onclick="selectQuizMode('write')">✍️ लिखने वाला<br><small>पहले याद करो, फिर लिखो</small></button>
+        <button class="mode-btn" data-mode="mixed" onclick="selectQuizMode('mixed')">🎲 मिक्स<br><small>MCQ + लिखने वाला</small></button>
+      </div>
+    </div>
+
+    <!-- Setup -->
+    <div class="quiz-setup" id="quizSetup">
+      <div class="setup-row">
+        <label>विषय (Subject)</label>
+        <select id="quizSubject"></select>
+      </div>
+      <div class="setup-row">
+        <label>अध्याय (Chapter)</label>
+        <select id="quizChapter"><option value="all">📚 सभी अध्याय (पूरी बुक)</option></select>
+      </div>
+      <div class="setup-row">
+        <label>क्विज़ का मोड</label>
+        <select id="quizModeSel">
+          <option value="mcq">✅ MCQ</option>
+          <option value="write">✍️ लिखने वाला</option>
+          <option value="mixed">🎲 मिक्स</option>
+        </select>
+      </div>
+      <div class="setup-row">
+        <label>प्रश्नों की संख्या</label>
+        <div class="qty-buttons">
+          <button class="qty-btn" data-n="10">10</button>
+          <button class="qty-btn" data-n="20">20</button>
+          <button class="qty-btn" data-n="50">50</button>
+          <button class="qty-btn active" data-n="100">100</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-big" onclick="startQuiz()">🚀 क्विज़ शुरू करें</button>
+    </div>
+
+    <!-- Active quiz -->
+    <div class="quiz-active" id="quizActive" style="display:none">
+      <div class="quiz-header">
+        <div class="quiz-progress"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="quiz-meta">
+          <span id="quizQNum">प्रश्न 1/10</span>
+          <span id="quizScore" class="score-chip">⭐ 0</span>
+        </div>
+      </div>
+      <div class="quiz-card" id="quizCard"></div>
+    </div>
+
+    <!-- Result -->
+    <div class="quiz-result" id="quizResult" style="display:none">
+      <div class="result-card">
+        <h2 id="resultHeadline">🎉 शाबाश!</h2>
+        <div class="result-score-circle" id="resultCircle"><span id="resultScore">0%</span></div>
+        <div class="result-detail">
+          <div class="result-row"><span>✅ सही उत्तर</span><span id="rCorrect">0</span></div>
+          <div class="result-row"><span>❌ गलत उत्तर</span><span id="rWrong">0</span></div>
+          <div class="result-row"><span>⏭️ छोड़े गए</span><span id="rSkipped">0</span></div>
+          <div class="result-row"><span>⭐ स्कोर</span><span id="rTotal">0%</span></div>
+        </div>
+        <div id="resultFeedback" class="result-feedback"></div>
+        <div id="chapterAnalysis" class="result-chapter-analysis"></div>
+        <div class="result-buttons">
+          <button class="btn btn-secondary" onclick="retryQuiz()">🔄 दोबारा</button>
+          <button class="btn btn-primary" onclick="location.href='analysis.html'">📊 पूरा विश्लेषण</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script src="js/explain.js"></script>
+<script src="js/quiz.js"></script>
+<script>
+// Qty buttons + setup
+document.addEventListener('DOMContentLoaded', () => {
+  fillSubjectSelect(document.getElementById('quizSubject'));
+  const s = getURLParam('subject');
+  if (s) {
+    initQuizForSubject(s);
+  } else {
+    currentQuiz.subject = document.getElementById('quizSubject').value;
+    updateChapterSel();
+  }
+
+  document.getElementById('quizSubject').addEventListener('change', () => {
+    currentQuiz.subject = document.getElementById('quizSubject').value;
+    updateChapterSel();
+  });
+
+  // Qty button clicks
+  document.querySelectorAll('.qty-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.qty-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  // Pre-select chapter/mode from URL
+  const chap = getURLParam('chapter');
+  if (chap) document.getElementById('quizChapter').value = chap;
+  const mode = getURLParam('mode');
+  if (mode) { document.getElementById('quizModeSel').value = mode; selectQuizMode(mode); }
+});
+</script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

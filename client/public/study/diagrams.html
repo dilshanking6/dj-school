@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>आरेख लैब (Diagram Lab) — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#7c3aed,#4c1d95)">
+  <h1 data-i18n="dd_title">🖼️ आरेख लैब (Diagram Lab)</h1>
+  <p data-i18n="dd_desc">बोर्ड के सबसे महत्वपूर्ण 25 आरेख — किसी भी part पर click करो, <b>बड़े अक्षरों में</b> उसका काम खुल जाएगा!</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="tabs dg-tabs">
+      <button class="tab dg-tab active" onclick="dgTab('bio', this)">🧬 जीव विज्ञान (14)</button>
+      <button class="tab dg-tab" onclick="dgTab('phy', this)">⚡ भौतिक विज्ञान (9)</button>
+      <button class="tab dg-tab" onclick="dgTab('chem', this)">🧪 रसायन विज्ञान (3)</button>
+      <button class="tab dg-tab" onclick="dgTab('all', this)">📚 सभी 26 देखें</button>
+    </div>
+    <p class="dg-hint">👇 किसी diagram पर ऊपर-नीचे ~ उस हिस्से को click करो (हरे घेरे) या नीचे की चिप (chip) — नीचे बड़े अक्षरों में उस part का पूरा काम दिखेगा। थपथपाकर (tap) अगला भाग भी देख सकते हो।</p>
+    <div id="dgContainer" class="dg-grid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+  <p class="pr-credits">🖼️ सभी आरेख (diagrams): Wikimedia Commons — free licensed (CC BY-SA / public domain). स्रोत मैनिफेस्ट: <code>assets/dia/manifest.json</code> व <code>assets/prac/manifest.json</code></p>
+</footer>
+
+<script src="js/hub.js"></script>
+
+<script src="js/common.js"></script>
+<script src="js/diagrams.js"></script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

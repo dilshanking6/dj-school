@@ -1,218 +1,306 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Hash, BookOpen, ArrowRight, Phone, Award, Briefcase, Users, Camera, Plus, Loader2 } from 'lucide-react';
+import {
+  Mail, Lock, User, BookOpen, ArrowRight, Phone, GraduationCap,
+  Camera, Plus, Loader2, ChevronLeft
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
+
+const field = 'w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 outline-none focus:border-primary/50 transition-colors text-sm placeholder:text-slate-500';
+
+const label = 'block text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-2';
+
+const IconField = ({ icon: Icon, ...props }) => (
+  <div className="relative">
+    <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+    <input {...props} className={`${field} pl-12`} />
+  </div>
+);
 
 const RegisterPage = ({ role = 'student' }) => {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    className: '',
-    section: 'A',
-    motherName: '',
-    fatherName: '',
-    rollNumber: '',
-    subject: '',
-    isClassTeacher: 'No',
-    classesHandled: [],
-    degree: '',
-    experience: '',
-    password: '',
-    avatar: ''
+  const isStudent = role === 'student';
+  const isTeacher = role === 'teacher';
+  const [form, setForm] = useState({
+    firstName: '', lastName: '', email: '', phone: '',
+    password: '', className: '9', section: 'A', rollNumber: '',
+    fatherName: '', motherName: '',
+    subject: '', degree: '', experience: 0
   });
+  const [avatar, setAvatar] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const loginPath = role === 'student' ? '/login' : `/${role}-login`;
+
+  const title = useMemo(() => {
+    if (isStudent) return 'Student registration';
+    if (isTeacher) return 'Teacher registration';
+    return 'Principal registration';
+  }, [isStudent, isTeacher]);
+
+  const set = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+    setError('');
+  };
+
+  const handleAvatar = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20000) {
+      setError('Choose an image under 20 KB');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatar(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
     setLoading(true);
-    const loadingToast = toast.loading('Creating account...');
+    setError('');
     try {
-      await axios.post('/api/auth/register', { ...formData, role });
-      toast.success(`${role.toUpperCase()} Registered Successfully!`, { id: loadingToast });
-      navigate(role === 'student' ? '/login' : `/${role}-panel`);
+      await axios.post('/api/auth/register', { ...form, role, avatar });
+      navigate(loginPath, { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed', { id: loadingToast });
-    } finally {
+      setError(err.response?.data?.error || 'Registration failed. Please try again.');
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleAvatar = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 20000) {
-        toast.error('DP too large! Max 20KB for Google Sheets.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => setFormData({ ...formData, avatar: reader.result });
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCheckbox = (val) => {
-    const current = formData.classesHandled;
-    if (current.includes(val)) {
-      setFormData({...formData, classesHandled: current.filter(c => c !== val)});
-    } else {
-      setFormData({...formData, classesHandled: [...current, val]});
-    }
-  };
-
   return (
-    <div className="min-h-screen pt-32 pb-20 px-4 flex items-center justify-center relative overflow-hidden">
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/20 blur-[100px] rounded-full -z-10"></div>
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/20 blur-[100px] rounded-full -z-10"></div>
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 pb-16 pt-28 sm:pt-32">
+      <div className="pointer-events-none absolute -right-24 top-1/4 h-72 w-72 rounded-full bg-primary/20 blur-[100px] lg:h-96 lg:w-96" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-accent/20 blur-[100px] lg:h-96 lg:w-96" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-3xl"
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-2xl"
       >
-        <div className="glass-effect rounded-[2.5rem] p-8 md:p-12 border border-white/10 shadow-2xl">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl font-black mb-2 capitalize">{role} Registration</h2>
-            <p className="text-gray-400">Join the Janta +2 High School Digital Community</p>
+        <div className="glass-effect rounded-3xl border border-white/10 p-5 shadow-2xl sm:p-9">
+          <Link
+            to={loginPath}
+            className="mb-6 inline-flex items-center gap-1.5 text-sm font-bold text-slate-400 transition-colors hover:text-white"
+          >
+            <ChevronLeft size={16} />
+            Back to sign in
+          </Link>
+
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-black sm:text-3xl">{title}</h1>
+            <p className="mt-1.5 text-sm text-slate-400">
+              {isStudent
+                ? 'Create your account to access attendance, results and study material.'
+                : 'Teaching staff accounts are activated by the school office after verification.'}
+            </p>
           </div>
 
-          <form onSubmit={handleRegister} className="space-y-8">
-            {/* DP Upload */}
-            <div className="flex justify-center mb-8">
-              <label className="relative cursor-pointer group">
-                <div className="w-24 h-24 rounded-3xl bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all">
-                  {formData.avatar ? (
-                    <img src={formData.avatar} alt="DP" className="w-full h-full object-cover" />
+          {error && (
+            <div className="mb-6 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={submit} className="space-y-6">
+            <div className="flex justify-center">
+              <label className="group relative cursor-pointer">
+                <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-white/15 bg-white/5 transition-colors group-hover:border-primary/50 sm:h-24 sm:w-24">
+                  {avatar ? (
+                    <img src={avatar} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <Camera className="text-gray-500 group-hover:text-primary transition-colors" size={32} />
+                    <Camera size={26} className="text-slate-500 transition-colors group-hover:text-primary" />
                   )}
-                </div>
+                </span>
                 <input type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
-                <div className="absolute -bottom-2 -right-2 bg-primary p-2 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <Plus size={14} className="text-white" />
-                </div>
+                <span className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white shadow-lg">
+                  <Plus size={15} />
+                </span>
               </label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">First Name</label>
-                <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-                  <input name="firstName" type="text" onChange={handleChange} placeholder="First Name" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label className={label} htmlFor="firstName">First name</label>
+                <IconField
+                  id="firstName"
+                  icon={User}
+                  value={form.firstName}
+                  onChange={set('firstName')}
+                  placeholder="First name"
+                  autoComplete="given-name"
+                  required
+                />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Last Name</label>
-                <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-                  <input name="lastName" type="text" onChange={handleChange} placeholder="Last Name" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Email Address</label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-                  <input name="email" type="email" onChange={handleChange} placeholder="Email" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Phone Number</label>
-                <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-                  <input name="phone" type="tel" onChange={handleChange} placeholder="+91" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                </div>
+              <div>
+                <label className={label} htmlFor="lastName">Last name</label>
+                <IconField
+                  id="lastName"
+                  icon={User}
+                  value={form.lastName}
+                  onChange={set('lastName')}
+                  placeholder="Last name"
+                  autoComplete="family-name"
+                  required
+                />
               </div>
             </div>
 
-            {role === 'student' && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Father's Name</label>
-                    <input name="fatherName" type="text" onChange={handleChange} placeholder="Father's Name" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Mother's Name</label>
-                    <input name="motherName" type="text" onChange={handleChange} placeholder="Mother's Name" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label className={label} htmlFor="email">Email address</label>
+                <IconField
+                  id="email"
+                  icon={Mail}
+                  type="email"
+                  value={form.email}
+                  onChange={set('email')}
+                  placeholder="name@school.edu"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div>
+                <label className={label} htmlFor="phone">Mobile number</label>
+                <IconField
+                  id="phone"
+                  icon={Phone}
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={set('phone')}
+                  placeholder="Registered number"
+                  autoComplete="tel"
+                  required
+                />
+              </div>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Class</label>
-                    <select name="className" onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 bg-background text-sm" required>
-                      <option value="">Select</option>
-                      {['9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Section</label>
-                    <select name="section" onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 bg-background text-sm" required>
-                      {['A', 'B', 'C', 'D'].map(s => <option key={s} value={s}>Section {s}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Roll Number</label>
-                    <input name="rollNumber" type="text" onChange={handleChange} placeholder="Roll No" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                  </div>
-                </div>
-              </>
-            )}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label className={label} htmlFor="fatherName">Father's name</label>
+                <input
+                  id="fatherName"
+                  value={form.fatherName}
+                  onChange={set('fatherName')}
+                  placeholder="Father's name"
+                  className={field}
+                  required
+                />
+              </div>
+              <div>
+                <label className={label} htmlFor="motherName">Mother's name</label>
+                <input
+                  id="motherName"
+                  value={form.motherName}
+                  onChange={set('motherName')}
+                  placeholder="Mother's name"
+                  className={field}
+                  required
+                />
+              </div>
+            </div>
 
-            {role === 'teacher' && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Educational Degree</label>
-                    <input name="degree" type="text" onChange={handleChange} placeholder="e.g. B.Ed, M.A." className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Primary Subject</label>
-                    <input name="subject" type="text" onChange={handleChange} placeholder="Math, Science, etc." className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Classes You Handle</label>
-                  <div className="flex flex-wrap gap-4 p-5 bg-white/5 rounded-[1.5rem] border border-white/10">
-                    {['9', '10', '11', '12'].map(c => (
-                      <label key={c} className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" checked={formData.classesHandled.includes(c)} onChange={() => handleCheckbox(c)} className="w-5 h-5 rounded-lg border-white/10 bg-white/5 text-primary focus:ring-primary/50" />
-                        <span className="text-sm font-bold group-hover:text-primary transition-colors">Class {c}</span>
-                      </label>
+            {isStudent ? (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                <div>
+                  <label className={label} htmlFor="className">Class</label>
+                  <select id="className" value={form.className} onChange={set('className')} className={`${field} bg-secondary`} required>
+                    {['9', '10', '11', '12'].map((item) => (
+                      <option key={item} value={item}>Class {item}</option>
                     ))}
-                  </div>
+                  </select>
                 </div>
-              </>
+                <div>
+                  <label className={label} htmlFor="section">Section</label>
+                  <select id="section" value={form.section} onChange={set('section')} className={`${field} bg-secondary`} required>
+                    {['A', 'B', 'C', 'D'].map((item) => (
+                      <option key={item} value={item}>Section {item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={label} htmlFor="rollNumber">Roll number</label>
+                  <input id="rollNumber" value={form.rollNumber} onChange={set('rollNumber')} placeholder="Roll no" className={field} required />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                  <label className={label} htmlFor="subject">Subject</label>
+                  <IconField
+                    id="subject"
+                    icon={BookOpen}
+                    value={form.subject}
+                    onChange={set('subject')}
+                    placeholder="Subject you teach"
+                    required={isTeacher}
+                  />
+                </div>
+                <div>
+                  <label className={label} htmlFor="experience">Years of experience</label>
+                  <input
+                    id="experience"
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={form.experience}
+                    onChange={set('experience')}
+                    className={field}
+                  />
+                </div>
+              </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Secure Password</label>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-                <input name="password" type="password" onChange={handleChange} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary/50 focus:bg-white/10 transition-all text-sm" required />
+            <div>
+              <label className={label} htmlFor="password">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <input
+                  id="password"
+                  type="password"
+                  value={form.password}
+                  onChange={set('password')}
+                  placeholder="At least 8 characters, with a number"
+                  autoComplete="new-password"
+                  className={`${field} pl-12`}
+                  minLength={8}
+                  required
+                />
               </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Use at least 8 characters and include both letters and numbers.
+              </p>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full py-5 bg-primary rounded-3xl font-black text-lg hover:scale-[1.01] active:scale-95 transition-all glow-shadow flex items-center justify-center gap-3 disabled:opacity-50">
-              {loading ? <Loader2 className="animate-spin" /> : <>Complete Registration <ArrowRight size={20} /></>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-bold text-white transition-all active:scale-[0.99] glow-shadow disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-10 text-center text-sm text-gray-500">
-            Already have an account? <Link to={role === 'student' ? '/login' : `/${role}-panel`} className="text-primary font-bold hover:underline">Login here</Link>
+          <div className="mt-7 flex items-center justify-center gap-2 text-sm text-slate-500">
+            <GraduationCap size={16} />
+            <span>
+              Already registered?{' '}
+              <Link to={loginPath} className="font-bold text-primary hover:underline">
+                Sign in
+              </Link>
+            </span>
           </div>
         </div>
       </motion.div>

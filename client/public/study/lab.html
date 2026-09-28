@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JAC 10th Hub">
+<link rel="manifest" href="manifest.json">
+<title>प्रयोगशाला (Lab) — JAC 10th Study Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<div class="page-hero" style="background:linear-gradient(120deg,#dc2626,#b91c1c)">
+  <h1 data-i18n="pl_title">🔬 प्रयोगशाला (Virtual Lab)</h1>
+  <p data-i18n="pl_desc">भौतिक, रसायन, जीव विज्ञान के प्रयोग — उद्देश्य से सावधानियों तक सब कुछ</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div id="mixLabContainer"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="tabs" id="labTabs">
+      <button class="tab active" data-subject="physics" onclick="showLab('physics', this)">⚡ भौतिक</button>
+      <button class="tab" data-subject="chemistry" onclick="showLab('chemistry', this)">🧪 रसायन</button>
+      <button class="tab" data-subject="biology" onclick="showLab('biology', this)">🧬 जीव विज्ञान</button>
+    </div>
+    <div id="experimentsContainer"></div>
+  </div>
+</section>
+
+<section class="section" id="balanceLabSection">
+  <div class="container">
+    <div id="balanceLab"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>🎓 JAC Board Class 10 Study Hub | NCERT Based</p>
+</footer>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script src="js/periodic.js"></script>
+<script src="js/lab.js"></script>
+<script src="js/balance.js"></script>
+<script>
+function showLab(subject, btn) {
+  document.querySelectorAll('#labTabs .tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderExperiments('experimentsContainer', subject);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderMixLab('mixLabContainer');
+  renderExperiments('experimentsContainer', 'physics');
+  renderBalanceLab('balanceLab');
+});
+</script>
+<script src="js/lang.js"></script>
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+</body>
+</html>

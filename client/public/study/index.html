@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DJ Study Hub">
+<meta name="description" content="Digital Janta +2 High School - कक्षा 9 से 12 तक अध्याय, नोट्स, क्विज़, फॉर्मूले और प्रयोग">
+<link rel="manifest" href="manifest.json">
+<title>Digital Janta Study Hub — कक्षा 9 से 12 तक</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="navbar" id="siteHeader"></header>
+
+<section class="hero">
+  <div class="container">
+    <h1><span id="heroClass">कक्षा 10</span> <br><span class="gradient-text">परीक्षा की पूरी तैयारी</span></h1>
+    <p id="heroDesc">अध्याय सूची, आसान नोट्स, क्विज़, फॉर्मूले और प्रयोग — सब एक ही जगह।</p>
+    <div class="hero-buttons">
+      <button class="btn btn-secondary btn-big" onclick="go('subjects.html')"><span data-i18n="cta_subjects">📚 विषय चुनें</span></button>
+      <button class="btn btn-primary btn-big" onclick="go('quiz.html')"><span data-i18n="cta_quiz">📝 क्विज़ शुरू करें</span></button>
+      <button class="btn btn-accent btn-big" onclick="go('formulas.html')"><span data-i18n="cta_formulas">🧮 फॉर्मूले</span></button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num" id="statQuestions">–</span><span class="stat-label" data-i18n="stat_questions">प्रश्न</span></div>
+      <div class="stat"><span class="stat-num" id="statChapters">–</span><span class="stat-label">अध्याय</span></div>
+      <div class="stat"><span class="stat-num" id="statSubjects">–</span><span class="stat-label" data-i18n="stat_subjects">विषय</span></div>
+      <div class="stat"><span class="stat-num" id="statClass">–</span><span class="stat-label">कक्षा</span></div>
+    </div>
+    <p class="muted" style="margin-top:14px;font-size:13px" id="sourceNote"></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-i18n="home_sec_h">🌟 सब कुछ एक क्लिक पर</h2>
+      <p data-i18n="home_sec_d">हर फीचर अपने अलग पेज पर — जैसे ही click करेंगे, open होगा</p>
+    </div>
+    <div class="home-grid" id="homeGrid"></div>
+  </div>
+</section>
+
+<section class="section" style="background:#fff">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-i18n="subs_sec_h">📚 अपना विषय चुनें</h2>
+      <p data-i18n="subs_sec_d" id="subsDesc">हर विषय के अध्याय, नोट्स और क्विज़</p>
+    </div>
+    <div class="subjects-grid" id="subjectsGrid"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p data-i18n="footer_credit">🎓 Digital Janta +2 High School Study Hub | कक्षा 9–12 | JAC / NCERT</p>
+  <p style="margin-top:8px;font-size:14px" data-i18n="footer_motto">💜 आपकी मेहनत ही आपकी सफलता है!</p>
+</footer>
+
+<div class="pwa-install-banner" id="pwaBanner">
+  <p>📱 इसे Home Screen पर install करें — बिना Internet भी चलेगा!</p>
+  <button class="pwa-install-btn" onclick="installPWA()">Install करें</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()">✕</button>
+</div>
+<script src="js/hub.js"></script>
+<script src="js/data.js"></script>
+<script src="js/common.js"></script>
+<script>
+// Homepage par pura question-bank (class 10 ~1.6MB) download na karein —
+// yahan sirf outline (subjects + chapters + counts) dikhana hai.
+window.STUDY_LIGHT = true;
+
+const HOME_FEATURES = [
+  { icon:"📚", title:"विषय (Subjects)", desc:"10 विषय — भाषा, गणित, विज्ञान (3 भाग), सामाजिक विज्ञान (4 भाग)। हर विषय का अलग पेज।", color:"#6366f1", page:"subjects.html" },
+  { icon:"📝", title:"क्विज़ (Quiz)", desc:"3 मोड — MCQ, लिखने वाला, मिक्स। Click करते ही पता चलेगा सही/गलत + विकल्प lock।", color:"#f59e0b", page:"quiz.html" },
+  { icon:"📖", title:"नोट्स", desc:"हर अध्याय का सारांश — बिंदु, याद रखने वाली ट्रिक और पुनरावृत्ति सुझाव।", color:"#22c55e", page:"notes.html" },
+  { icon:"🧮", title:"फॉर्मूले", desc:"गणित के फॉर्मूले (किसके लिए क्या), त्रिकोणमिति सारणी + भौतिक व रसायन के।", color:"#8b5cf6", page:"formulas.html" },
+  { icon:"🧪", title:"आवर्त सारणी", desc:"पूरी Periodic Table — हर तत्व पर click करो, उसका नाम-वर्ग-द्रव्यमान जानो।", color:"#0d9488", page:"periodic.html" },
+  { icon:"📉", title:"ग्राफ (Math Lab)", desc:"आरेख बनाओ और देखो कि फलन कैसे बदलता है।", color:"#2563eb", page:"mathlab.html" },
+  { icon:"📊", title:"मेरा रिज़ल्ट", desc:"क्विज़ के बाद स्कोर, weak अध्याय और सुझाव — पूरा विश्लेषण।", color:"#7048e8", page:"analysis.html" },
+  { icon:"🔬", title:"प्रयोगशाला (Lab)", desc:"भौतिक, रसायन, जीव विज्ञान के प्रयोग — उद्देश्य, सामान, विधि, अवलोकन, सावधानियाँ।", color:"#dc2626", page:"lab.html", only:10 },
+  { icon:"🧫", title:"प्रैक्टिकल", desc:"जीव विज्ञान के प्रैक्टिकल — बाह्य और आंतरिक अवलोकन के साथ।", color:"#0891b2", page:"practical.html", only:10 },
+  { icon:"🖼️", title:"डायग्राम", desc:"पारिस्थितिक, मानव शरीर, विद्युत और प्रकाश के साफ़ डायग्राम।", color:"#7c3aed", page:"diagrams.html", only:10 },
+  { icon:"📗", title:"कहानियाँ", desc:"हिन्दी और English की सभी कहानियाँ — लेखक, सारांश, पात्र, सीख।", color:"#ea580c", page:"stories.html", only:10 },
+  { icon:"🕰️", title:"इतिहास की तारीखें", desc:"कब क्या हुआ — पूरी Timeline: क्रांति, आंदोलन, युद्ध, घटनाएँ साल के साथ।", color:"#e11d48", page:"history.html", only:10 },
+  { icon:"📄", title:"PDF रिवीज़न", desc:"बोर्ड प्रश्न-पत्र और उत्तर-कुंजियाँ — यहीं website पर open करके पढ़ो।", color:"#0891b2", page:"pdf.html", only:10 }
+];
+
+function go(page) {
+  location.href = window.hubLink ? window.hubLink(page) : page;
+}
+
+function visibleFeatures() {
+  const cls = (window.HUB && window.HUB.class) || 10;
+  return HOME_FEATURES.filter(f => !f.only || cls === f.only);
+}
+
+function renderHome() {
+  const grid = document.getElementById('homeGrid');
+  if (grid) {
+    grid.innerHTML = visibleFeatures().map(f => `
+      <div class="feature-card" style="border-top-color:${f.color}" onclick="go('${f.page}')">
+        <div class="fc-icon">${f.icon}</div>
+        <h3>${f.title}</h3>
+        <p>${f.desc}</p>
+        <div class="fc-go">खोलें →</div>
+      </div>`).join('');
+  }
+  renderSubjectCards('subjectsGrid', 'subjects.html');
+
+  // Asli numbers - koi anumaan nahi
+  let questions = 0, chapters = 0, subjects = 0;
+  for (const s in QUESTION_DATA) {
+    const d = QUESTION_DATA[s] || {};
+    const q = d.questions && d.questions.length ? d.questions.length : (d.questionCount || 0);
+    if (q || (d.chapters || []).length) subjects++;
+    questions += q;
+    chapters += (d.chapters || []).length;
+  }
+  const cls = (window.HUB && window.HUB.class) || 10;
+  document.getElementById('statQuestions').textContent = questions;
+  document.getElementById('statChapters').textContent = chapters;
+  document.getElementById('statSubjects').textContent = subjects;
+  document.getElementById('statClass').textContent = cls;
+  document.getElementById('heroClass').textContent = classLabel(cls);
+  document.getElementById('subsDesc').textContent =
+    cls === 10
+      ? 'हर विषय के अध्याय, नोट्स और 300 प्रश्नों का बोर्ड प्रश्न-बैंक'
+      : 'हर विषय के अध्याय, सारांश नोट्स और अभ्यास प्रश्न';
+
+  const note = document.getElementById('sourceNote');
+  if (note) {
+    note.textContent = cls === 10
+      ? 'कक्षा 10 की सामग्री JAC बोर्ड प्रश्न-बैंक (3000 प्रश्न) पर आधारित है।'
+      : 'कक्षा ' + cls + ' की प्रैक्टिस प्रश्न इस साइट पर बनाए गए हैं — परीक्षा में बोर्ड प्रश्न-पत्र ही आएँगे।';
+  }
+}
+
+// common.js content-ready ke baad onHubReady ko pahle hi call kar deta hai,
+// isliye yahan dubara direct listener nahi chahiye (warna dau baar render ho jata).
+window.onHubReady = renderHome;
+document.addEventListener('DOMContentLoaded', () => { renderHome(); });
+</script>
+<script src="js/lang.js"></script>
+</body>
+</html>

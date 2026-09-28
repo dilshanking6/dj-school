@@ -1,0 +1,25 @@
+{
+  "description": "Diagram Lab images — all bundled locally for offline use (file://).",
+  "licence_note": "All images from Wikimedia Commons under CC BY-SA / CC BY / Public Domain. Downloaded via Special:FilePath (width 800)",
+
+  "dia": {
+    "amoeba.png":  { "source": "https://commons.wikimedia.org/wiki/File:Amoeba_(PSF).png",  "license": "Public Domain (Pearson Scott Foresman PSF)" },
+    "concave.png": { "source": "https://commons.wikimedia.org/wiki/File:Concave_mirror.svg", "license": "CC BY-SA" },
+    "convex.png":  { "source": "https://commons.wikimedia.org/wiki/File:Convex_lens.svg",   "license": "CC BY-SA" },
+    "copperrefine.png": { "source": "https://commons.wikimedia.org/wiki/File:CuElectrolyticRefineApparatus.png", "license": "Public Domain" },
+    "elecwater.png":    { "source": "https://commons.wikimedia.org/wiki/File:Electrolysis_of_Water.png",     "license": "CC BY-SA" },
+    "excretory.png":    { "source": "https://commons.wikimedia.org/wiki/File:Urinary_system.svg",           "license": "Public Domain" },
+    "femalerepro.png":  { "source": "https://commons.wikimedia.org/wiki/File:Female_reproductive_system.svg", "license": "CC BY" },
+    "hypermetropia.png":{ "source": "https://commons.wikimedia.org/wiki/File:Hypermetropia.svg",            "license": "CC BY-SA" },
+    "malerepro.png":    { "source": "https://commons.wikimedia.org/wiki/File:Male_reproductive_system_(Labelled).jpg", "license": "Public Domain" },
+    "micelle.png":      { "source": "https://commons.wikimedia.org/wiki/File:Micelle.svg",                  "license": "CC BY-SA" },
+    "myopia.png":       { "source": "https://commons.wikimedia.org/wiki/File:Myopia.svg",                   "license": "CC BY-SA" },
+    "nephron.png":      { "source": "https://commons.wikimedia.org/wiki/File:Nephron.svg",                  "license": "CC BY-SA" },
+    "ohmlaw.png":       { "source": "https://commons.wikimedia.org/wiki/File:Ohm%27s_Law_with_Voltage_source.svg", "license": "CC BY-SA" },
+    "pollen.png":       { "source": "https://commons.wikimedia.org/wiki/File:Pollination_Diagram.svg",      "license": "CC BY-SA" },
+    "prism.png":        { "source": "https://commons.wikimedia.org/wiki/File:Dispersive_prism.png",         "license": "Public Domain" },
+    "reflexarc.png":    { "source": "https://commons.wikimedia.org/wiki/File:Reflex_arc.svg",               "license": "CC BY-SA" },
+    "seriesparallel.png":{ "source": "https://commons.wikimedia.org/wiki/File:Series_and_parallel_circuits.svg", "license": "CC BY-SA" },
+    "solenoid.png":     { "source": "https://commons.wikimedia.org/wiki/File:Solenoid.svg",                 "license": "Public Domain" }
+  }
+}

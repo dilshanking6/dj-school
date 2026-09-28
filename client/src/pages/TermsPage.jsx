@@ -1,85 +1,84 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, FileText, Lock, Users } from 'lucide-react';
+import { ShieldCheck, FileText, Lock, Users, KeyRound, Bell } from 'lucide-react';
 
-const TermsPage = () => {
-  return (
-    <div className="min-h-screen pt-32 pb-20 px-4 max-w-4xl mx-auto">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-effect rounded-[3rem] p-10 lg:p-16 border border-white/10 shadow-2xl"
-      >
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
-            <ShieldCheck size={32} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black">Terms & Conditions</h1>
-            <p className="text-gray-500 uppercase tracking-widest text-[10px] font-bold">Last Updated: June 2026</p>
-          </div>
+const SECTIONS = [
+  {
+    icon: FileText,
+    tone: 'text-primary',
+    title: '1. Introduction',
+    body: 'The Digital Janta Portal is the digital management system used by Janta +2 High School, Khalari, for attendance, results, study material, events, notices and school communication. By using the portal you agree to the rules below. These rules apply to students, teachers, the principal’s office and the administrator.'
+  },
+  {
+    icon: KeyRound,
+    tone: 'text-accent',
+    title: '2. Accounts and sign-in',
+    body: 'Students and teachers may register themselves. A teacher account stays inactive until the school office approves it; the principal and administrator accounts are created by the school office only. You sign in with your email and password, or with a one-time code sent to your registered phone number. Keep your credentials private — anyone using your account is treated as you. Telling or lending your sign-in details to another person can lead to your account being suspended.'
+  },
+  {
+    icon: Lock,
+    tone: 'text-purple-400',
+    title: '3. Your data',
+    body: 'The portal stores your name, class, contact details, attendance, results and messages. This information is used only for school purposes and is visible to the staff who need it — for example, a teacher sees the attendance of their own class only. Staff roles are separated so that each person sees only what their work requires. We do not sell or share personal data for commercial use. If you find an error in your record, correct it from Account settings or report it to the school office.'
+  },
+  {
+    icon: Users,
+    tone: 'text-emerald-400',
+    title: '4. Conduct in chat and complaints',
+    body: 'Class channels and direct messages are for school communication. Harassment, bullying, rude language, or sharing unsuitable content is not allowed and can be acted on by the principal’s office. Students can send a complaint to the principal from the Help & Complaints section and follow its status there. Complaints should be genuine; knowingly false complaints may lead to disciplinary action.'
+  },
+  {
+    icon: Bell,
+    tone: 'text-amber-400',
+    title: '5. Content shared on the portal',
+    body: 'Study material and links shared by teachers are for classroom use. Do not upload or forward material that belongs to someone else or that is not meant for the class. The school may remove content that breaks these rules, and may correct or withdraw a notice that was published by mistake.'
+  },
+  {
+    icon: ShieldCheck,
+    tone: 'text-sky-400',
+    title: '6. Availability and changes',
+    body: 'The portal depends on school internet and on the school’s data service, so a feature may be temporarily unavailable. We may update these rules as the portal improves; the version published on this page is the one that applies.'
+  }
+];
+
+const TermsPage = () => (
+  <div className="mx-auto w-full max-w-4xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-effect rounded-3xl border border-white/10 p-6 shadow-2xl sm:rounded-[3rem] sm:p-10 lg:p-14"
+    >
+      <div className="mb-10 flex items-center gap-4">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+          <ShieldCheck size={28} />
+        </span>
+        <div>
+          <h1 className="text-2xl font-black sm:text-3xl">Terms &amp; Conditions</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
+            Janta +2 High School, Khalari
+          </p>
         </div>
+      </div>
 
-        <div className="space-y-12 text-gray-300 leading-relaxed">
-          <section>
-            <div className="flex items-center gap-3 mb-4 text-white">
-              <FileText size={20} className="text-primary" />
-              <h2 className="text-xl font-bold">1. Introduction</h2>
+      <div className="space-y-9 leading-relaxed text-slate-300">
+        {SECTIONS.map(({ icon: Icon, tone, title, body }) => (
+          <section key={title}>
+            <div className="mb-3 flex items-center gap-3">
+              <Icon size={19} className={tone} />
+              <h2 className="text-lg font-bold text-white">{title}</h2>
             </div>
-            <p>
-              Welcome to the Digital Janta Portal ("Platform"), the official digital management system of Janta +2 High School, Khalari. By accessing or using this platform, you agree to comply with and be bound by these Terms and Conditions. This platform is designed to facilitate educational communication, attendance tracking, result management, and community interaction for students, teachers, and administration.
-            </p>
+            <p className="text-sm leading-relaxed sm:text-base">{body}</p>
           </section>
+        ))}
+      </div>
 
-          <section>
-            <div className="flex items-center gap-3 mb-4 text-white">
-              <Users size={20} className="text-accent" />
-              <h2 className="text-xl font-bold">2. User Accounts and Security</h2>
-            </div>
-            <p>
-              Users are responsible for maintaining the confidentiality of their login credentials (email and password). Any activity performed under a user's account is their sole responsibility. Unauthorized sharing of accounts or attempting to access restricted portals (Teacher, Principal, or Admin) without proper authorization is strictly prohibited and may result in permanent suspension of access.
-            </p>
-          </section>
-
-          <section>
-            <div className="flex items-center gap-3 mb-4 text-white">
-              <Lock size={20} className="text-purple-400" />
-              <h2 className="text-xl font-bold">3. Data Privacy and Usage</h2>
-            </div>
-            <p>
-              Digital Janta collects and stores data related to student academic performance, attendance, and communication for educational purposes only. We utilize Google Sheets as our primary database engine. While we implement security measures, users acknowledge that the platform operates on web-based infrastructure. Personal data will not be shared with third parties for commercial use.
-            </p>
-          </section>
-
-          <section>
-            <div className="flex items-center gap-3 mb-4 text-white">
-              <ShieldCheck size={20} className="text-emerald-400" />
-              <h2 className="text-xl font-bold">4. Code of Conduct</h2>
-            </div>
-            <p>
-              The Public Chat Rooms and community sections are for educational discussion only. Harassment, bullying, sharing of inappropriate content, or any form of cyber-misconduct will result in immediate disciplinary action by the Principal's office. The school reserves the right to moderate all content shared on the platform.
-            </p>
-          </section>
-
-          <section>
-            <div className="flex items-center gap-3 mb-4 text-white">
-              <FileText size={20} className="text-amber-400" />
-              <h2 className="text-xl font-bold">5. Complaint System</h2>
-            </div>
-            <p>
-              Students may submit complaints directly to the Principal's office via the portal. The Principal reserves the right to accept, reject, or mark complaints as resolved. The status of a complaint reflected on the portal is final. False or malicious complaints may lead to disciplinary measures.
-            </p>
-          </section>
-
-          <div className="pt-12 border-t border-white/5 text-center">
-            <p className="text-sm text-gray-500 italic">
-              "Dedicated to providing a safe and smart learning environment for every student at Janta +2 High School."
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
+      <div className="mt-10 border-t border-white/5 pt-8 text-center">
+        <p className="text-sm text-slate-500">
+          Questions about these rules? Ask the school office.
+        </p>
+      </div>
+    </motion.div>
+  </div>
+);
 
 export default TermsPage;

@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Send, Loader2, Award, User, MessageSquare } from 'lucide-react';
+import { Star, Send, Loader2, User, MessageSquare, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+const field = 'w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-base outline-none transition-colors placeholder:text-slate-500 focus:border-primary/50';
+const label = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500';
 
 const TeacherRatingPage = () => {
   const { user } = useContext(AuthContext);
@@ -13,140 +18,168 @@ const TeacherRatingPage = () => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
-  const fetchTeachers = async () => {
+  const fetchTeachers = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await axios.get('/api/auth/teachers');
-      setTeachers(res.data);
+      setTeachers(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Failed to fetch real teachers', err);
-      setTeachers([]);
+      toast.error(err.response?.data?.error || 'Teachers could not be loaded');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTeachers();
-  }, []);
+  }, [fetchTeachers]);
 
   const handleRate = async (e) => {
     e.preventDefault();
-    if (!selectedTeacher) return alert('Select a teacher first');
+    if (!selectedTeacher) {
+      toast.error('Choose a teacher first');
+      return;
+    }
+
     setSubmitting(true);
+    const loadingToast = toast.loading('Submitting your review');
     try {
-      await axios.post('/api/ratings', {
-        studentId: user.id,
-        teacherId: selectedTeacher.id,
-        teacherName: selectedTeacher.name,
-        rating,
-        comment
-      });
-      alert('Rating submitted! Thank you.');
+      await axios.post('/api/ratings', { teacherId: selectedTeacher.id, rating, comment });
+      toast.success('Thank you, your review was recorded', { id: loadingToast });
       setSelectedTeacher(null);
       setComment('');
+      setRating(5);
     } catch (err) {
-      alert(err.response?.data?.error || 'Rating failed');
+      toast.error(err.response?.data?.error || 'Review could not be submitted', { id: loadingToast });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-black mb-8 flex items-center gap-4">
-        <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary"><Star /></div>
-        Rate Your Teachers
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <h1 className="mb-6 flex items-center gap-3 text-2xl font-black sm:mb-8 sm:gap-4 sm:text-3xl">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+          <Star size={24} />
+        </span>
+        Teacher feedback
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div>
-          <h2 className="text-xl font-bold mb-6 text-gray-400 uppercase tracking-widest text-xs font-black">Select Teacher</h2>
-          <div className="grid grid-cols-1 gap-4">
-            {teachers.map((t) => (
-              <motion.div 
-                key={t.id}
-                onClick={() => setSelectedTeacher(t)}
-                whileHover={{ x: 10 }}
-                className={`p-6 rounded-[2rem] border cursor-pointer transition-all ${
-                  selectedTeacher?.id === t.id ? 'bg-primary/20 border-primary' : 'glass-effect border-white/5 hover:border-white/10'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-primary"><User /></div>
-                    <div>
-                      <h4 className="font-bold">{t.name}</h4>
-                      <p className="text-xs text-gray-500 font-black uppercase tracking-widest">{t.subject}</p>
-                    </div>
-                  </div>
-                  <a 
-                    href={`/student/chat?userId=${t.id}`}
-                    onClick={(e) => e.stopPropagation()} 
-                    className="p-3 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg"
+      <p className="mb-6 max-w-2xl text-sm leading-relaxed text-slate-400">
+        Reviews are anonymous to teachers and each student can rate a teacher once. Results are shared
+        with the school office, never back to the teacher as a score.
+      </p>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+        <section>
+          <h2 className="mb-4 text-lg font-bold">Choose a teacher</h2>
+
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+          ) : teachers.length === 0 ? (
+            <div className="glass-effect rounded-3xl border border-white/5 px-5 py-14 text-center">
+              <Users className="mx-auto mb-4 text-slate-600" size={40} />
+              <p className="text-sm text-slate-500">No teachers are listed yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {teachers.map((teacher) => (
+                <button
+                  key={teacher.id}
+                  type="button"
+                  onClick={() => setSelectedTeacher(teacher)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-colors ${
+                    selectedTeacher?.id === teacher.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-white/5 bg-white/5 hover:border-white/15'
+                  }`}
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-primary">
+                    <User size={20} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold">{teacher.name}</span>
+                    <span className="block truncate text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
+                      {teacher.subject || 'Faculty'}
+                    </span>
+                  </span>
+                  <Link
+                    to={`/student/chat?userId=${teacher.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 rounded-xl bg-primary/10 p-2.5 text-primary transition-colors hover:bg-primary hover:text-white"
+                    aria-label={`Message ${teacher.name}`}
                   >
-                    <MessageSquare size={18} />
-                  </a>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+                    <MessageSquare size={16} />
+                  </Link>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <div>
-          <div className="glass-effect p-10 rounded-[3rem] border border-white/10 shadow-2xl sticky top-24">
-            <h2 className="text-2xl font-black mb-8">Share Your Review</h2>
+        <section>
+          <div className="glass-effect rounded-3xl border border-white/5 p-5 sm:p-6 lg:sticky lg:top-24">
+            <h2 className="mb-5 text-lg font-bold">Your review</h2>
+
             {!selectedTeacher ? (
-              <p className="text-gray-500 text-center py-10 italic">Please select a teacher from the list to start rating.</p>
+              <p className="py-12 text-center text-sm text-slate-500">
+                Select a teacher from the list to continue.
+              </p>
             ) : (
-              <form onSubmit={handleRate} className="space-y-8">
-                <div className="text-center p-4 bg-primary/10 rounded-2xl border border-primary/20 mb-8">
-                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Rating for</p>
-                  <p className="text-xl font-black text-primary">{selectedTeacher.name}</p>
+              <form onSubmit={handleRate} className="space-y-5">
+                <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Reviewing</p>
+                  <p className="text-lg font-black text-primary">{selectedTeacher.name}</p>
                 </div>
 
-                <div className="space-y-4">
-                  <label className="text-xs font-black text-gray-500 uppercase tracking-widest block text-center">Your Score</label>
+                <div>
+                  <span className={label}>Your score</span>
                   <div className="flex justify-center gap-2">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <button 
-                        key={s} 
-                        type="button" 
-                        onClick={() => setRating(s)}
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                          rating >= s ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-500'
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${
+                          rating >= star
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-white/5 text-slate-500 hover:bg-white/10'
                         }`}
                       >
-                        <Star size={20} fill={rating >= s ? 'currentColor' : 'none'} />
+                        <Star size={20} fill={rating >= star ? 'currentColor' : 'none'} />
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Feedback (Optional)</label>
-                  <div className="relative">
-                    <MessageSquare className="absolute left-6 top-6 text-gray-500" size={18} />
-                    <textarea 
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      rows="4"
-                      className="w-full bg-white/5 border border-white/10 rounded-[2rem] p-6 pl-14 outline-none focus:border-primary/50 transition-all text-sm resize-none"
-                      placeholder="What do you like about this teacher's teaching style?"
-                    ></textarea>
-                  </div>
+                <div>
+                  <label className={label} htmlFor="rating-comment">Feedback (optional)</label>
+                  <textarea
+                    id="rating-comment"
+                    rows={4}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    maxLength={600}
+                    placeholder="What worked well in this teacher's class?"
+                    className={`${field} resize-none`}
+                  />
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={submitting}
-                  className="w-full py-4 bg-primary rounded-2xl font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all glow-shadow flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-bold text-white disabled:opacity-50"
                 >
-                  {submitting ? <Loader2 className="animate-spin" /> : <>Submit My Vote <Send size={20} /></>}
+                  {submitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                  Submit review
                 </button>
               </form>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

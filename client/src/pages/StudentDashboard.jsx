@@ -1,126 +1,210 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import ChatPage from './ChatPage';
-import NotesPage from './NotesPage';
-import ComplaintsPage from './ComplaintsPage';
-import SettingsPage from './SettingsPage';
-import AttendancePage from './AttendancePage';
-import ResultsPage from './ResultsPage';
-import EventsPage from './EventsPage';
-import TeacherRatingPage from './TeacherRatingPage';
+import React, { Suspense, lazy, useContext, useEffect, useState } from 'react';
+import { Routes, Route, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { BookOpen, Award, Users, Bell, Calendar, Loader2, Megaphone, HelpCircle, Star, ClipboardList } from 'lucide-react';
+import DashboardShell from '../components/DashboardShell';
+import StudyHubCard from '../components/StudyHubCard';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+const ChatPage = lazy(() => import('./ChatPage'));
+const NotesPage = lazy(() => import('./NotesPage'));
+const ComplaintsPage = lazy(() => import('./ComplaintsPage'));
+const SettingsPage = lazy(() => import('./SettingsPage'));
+const AttendancePage = lazy(() => import('./AttendancePage'));
+const ResultsPage = lazy(() => import('./ResultsPage'));
+const EventsPage = lazy(() => import('./EventsPage'));
+const TeacherRatingPage = lazy(() => import('./TeacherRatingPage'));
+
+const card = 'glass-effect rounded-3xl border border-white/5 p-5 sm:p-6';
+const PageLoader = () => (
+  <div className="flex min-h-[50dvh] items-center justify-center">
+    <Loader2 className="animate-spin text-primary" size={30} />
+  </div>
+);
 
 const StudentHome = () => {
   const { user } = useContext(AuthContext);
   const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadDashboard = async () => {
       try {
-        const res = await axios.get(`/api/school/dashboard?role=student&userId=${user.id}&className=${user.class}`);
-        setDashboard(res.data);
+        const res = await axios.get('/api/school/dashboard');
+        if (!cancelled) setDashboard(res.data);
       } catch (err) {
-        // Dashboard silently fails if sheet not ready
+        if (!cancelled) toast.error(err.response?.data?.error || 'Overview could not be loaded');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
+
     if (user) loadDashboard();
-  }, [user?.id, user?.class]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const student = dashboard?.student || {};
   const announcements = dashboard?.announcements || [];
   const events = dashboard?.events || [];
 
+  const stats = [
+    {
+      label: 'Attendance',
+      value: student.attendancePercent === null || student.attendancePercent === undefined ? '—' : `${student.attendancePercent}%`,
+      hint: 'From your marked register',
+      icon: Users,
+      tone: 'text-primary'
+    },
+    {
+      label: 'Homework shared',
+      value: student.pendingHomework ?? 0,
+      hint: 'Items posted for your class',
+      icon: BookOpen,
+      tone: 'text-accent'
+    },
+    {
+      label: 'Average score',
+      value: student.averageResult === null || student.averageResult === undefined ? '—' : `${student.averageResult}%`,
+      hint: 'From published results',
+      icon: Award,
+      tone: 'text-violet-400'
+    },
+    {
+      label: 'Class rank',
+      value: student.rank ? `#${student.rank}` : '—',
+      hint: 'Based on class results',
+      icon: Megaphone,
+      tone: 'text-emerald-400'
+    }
+  ];
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-black mb-6 flex items-center gap-3">
-        Welcome back, <span className="text-primary">{user?.name}</span>!
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <h1 className="mb-6 text-2xl font-black sm:mb-8 sm:text-3xl">
+        Welcome back, <span className="text-primary">{user?.name?.split(' ')[0]}</span>
       </h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-effect p-6 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold mb-2 text-gray-400">Attendance</h3>
-          <p className="text-4xl font-black text-primary">{student.attendancePercent === null || student.attendancePercent === undefined ? 'No Data' : `${student.attendancePercent}%`}</p>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mt-2">From marked attendance</p>
+
+      <StudyHubCard className="mb-6 sm:mb-8" />
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="animate-spin text-primary" size={30} />
         </div>
-        <div className="glass-effect p-6 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold mb-2 text-gray-400">Pending Homework</h3>
-          <p className="text-4xl font-black text-accent">{student.pendingHomework ?? 0}</p>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mt-2">From teacher uploads</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {stats.map(({ label, value, hint, icon: Icon, tone }) => (
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={card}
+            >
+              <div className={`mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500`}>
+                <Icon size={14} className={tone} />
+                {label}
+              </div>
+              <p className={`text-3xl font-black sm:text-4xl ${tone}`}>{value}</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{hint}</p>
+            </motion.div>
+          ))}
         </div>
-        <div className="glass-effect p-6 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold mb-2 text-gray-400">Class Rank</h3>
-          <p className="text-4xl font-black text-purple-400">{student.rank ? `#${student.rank}` : 'No Data'}</p>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mt-2">Calculated from results</p>
-        </div>
+      )}
+
+      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { name: 'Help & Complaints', path: '/student/complaints', icon: HelpCircle, tone: 'text-rose-400' },
+          { name: 'Rate Teachers', path: '/student/rating', icon: Star, tone: 'text-amber-400' },
+          { name: 'Results', path: '/student/results', icon: ClipboardList, tone: 'text-emerald-400' },
+          { name: 'Events', path: '/student/events', icon: Calendar, tone: 'text-accent' }
+        ].map(({ name, path, icon: Icon, tone }) => (
+          <Link
+            key={path}
+            to={path}
+            className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-4 transition-colors hover:border-primary/30 hover:bg-white/5"
+          >
+            <Icon size={18} className={`shrink-0 ${tone}`} />
+            <span className="text-sm font-bold">{name}</span>
+          </Link>
+        ))}
       </div>
-      
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass-effect p-8 rounded-[2.5rem] border border-white/5">
-          <h2 className="text-xl font-bold mb-6">Recent Notices</h2>
-          <div className="space-y-4">
+
+      <div className="mt-6 grid grid-cols-1 gap-5 lg:mt-8 lg:grid-cols-2 lg:gap-6">
+        <section className={card}>
+          <h2 className="mb-5 flex items-center gap-2 font-bold">
+            <Bell size={18} className="text-primary" />
+            Recent notices
+          </h2>
+          <div className="space-y-3">
             {announcements.length === 0 ? (
-              <p className="text-sm text-gray-500">No announcements yet.</p>
-            ) : announcements.map((notice) => (
-              <div key={notice.id} className="flex gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors">
-                <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                </div>
-                <div>
-                  <p className="font-bold text-sm mb-1">{notice.title}</p>
-                  <p className="text-xs text-gray-500">{notice.message}</p>
-                </div>
-              </div>
-            ))}
+              <p className="text-sm text-slate-500">No notices have been posted yet.</p>
+            ) : (
+              announcements.map((notice) => (
+                <article key={notice.id} className="rounded-2xl bg-white/5 p-4">
+                  <p className="mb-1 font-bold">{notice.title}</p>
+                  <p className="text-sm leading-relaxed text-slate-400">{notice.message}</p>
+                </article>
+              ))
+            )}
           </div>
-        </div>
+        </section>
 
-        <div className="glass-effect p-8 rounded-[2.5rem] border border-white/5">
-          <h2 className="text-xl font-bold mb-6">Upcoming Events</h2>
-          <div className="space-y-4">
+        <section className={card}>
+          <h2 className="mb-5 flex items-center gap-2 font-bold">
+            <Calendar size={18} className="text-accent" />
+            Upcoming events
+          </h2>
+          <div className="space-y-3">
             {events.length === 0 ? (
-              <p className="text-sm text-gray-500">No events posted yet.</p>
-            ) : events.map((event) => (
-              <div key={event.id} className="flex items-center justify-between p-4 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="text-center bg-white/5 p-3 rounded-xl min-w-[60px]">
-                    <p className="text-xs text-gray-400 uppercase">{event.date ? new Date(event.date).toLocaleString('en-IN', { month: 'short' }) : '--'}</p>
-                    <p className="text-lg font-black">{event.date ? new Date(event.date).getDate() : '--'}</p>
+              <p className="text-sm text-slate-500">No events have been scheduled yet.</p>
+            ) : (
+              events.map((event) => (
+                <article key={event.id} className="flex items-center gap-4 rounded-2xl border border-white/5 p-4">
+                  <div className="min-w-[3.5rem] rounded-xl bg-white/5 px-2 py-2 text-center">
+                    <p className="text-[10px] font-bold uppercase text-slate-400">
+                      {event.date ? new Date(event.date).toLocaleString('en-IN', { month: 'short' }) : '--'}
+                    </p>
+                    <p className="text-lg font-black">
+                      {event.date ? new Date(event.date).getDate() : '--'}
+                    </p>
                   </div>
-                  <div>
-                    <p className="font-bold">{event.title}</p>
-                    <p className="text-xs text-gray-500">{event.venue} • {event.time}</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold">{event.title}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {[event.venue, event.time].filter(Boolean).join(' · ')}
+                    </p>
                   </div>
-                </div>
-              </div>
-            ))}
+                </article>
+              ))
+            )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
 };
 
-const StudentDashboard = () => {
-  return (
-    <div className="flex">
-      <Sidebar role="student" />
-      <main className="flex-1 ml-64 min-h-screen pt-20">
-        <Routes>
-          <Route path="/" element={<StudentHome />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/homework" element={<NotesPage />} />
-          <Route path="/attendance" element={<AttendancePage />} />
-          <Route path="/results" element={<ResultsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/rating" element={<TeacherRatingPage />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/complaints" element={<ComplaintsPage />} />
-        </Routes>
-      </main>
-    </div>
-  );
-};
+const StudentDashboard = () => (
+  <DashboardShell role="student">
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<StudentHome />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/homework" element={<NotesPage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/results" element={<ResultsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/rating" element={<TeacherRatingPage />} />
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/complaints" element={<ComplaintsPage />} />
+      </Routes>
+    </Suspense>
+  </DashboardShell>
+);
 
 export default StudentDashboard;

@@ -1,0 +1,2428 @@
+{
+ "subject": "English",
+ "chapters": [
+  "A Letter to God",
+  "Nelson Mandela: Long Walk to Freedom",
+  "Two Stories about Flying",
+  "From the Diary of Anne Frank",
+  "The Hundred Dresses - I",
+  "The Hundred Dresses - II",
+  "Glimpses of India",
+  "Mijbil the Otter",
+  "Madam Rides the Bus",
+  "The Sermon at Benares",
+  "The Proposal",
+  "Dust of Snow",
+  "Fire and Ice",
+  "A Tiger in the Zoo",
+  "How to Tell Wild Animals",
+  "The Ball Poem",
+  "Amanda!",
+  "Animals",
+  "The Trees",
+  "Fog",
+  "The Tale of Custard the Dragon",
+  "For Anne Gregory",
+  "A Triumph of Surgery",
+  "The Thief's Story",
+  "The Midnight Visitor",
+  "A Question of Trust",
+  "Footprints without Feet",
+  "The Making of a Scientist",
+  "The Necklace",
+  "The Hack Driver",
+  "Bholi",
+  "The Book that Saved the Earth",
+  "Objective / MCQ Questions (1 mark)",
+  "Grammar & Writing (Important)"
+ ],
+ "questions": [
+  {
+   "id": "english-1",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Why did Lencho write a letter to God?",
+   "ans": "Lencho wrote a letter to God because his crops were destroyed by a hailstorm and he had no money to sow again. He had full faith that God would help him."
+  },
+  {
+   "id": "english-2",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What did Lencho ask God for in the letter?",
+   "ans": "Lencho asked God to send him one hundred pesos so that he could sow his field again until the next crop was ready."
+  },
+  {
+   "id": "english-3",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "How did Lencho react when the postmaster saw his letter?",
+   "ans": "Lencho was not surprised at all. He had such firm faith in God that he believed God would surely read the letter and send help."
+  },
+  {
+   "id": "english-4",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What did the postmaster and his office staff do after reading the letter?",
+   "ans": "The postmaster was moved by Lencho's faith. He collected money from his staff and friends, but could gather only seventy pesos. He sent the money in an envelope addressed to Lencho with a note asking him to request God for the full amount."
+  },
+  {
+   "id": "english-5",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What did Lencho do when he received only seventy pesos?",
+   "ans": "Lencho was angry and wrote another letter to God, asking him not to send the money through the post office because the clerks there had stolen thirty pesos."
+  },
+  {
+   "id": "english-6",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What does this story tell us about Lencho's character?",
+   "ans": "This story shows that Lencho was an innocent, simple, and deeply religious man. His blind faith in God was so strong that he could not believe any human being could cheat him. He had complete trust in God's honesty."
+  },
+  {
+   "id": "english-7",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What does Mandela mean by 'twin obligations'?",
+   "ans": "Mandela said every man has two obligations: one to his family (parents, wife, and children), and the other to his people (community and country). He struggled to fulfill both."
+  },
+  {
+   "id": "english-8",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Why did Mandela feel that the freedom of Black people was linked with the freedom of White people?",
+   "ans": "Mandela believed that as long as Black South Africans were oppressed, White South Africans would also not be truly free. Freedom is indivisible; no one can be truly free when others are in chains."
+  },
+  {
+   "id": "english-9",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Describe Mandela's inauguration ceremony briefly.",
+   "ans": "On 10 May 1994, Nelson Mandela was inaugurated as the first Black President of South Africa. Thousands of people of all races attended the ceremony. Two national anthems were sung. The event symbolized the end of apartheid and the beginning of a democratic South Africa."
+  },
+  {
+   "id": "english-10",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What were the two national anthems sung at the inauguration?",
+   "ans": "The two national anthems were 'Die Stem' (the old anthem of South Africa representing the White community) and 'Nkosi Sikelel' iAfrika' (the anthem of the freedom movement representing the Black community). Both were sung together."
+  },
+  {
+   "id": "english-11",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the most difficult part of Mandela's 'long walk to freedom'?",
+   "ans": "The most difficult part was the long decades of struggle, sacrifice, and imprisonment. Mandela endured 27 years in prison, yet he never gave up hope. He described the long walk to freedom as a journey from oppression to liberty that required patience, courage, and determination."
+  },
+  {
+   "id": "english-12",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What lesson does this chapter teach about courage?",
+   "ans": "This chapter teaches that true courage is not the absence of fear but the willingness to sacrifice for a just cause. Mandela showed that one man's determination can change the course of history. Courage does not mean recklessness; it means fighting for what is right despite all obstacles."
+  },
+  {
+   "id": "english-13",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "Why was the young seagull afraid to fly?",
+   "ans": "The young seagull was afraid to fly because he had tried once before and had fallen from the ledge. He lacked self-confidence and was terrified of the vast open sky and the possibility of failing again."
+  },
+  {
+   "id": "english-14",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "How did the seagull's family help him overcome his fear?",
+   "ans": "The seagull's family helped him by not giving him food. When he was starving, his mother offered him a piece of fish. She flew close to the ledge but did not land, making him lean forward to grab the fish. He lost his balance and fell, which forced him to flap his wings and fly."
+  },
+  {
+   "id": "english-15",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "How did the seagull feel when he finally learned to fly?",
+   "ans": "The seagull felt tremendous joy and pride when he finally learned to fly. The fear disappeared as he soared higher and higher. He felt confident and free, discovering the beauty of the sky and the wind beneath his wings."
+  },
+  {
+   "id": "english-16",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "What message does 'His First Flight' convey?",
+   "ans": "The story conveys that fear can be overcome with a push, and self-confidence is essential for success. Sometimes we need a crisis or external motivation to discover our hidden potential."
+  },
+  {
+   "id": "english-17",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "Who was the pilot of the black aeroplane?",
+   "ans": "The identity of the pilot of the black aeroplane remains a mystery in the story. No one in the control tower acknowledged guiding the narrator through the storm. It is suggested that it could have been the narrator's own spirit or imagination."
+  },
+  {
+   "id": "english-18",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "Why was the narrator in a hurry to fly back to England?",
+   "ans": "The narrator wanted to get home in time for a weekend holiday with his family. He had prepared a nice supper and wanted to reach London by Saturday morning. This desire led him to take a risk and fly through the storm."
+  },
+  {
+   "id": "english-19",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "How did the mysterious pilot help the narrator?",
+   "ans": "The mysterious pilot in the black aeroplane guided the narrator through the dangerous storm. He gave instructions over the radio and led him to the runway. Without this help, the narrator would have been lost in the storm and likely crashed."
+  },
+  {
+   "id": "english-20",
+   "chapter": "Two Stories about Flying",
+   "type": "write",
+   "q": "What lesson does 'The Black Aeroplane' teach?",
+   "ans": "The story teaches that we should not take unnecessary risks driven by greed or desire. It also suggests that sometimes unexpected help comes when we need it most. However, one must be cautious and not rely on luck alone."
+  },
+  {
+   "id": "english-21",
+   "chapter": "From the Diary of Anne Frank",
+   "type": "write",
+   "q": "Why did Anne Frank feel that she was lonely and had no true friends?",
+   "ans": "Anne felt lonely because she had no real friends who understood her. She poured out her thoughts in her diary, which she named 'Kitty,' because she felt no one around her could truly listen to her heart."
+  },
+  {
+   "id": "english-22",
+   "chapter": "From the Diary of Anne Frank",
+   "type": "write",
+   "q": "What was the subject that created tension between Anne and her mathematics teacher, Mr. Keesing?",
+   "ans": "Anne was talkative in class, which annoyed Mr. Keesing. He punished her by assigning her extra essays. This led to a humorous back-and-forth between them, which eventually ended when Anne wrote an essay titled 'Quack, Quack, Quack.'"
+  },
+  {
+   "id": "english-23",
+   "chapter": "From the Diary of Anne Frank",
+   "type": "write",
+   "q": "How did Anne describe her father in her diary?",
+   "ans": "Anne described her father as the most adorable father in the world. She said he loved her so much that he went along with everything she wanted. He was kind, understanding, and a great support to her."
+  },
+  {
+   "id": "english-24",
+   "chapter": "From the Diary of Anne Frank",
+   "type": "write",
+   "q": "Why was Anne's diary significant?",
+   "ans": "Anne's diary is significant because it is an honest and moving account of a young girl's life during the Holocaust. It gives a personal perspective on the fears, hopes, and daily struggles of Jewish people hiding from Nazi persecution. It has become one of the most widely read accounts of the Holocaust."
+  },
+  {
+   "id": "english-25",
+   "chapter": "From the Diary of Anne Frank",
+   "type": "write",
+   "q": "What kind of person was Anne Frank according to her diary?",
+   "ans": "Anne Frank was intelligent, witty, observant, and deeply reflective. She had a vivid imagination and a strong desire to express herself. Despite the hardships she faced, she maintained hope and a love for life. Her diary reveals her as a thoughtful and mature young girl."
+  },
+  {
+   "id": "english-26",
+   "chapter": "From the Diary of Anne Frank",
+   "type": "write",
+   "q": "What were the essays assigned to Anne by Mr. Keesing and how did she respond?",
+   "ans": "Mr. Keesing assigned Anne essays on topics like 'A Chatterbox,' 'An Incorrigible Chatterbox,' and 'Quack, Quack, Quack.' Anne responded creatively with humour and self-awareness. In her final essay, she wrote a poem about a duckling which made the whole class laugh and ended the conflict with the teacher."
+  },
+  {
+   "id": "english-27",
+   "chapter": "The Hundred Dresses - I",
+   "type": "write",
+   "q": "Who was Wanda Petronski and why was she a target of teasing?",
+   "ans": "Wanda Petronski was a Polish immigrant girl who came to school in America. She was teased because of her strange name, her faded blue dress, and the fact that she always claimed to have a hundred dresses at home, which nobody believed."
+  },
+  {
+   "id": "english-28",
+   "chapter": "The Hundred Dresses - I",
+   "type": "write",
+   "q": "What game did the girls in the classroom play with Wanda?",
+   "ans": "Every day, the girls would surround Wanda and ask her about her hundred dresses. They would tease her and make fun of her while Wanda would stand alone and silently answer them with a smile, saying she had a hundred dresses all lined up in her closet."
+  },
+  {
+   "id": "english-29",
+   "chapter": "The Hundred Dresses - I",
+   "type": "write",
+   "q": "What was the real number of dresses Wanda had?",
+   "ans": "Wanda did not have a hundred dresses in her closet. The real number was the hundred beautiful designs she had drawn in the art contest. The hundred drawings of different coloured and designed dresses were her true hundred dresses."
+  },
+  {
+   "id": "english-30",
+   "chapter": "The Hundred Dresses - I",
+   "type": "write",
+   "q": "What was the reaction of the class when Wanda won the drawing contest?",
+   "ans": "The class was shocked and filled with remorse when Wanda's hundred drawings of dresses were displayed. Peggy and Maddie, who had teased Wanda the most, realized their mistake. They wanted to apologize but Wanda had already left the school with her family."
+  },
+  {
+   "id": "english-31",
+   "chapter": "The Hundred Dresses - I",
+   "type": "write",
+   "q": "What message does 'The Hundred Dresses - I' convey?",
+   "ans": "The story conveys the message of empathy, kindness, and sensitivity towards others. It teaches that we should never judge or tease anyone based on appearance, name, or social status. Our insensitive behaviour can deeply hurt others."
+  },
+  {
+   "id": "english-32",
+   "chapter": "The Hundred Dresses - II",
+   "type": "write",
+   "q": "What did Wanda's father reveal in his letter to Miss Mason?",
+   "ans": "Wanda's father informed Miss Mason that Wanda would not come to school anymore because they had moved to a different city. He also said that in America, a person's name or background should not matter, implying the hurt caused by teasing."
+  },
+  {
+   "id": "english-33",
+   "chapter": "The Hundred Dresses - II",
+   "type": "write",
+   "q": "How did Peggy and Maddie try to make amends?",
+   "ans": "Peggy and Maddie visited Wanda's old house hoping to find her and apologize. When they did not find her, they went to the shop and discovered that Wanda had given them two beautiful dress drawings as a gift. They felt relieved and guilty at the same time."
+  },
+  {
+   "id": "english-34",
+   "chapter": "The Hundred Dresses - II",
+   "type": "write",
+   "q": "What was the significance of the drawings Wanda left for Peggy and Maddie?",
+   "ans": "The drawings showed that despite being hurt by the girls, Wanda harboured no ill feelings. She was generous enough to give them beautiful drawings. It showed Wanda's forgiving nature and her desire to move on with dignity."
+  },
+  {
+   "id": "english-35",
+   "chapter": "The Hundred Dresses - II",
+   "type": "write",
+   "q": "What does the story teach about regret and making amends?",
+   "ans": "The story teaches that realising one's mistake is not enough; one must act to make amends before it is too late. Peggy and Maddie's guilt shows that even unintentional hurt causes lasting damage. The story emphasises the importance of compassion and standing up against injustice."
+  },
+  {
+   "id": "english-36",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What was the profession of the narrator's grandfather and why was it important?",
+   "ans": "The narrator's grandfather was a baker (pader) in Goa. Baking was an essential profession because bread (pao) was a staple food of the Goan people. The baker visited the house early in the morning and everyone eagerly awaited his arrival."
+  },
+  {
+   "id": "english-37",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "How did the baker's arrival bring joy to the family?",
+   "ans": "The baker's arrival was a joyful event. Children ran to meet him for bread. The mother came out to buy bread for breakfast. The women gathered to discuss the baker's goods. The baker also carried special items for festivals like sweets and bread for special occasions."
+  },
+  {
+   "id": "english-38",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What connection does the narrator draw between the Portuguese and the baking tradition in Goa?",
+   "ans": "The narrator explains that the Portuguese introduced the baking tradition in Goa. The bread-makers (paders) continued the tradition even after the Portuguese left. The baker and his family still survived in Goa, maintaining the old customs and lifestyle."
+  },
+  {
+   "id": "english-39",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "How was the baker's dress and appearance described?",
+   "ans": "The baker wore a unique white uniform that was different from common clothing. His clothes were freshly washed and he had a special look that distinguished him. His arrival was marked by the sound of his bamboo staff (bol) on the street."
+  },
+  {
+   "id": "english-40",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "Why does the narrator say that the baker was their friend, guide, and companion?",
+   "ans": "The narrator calls the baker a friend, guide, and companion because the baker was an integral part of their daily life. He brought not just bread but also joy, gossip, and a sense of community. The children eagerly awaited him, and his visits made their mornings special."
+  },
+  {
+   "id": "english-41",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What is special about the people of Coorg?",
+   "ans": "The people of Coorg are known for their independent and brave nature. They are descendants of Greek or Arab soldiers. They are hospitable and warm. The men of Coorg are known for their courage and they have a distinct martial tradition."
+  },
+  {
+   "id": "english-42",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "Describe the geographical features of Coorg.",
+   "ans": "Coorg is a place of natural beauty located between Mysore and the coastal town of Mangalore. It has evergreen forests, coffee plantations, and spice estates. The River Kaveri flows through the region. The weather is pleasant with misty hills and lush greenery."
+  },
+  {
+   "id": "english-43",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What is the legend about the origin of the Coorg people?",
+   "ans": "According to legend, the Coorg people are descended from Greek or Arab soldiers who married local women. The Coorg regiment is one of the most decorated in the Indian Army. The people are said to have shown great bravery during the world wars."
+  },
+  {
+   "id": "english-44",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "Why is Coorg called a place of warriors?",
+   "ans": "Coorg is called a place of warriors because its people have a long tradition of bravery and martial skill. Many Coorgis served in the British and Indian armies. The Coorg regiment has won numerous gallantry awards. The people's independent spirit and courage have given them this reputation."
+  },
+  {
+   "id": "english-45",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What rituals and customs are associated with the Coorg people?",
+   "ans": "The Coorg people have unique customs. Their marriage ceremonies involve the groom wearing a white head-dress and a long coat. The young men of the community are said to go on a solo hunting expedition before they marry. The community follows Hindu traditions with local variations."
+  },
+  {
+   "id": "english-46",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "How was tea first discovered according to the legend mentioned in the story?",
+   "ans": "According to the legend, a Chinese king discovered tea when leaves from a nearby bush fell into his boiling water. The aroma attracted him and upon tasting it, he found it refreshing. This led to the discovery of tea as a drink."
+  },
+  {
+   "id": "english-47",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What made Assam the largest tea-growing region in India?",
+   "ans": "Assam's favourable climate with heavy rainfall, warm temperatures, and fertile soil made it ideal for tea cultivation. The Brahmaputra valley provides perfect growing conditions. The region produces the bulk of India's tea and is known for its strong, full-bodied tea."
+  },
+  {
+   "id": "english-48",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What is the process of tea production in Assam?",
+   "ans": "Tea production in Assam involves several steps: first, the tea leaves are carefully plucked from the bushes. The leaves are then spread in the sun to dry. They are rolled, fermented, and dried. Finally, the dried leaves are sorted and packed for sale."
+  },
+  {
+   "id": "english-49",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "Why did Pranjal not believe Rajvir's statement about tea?",
+   "ans": "Pranjal was skeptical because Rajvir told him that tea was first discovered by a Chinese king. Pranjal thought this was merely a legend or fiction. However, Rajvir insisted it was a legend passed down through generations."
+  },
+  {
+   "id": "english-50",
+   "chapter": "Glimpses of India",
+   "type": "write",
+   "q": "What are the signs of a tea estate that Pranjal and Rajvir saw on their journey?",
+   "ans": "On their journey to Diphu, Pranjal and Rajvir saw signboards of tea gardens along the way. They also saw tea bushes growing on the hillsides, workers plucking tea leaves, and lush green plantations stretching across the valley. The beautiful landscape of tea estates was a remarkable sight."
+  },
+  {
+   "id": "english-51",
+   "chapter": "Mijbil the Otter",
+   "type": "write",
+   "q": "How did Maxwell get the otter Mijbil?",
+   "ans": "Maxwell got Mijbil (Mij) from Basra, Iraq. When his friends told him about otters being kept as pets, they sent him one. He found Mij in a sack and the otter immediately became his close companion, winning his heart with playful behaviour."
+  },
+  {
+   "id": "english-52",
+   "chapter": "Mijbil the Otter",
+   "type": "write",
+   "q": "What happened during the journey to London with Mijbil?",
+   "ans": "During the journey to London, Mijbil escaped from his cardboard box on the luggage rack of the taxi. Maxwell was worried, but after searching the airport, he found Mij playing with rubber balls in a corner. The incident showed the otter's curious and playful nature."
+  },
+  {
+   "id": "english-53",
+   "chapter": "Mijbil the Otter",
+   "type": "write",
+   "q": "What was Mijbil's favourite game and how did it involve the author?",
+   "ans": "Mijbil's favourite game was playing with rubber balls. He would place a ball on the edge of the bathtub and wait for the author to send it back. This created a routine where Mij would spend hours in the bathroom playing his game with the author."
+  },
+  {
+   "id": "english-54",
+   "chapter": "Mijbil the Otter",
+   "type": "write",
+   "q": "What was unique about Mijbil's appearance and behaviour?",
+   "ans": "Mijbil was a sleek, smooth creature with a streamlined body and a small, cat-like head. He was friendly, intelligent, and affectionate. He had webbed feet, a long tail, and could hold the author's hand. He became a beloved companion and the author developed a deep bond with him."
+  },
+  {
+   "id": "english-55",
+   "chapter": "Mijbil the Otter",
+   "type": "write",
+   "q": "How does the author describe the process of choosing a name for the otter?",
+   "ans": "The author tried many names for the otter but none seemed fitting. Eventually, he settled on 'Mijbil' as it seemed to suit the otter's character. He also called him 'Mij' for short. The name reflected the author's affection for his pet."
+  },
+  {
+   "id": "english-56",
+   "chapter": "Mijbil the Otter",
+   "type": "write",
+   "q": "What does the story tell us about the bond between humans and animals?",
+   "ans": "The story beautifully illustrates the deep bond that can develop between humans and animals. Mijbil became Maxwell's constant companion and source of joy. The story shows that animals are capable of love, loyalty, and forming meaningful relationships with humans."
+  },
+  {
+   "id": "english-57",
+   "chapter": "Madam Rides the Bus",
+   "type": "write",
+   "q": "What was Valli's greatest desire?",
+   "ans": "Valli's greatest desire was to ride on the bus. She was fascinated by the bus that passed her street every day. She wanted to experience the journey and see the world outside her small village."
+  },
+  {
+   "id": "english-58",
+   "chapter": "Madam Rides the Bus",
+   "type": "write",
+   "q": "How did Valli save money for the bus ride?",
+   "ans": "Valli saved money for the bus ride by being very careful with her expenses. She resisted the temptation of buying things like peppermints, toys, and other items that children usually spend money on. She saved every penny she got."
+  },
+  {
+   "id": "english-59",
+   "chapter": "Madam Rides the Bus",
+   "type": "write",
+   "q": "What did Valli see during her bus journey that disturbed her?",
+   "ans": "During her bus journey, Valli saw a young cow running in front of the bus. The driver tried to avoid it, but the cow was hit and killed. Valli was deeply disturbed by the sight of the dead cow and felt very sad."
+  },
+  {
+   "id": "english-60",
+   "chapter": "Madam Rides the Bus",
+   "type": "write",
+   "q": "How did Valli plan her journey carefully?",
+   "ans": "Valli carefully planned every detail of her journey. She noted the timing of the bus, the fare, and the distance. She planned to go as far as the town and return before her mother woke up. She calculated everything to avoid suspicion."
+  },
+  {
+   "id": "english-61",
+   "chapter": "Madam Rides the Bus",
+   "type": "write",
+   "q": "What kind of person was Valli according to the story?",
+   "ans": "Valli was a bold, independent, and resourceful young girl. She was curious about the world and had a strong desire to explore it. She was determined and brave, making her bus journey alone at a young age. She was also sensible and empathetic, as shown by her reaction to the cow's death."
+  },
+  {
+   "id": "english-62",
+   "chapter": "Madam Rides the Bus",
+   "type": "write",
+   "q": "What message does the story convey about childhood curiosity and independence?",
+   "ans": "The story conveys that childhood curiosity is natural and valuable. Valli's desire to see the world and her independent spirit are qualities that should be encouraged. The story also shows that children are capable of being responsible and thoughtful when given the chance to explore."
+  },
+  {
+   "id": "english-63",
+   "chapter": "The Sermon at Benares",
+   "type": "write",
+   "q": "Who was Kisa Gotami and why did she come to the Buddha?",
+   "ans": "Kisa Gotami was a young woman who had lost her only son. She was overwhelmed with grief and came to the Buddha with her dead child, hoping that he could bring her son back to life. She was desperate and inconsolable."
+  },
+  {
+   "id": "english-64",
+   "chapter": "The Sermon at Benares",
+   "type": "write",
+   "q": "What task did the Buddha assign to Kisa Gotami?",
+   "ans": "The Buddha asked Kisa Gotami to bring a mustard seed from a house where no one had ever died. She went from door to door seeking such a house, but found that death is universal. Every household had experienced loss."
+  },
+  {
+   "id": "english-65",
+   "chapter": "The Sermon at Benares",
+   "type": "write",
+   "q": "What lesson did Kisa Gotami learn from this experience?",
+   "ans": "Kisa Gotami learned that death is a universal truth that comes to every living being. No one can escape it. She realised that her sorrow was not unique and that she should accept this reality with equanimity rather than be consumed by grief."
+  },
+  {
+   "id": "english-66",
+   "chapter": "The Sermon at Benares",
+   "type": "write",
+   "q": "What did the Buddha say about death and suffering?",
+   "ans": "The Buddha taught that sorrow and death are natural parts of life. He said that the wise do not grieve over things that are inevitable. One should not cling to what is impermanent but should seek wisdom and understanding. Life is transient and we must accept this truth."
+  },
+  {
+   "id": "english-67",
+   "chapter": "The Sermon at Benares",
+   "type": "write",
+   "q": "How did Kisa Gotami's behaviour change after the Buddha's sermon?",
+   "ans": "After the Buddha's sermon, Kisa Gotami's grief transformed into wisdom. She accepted her son's death as a natural event. She became calm and composed. She learned to live without excessive attachment and found peace by understanding the impermanence of life."
+  },
+  {
+   "id": "english-68",
+   "chapter": "The Sermon at Benares",
+   "type": "write",
+   "q": "What is the universal message of this story?",
+   "ans": "The universal message of this story is that death is an unavoidable part of life. Every living being must die. The story teaches us to accept this truth with grace and wisdom. Instead of being overwhelmed by grief, we should cherish the moments we have and seek inner peace."
+  },
+  {
+   "id": "english-69",
+   "chapter": "The Proposal",
+   "type": "write",
+   "q": "Who are the main characters in the play and what are they fighting about?",
+   "ans": "The main characters are Lomov, Natalya, and Natalya's father Chubukov. Lomov has come to propose marriage to Natalya. However, they keep arguing about various topics like their neighbouring estates, the superiority of their dogs, and who owns what land."
+  },
+  {
+   "id": "english-70",
+   "chapter": "The Proposal",
+   "type": "write",
+   "q": "What is ironic about the behaviour of Lomov and Natalya?",
+   "ans": "The irony is that Lomov came to propose marriage to Natalya, but they end up quarrelling about everything. Their arguments are about trivial matters like dogs and land, yet they get so angry that the proposal is repeatedly interrupted. Despite their fighting, they are well-matched."
+  },
+  {
+   "id": "english-71",
+   "chapter": "The Proposal",
+   "type": "write",
+   "q": "What happens when Lomov first proposes to Natalya?",
+   "ans": "When Lomov first proposes to Natalya, she does not believe him and thinks he is mocking her. She gets angry and tells him to leave. Lomov is hurt and confused because he genuinely intended to propose. The misunderstanding leads to a heated argument."
+  },
+  {
+   "id": "english-72",
+   "chapter": "The Proposal",
+   "type": "write",
+   "q": "How does the play end?",
+   "ans": "The play ends with Lomov and Natalya finally agreeing to get married. After repeated arguments and quarrels, they both accept each other. Natalya's father Chubukov is happy with the match and gives his blessing. The ending is comedic as the couple gets engaged despite all their fights."
+  },
+  {
+   "id": "english-73",
+   "chapter": "The Proposal",
+   "type": "write",
+   "q": "What does the play suggest about human nature?",
+   "ans": "The play suggests that humans often get carried away by trivial matters and lose sight of what is truly important. It shows that even when people have good intentions, misunderstandings and pride can lead to unnecessary conflict. The play also suggests that love and compatibility can exist even between people who argue."
+  },
+  {
+   "id": "english-74",
+   "chapter": "The Proposal",
+   "type": "write",
+   "q": "What is the humour in the play?",
+   "ans": "The humour in the play comes from the constant quarrelling between Lomov and Natalya over petty issues. Their exaggerated arguments about dogs, land, and hunting are funny. The absurdity of two people who want to get married fighting at every turn creates a comedic situation."
+  },
+  {
+   "id": "english-75",
+   "chapter": "Dust of Snow",
+   "type": "write",
+   "q": "What happened when the crow shook the dust of snow on the poet?",
+   "ans": "When the crow shook the dust of snow on the poet, it changed his mood completely. He was in a depressed and sad state of mind, but the act of the crow revived his spirits. He felt suddenly uplifted and saved from the gloomy day."
+  },
+  {
+   "id": "english-76",
+   "chapter": "Dust of Snow",
+   "type": "write",
+   "q": "What is the significance of the crow and the hemlock tree in the poem?",
+   "ans": "The crow and the hemlock tree are traditionally considered symbols of bad omen and sadness. However, in this poem, they become the agents of joy and salvation. The poet uses them to show that happiness can come from unexpected and unlikely sources."
+  },
+  {
+   "id": "english-77",
+   "chapter": "Dust of Snow",
+   "type": "write",
+   "q": "How did the poet feel after the crow shook snow on him?",
+   "ans": "After the crow shook the dust of snow on him, the poet felt uplifted and relieved. His gloomy and depressed mood vanished. He had been in a bad mood all day, but this small, unexpected event gave him a new perspective and saved him from his sadness."
+  },
+  {
+   "id": "english-78",
+   "chapter": "Dust of Snow",
+   "type": "write",
+   "q": "What message does the poem convey?",
+   "ans": "The poem conveys that small and unexpected acts can have a big impact on our mood and outlook. Happiness can come from the most unlikely sources. We should remain open to the world around us and find joy in simple, everyday moments."
+  },
+  {
+   "id": "english-79",
+   "chapter": "Fire and Ice",
+   "type": "write",
+   "q": "What does the poet compare 'fire' and 'ice' to?",
+   "ans": "The poet compares 'fire' to desire and 'ice' to hatred. Fire represents greed, lust, and passion that can destroy the world. Ice represents cruelty, indifference, and hatred that can also bring about the end of the world."
+  },
+  {
+   "id": "english-80",
+   "chapter": "Fire and Ice",
+   "type": "write",
+   "q": "Which does the poet think is more destructive -- fire or ice?",
+   "ans": "The poet initially says fire is more destructive because it spreads faster and consumes everything in its path. However, in the end, he says that ice is equally destructive because it can freeze and destroy just as effectively as fire. Both are equally dangerous."
+  },
+  {
+   "id": "english-81",
+   "chapter": "Fire and Ice",
+   "type": "write",
+   "q": "What is the central theme of the poem?",
+   "ans": "The central theme of the poem is the destructive power of human emotions. Both unbridled desire (fire) and cold hatred (ice) are capable of bringing about the end of the world. The poem warns against the dangers of extreme emotions and unchecked passion."
+  },
+  {
+   "id": "english-82",
+   "chapter": "Fire and Ice",
+   "type": "write",
+   "q": "Why does the poet say 'from what I've tasted of desire'?",
+   "ans": "The poet says 'from what I've tasted of desire' to indicate that he has experienced desire himself. This personal experience gives him authority to speak about its destructive nature. It suggests that desire is something that can be consumed or experienced, and it leaves a lasting impact."
+  },
+  {
+   "id": "english-83",
+   "chapter": "A Tiger in the Zoo",
+   "type": "write",
+   "q": "How does the tiger behave in the zoo compared to its natural habitat?",
+   "ans": "In the zoo, the tiger is confined to a small concrete cell. It walks with stealth and rage, hearing the sounds of passing vehicles. In its natural habitat, the tiger would lurk near water, hunt prey, and roam freely in the jungle."
+  },
+  {
+   "id": "english-84",
+   "chapter": "A Tiger in the Zoo",
+   "type": "write",
+   "q": "What does the tiger do when it is in the jungle?",
+   "ans": "In the jungle, the tiger lurks in shadow, slides through tall grass, and stalks its prey near the water hole. It ambushes and kills a deer, then lies in the shade. The tiger is free, powerful, and in complete control of its environment."
+  },
+  {
+   "id": "english-85",
+   "chapter": "A Tiger in the Zoo",
+   "type": "write",
+   "q": "What is the contrast between the tiger's life in the zoo and in the wild?",
+   "ans": "The contrast is stark. In the zoo, the tiger is caged, frustrated, and powerless. In the wild, it is free, fierce, and dominant. The poem contrasts the loss of freedom with the dignity of living in one's natural habitat."
+  },
+  {
+   "id": "english-86",
+   "chapter": "A Tiger in the Zoo",
+   "type": "write",
+   "q": "What message does the poem convey about animals in captivity?",
+   "ans": "The poem conveys that confining wild animals in zoos is cruel and unnatural. It suppresses their natural instincts and diminishes their dignity. The poem advocates for the freedom of wild animals and raises awareness about animal rights and welfare."
+  },
+  {
+   "id": "english-87",
+   "chapter": "How to Tell Wild Animals",
+   "type": "write",
+   "q": "How does the poet suggest we identify a Bengal Tiger?",
+   "ans": "The poet says we can identify a Bengal Tiger by its large size, yellowish-brown body, and black stripes. If a large beast leaps on us and devours us, we can be sure it is a Bengal Tiger. The description is humorous and exaggerated."
+  },
+  {
+   "id": "english-88",
+   "chapter": "How to Tell Wild Animals",
+   "type": "write",
+   "q": "What is the humour in the poem?",
+   "ans": "The humour lies in the absurd and dangerous suggestions for identifying wild animals. The poet suggests that if a bear hugs us, we know it is a bear. If a lion roars at us, we know it is a lion. These descriptions are funny because they involve being attacked by the animals."
+  },
+  {
+   "id": "english-89",
+   "chapter": "How to Tell Wild Animals",
+   "type": "write",
+   "q": "How does the poet describe the Chameleon?",
+   "ans": "The poet describes the Chameleon as a creature that is so small and changes colour so frequently that it is almost impossible to spot. If you see a small thing that changes colour and is not easily visible, it is likely a Chameleon. The poet humourously notes that the Chameleon has no ears or wings."
+  },
+  {
+   "id": "english-90",
+   "chapter": "How to Tell Wild Animals",
+   "type": "write",
+   "q": "What literary devices are used in the poem?",
+   "ans": "The poem uses humour, irony, and exaggeration as literary devices. The poet also uses rhyming couplets and a light, playful tone. The descriptions of the animals are deliberately exaggerated to create a humorous effect. The poem also uses personification and imagery."
+  },
+  {
+   "id": "english-91",
+   "chapter": "The Ball Poem",
+   "type": "write",
+   "q": "What does the boy lose in the poem and what does it represent?",
+   "ans": "The boy loses a ball, which represents his childhood innocence, happiness, and the carefree days of youth. The ball is a symbol of everything the boy has known and loved. Its loss marks the beginning of his understanding of loss and growing up."
+  },
+  {
+   "id": "english-92",
+   "chapter": "The Ball Poem",
+   "type": "write",
+   "q": "How does the boy react to the loss of the ball?",
+   "ans": "The boy stands staring at the harbour where the ball is lost. He is in a state of shock and despair. The poet says the boy is trembling and staring at the spot where the ball fell. The boy is experiencing his first real loss."
+  },
+  {
+   "id": "english-93",
+   "chapter": "The Ball Poem",
+   "type": "write",
+   "q": "What does the poet mean by 'the epistemology of loss'?",
+   "ans": "The poet means that the boy is learning the fundamental truth about loss for the first time. The loss of the ball teaches him that once something is gone, it cannot be recovered. This is a painful but important life lesson about the nature of loss."
+  },
+  {
+   "id": "english-94",
+   "chapter": "The Ball Poem",
+   "type": "write",
+   "q": "What is the message of the poem?",
+   "ans": "The poem conveys that loss is an inevitable part of growing up. We must learn to accept and cope with loss. The loss of innocence and childhood is a natural part of the process of maturing. The boy must stand up and face the world with new understanding."
+  },
+  {
+   "id": "english-95",
+   "chapter": "Amanda!",
+   "type": "write",
+   "q": "Why is Amanda being scolded by her mother?",
+   "ans": "Amanda's mother is scolding her for various things like not cleaning her room, not doing her homework, and not sitting properly. The mother is constantly nagging Amanda about her behaviour and habits."
+  },
+  {
+   "id": "english-96",
+   "chapter": "Amanda!",
+   "type": "write",
+   "q": "Where does Amanda wish to escape to in her imagination?",
+   "ans": "Amanda wishes to escape to the quiet world of a mermaid. She imagines herself as a mermaid living in the sea, where she would be free from all the nagging and restrictions. She also imagines being Rapunzel in a tower, living alone and peaceful."
+  },
+  {
+   "id": "english-97",
+   "chapter": "Amanda!",
+   "type": "write",
+   "q": "What does Amanda imagine about being an orphan?",
+   "ans": "Amanda imagines being an orphan because she feels lonely and misunderstood. She thinks that if she were an orphan, she would have no one to scold her. She would be free to live her own life without anyone telling her what to do."
+  },
+  {
+   "id": "english-98",
+   "chapter": "Amanda!",
+   "type": "write",
+   "q": "What message does the poem convey about parent-child relationships?",
+   "ans": "The poem conveys that constant nagging and criticism can push children into a world of fantasy and escapism. Parents should give children some space and freedom to grow. The poem highlights the importance of understanding and respecting a child's need for independence."
+  },
+  {
+   "id": "english-99",
+   "chapter": "Animals",
+   "type": "write",
+   "q": "Why does the poet want to live with animals?",
+   "ans": "The poet wants to live with animals because they are content, patient, and simple. They do not complain, argue, or weep about their condition. Animals live in the present and do not carry the burden of guilt or duty that humans do."
+  },
+  {
+   "id": "english-100",
+   "chapter": "Animals",
+   "type": "write",
+   "q": "What qualities of animals does the poet admire?",
+   "ans": "The poet admires animals for their calmness, innocence, and self-sufficiency. They do not worry about what others think. They do not complain about their lot. They are comfortable with who they are. They do not sweat or complain about their existence."
+  },
+  {
+   "id": "english-101",
+   "chapter": "Animals",
+   "type": "write",
+   "q": "What does the poet say about human behaviour compared to animals?",
+   "ans": "The poet says humans are burdened by greed, guilt, and duty. Humans weep over their condition and feel dissatisfied. Humans have given up their original nature. In contrast, animals are content, patient, and do not worry about things that humans stress over."
+  },
+  {
+   "id": "english-102",
+   "chapter": "Animals",
+   "type": "write",
+   "q": "What is the central theme of the poem?",
+   "ans": "The central theme is the desire to return to a simpler, more natural way of life. The poet feels that humans have lost their innate goodness and simplicity. The poem suggests that animals are closer to nature and live more fulfilling lives without the complications of human society."
+  },
+  {
+   "id": "english-103",
+   "chapter": "The Trees",
+   "type": "write",
+   "q": "What are the trees doing in the poem?",
+   "ans": "The trees in the poem are breaking free from the house and moving out of the forest. They are stretching their roots and branches towards the sky. The trees are leaving the enclosed space of the house to return to the open forest."
+  },
+  {
+   "id": "english-104",
+   "chapter": "The Trees",
+   "type": "write",
+   "q": "What does the poet mean by 'the night is fresh and the whole moon shines'?",
+   "ans": "The poet describes the freshness of the night and the shining moon to create an atmosphere of renewal and freedom. The fresh night symbolises new beginnings, while the moonlight represents hope and possibility as the trees move towards freedom."
+  },
+  {
+   "id": "english-105",
+   "chapter": "The Trees",
+   "type": "write",
+   "q": "What message does the poem convey?",
+   "ans": "The poem conveys the message of freedom and breaking free from confinement. It represents the natural desire of all living things to be free. The trees symbolise nature's resilience and the importance of allowing all things to live in their natural environment."
+  },
+  {
+   "id": "english-106",
+   "chapter": "The Trees",
+   "type": "write",
+   "q": "What is the significance of the trees moving at night?",
+   "ans": "The trees move at night because it is a time of peace and safety. The darkness provides cover for their journey back to the forest. The night is also symbolic of change and transformation. The moonlight guides them on their path to freedom."
+  },
+  {
+   "id": "english-107",
+   "chapter": "Fog",
+   "type": "write",
+   "q": "What metaphor does the poet use to describe the fog?",
+   "ans": "The poet compares the fog to a cat. The fog arrives silently like a cat, sits on silent haunches, and looks out over the harbour. The comparison creates a vivid image of the fog as a gentle, mysterious presence."
+  },
+  {
+   "id": "english-108",
+   "chapter": "Fog",
+   "type": "write",
+   "q": "What is the effect of the fog on the harbour?",
+   "ans": "The fog covers the entire harbour, obscuring everything. The movement of ships and people in the harbour comes to a standstill. The fog creates a sense of stillness and mystery. It transforms the busy harbour into a quiet, silent world."
+  },
+  {
+   "id": "english-109",
+   "chapter": "Fog",
+   "type": "write",
+   "q": "What is the message of the poem?",
+   "ans": "The poem conveys the beauty and mystery of nature. The fog is a natural phenomenon that comes and goes quietly. The poem suggests that nature has its own gentle power and that we should observe and appreciate these moments of natural beauty."
+  },
+  {
+   "id": "english-110",
+   "chapter": "Fog",
+   "type": "write",
+   "q": "Why does the poet say 'and then moves on'?",
+   "ans": "The poet says the fog 'moves on' to emphasise its temporary and transient nature. Like a cat that comes and goes, the fog arrives and eventually moves on. This line creates a sense of impermanence and the fleeting beauty of natural phenomena."
+  },
+  {
+   "id": "english-111",
+   "chapter": "The Tale of Custard the Dragon",
+   "type": "write",
+   "q": "What was special about Custard the dragon?",
+   "ans": "Custard the dragon had real sharp teeth, big spikes, big claws, and a mouth like a fireplace. Despite being the biggest and scariest of all the pets, Custard was the most timid. He always wanted a safe cage."
+  },
+  {
+   "id": "english-112",
+   "chapter": "The Tale of Custard the Dragon",
+   "type": "write",
+   "q": "How did the other pets react to Custard's timidity?",
+   "ans": "The other pets - Belinda, the kitten, the mouse, and the puppy - mocked Custard for his cowardice. They called him a coward and made fun of him. They bragged about their own bravery while Custard quietly accepted their teasing."
+  },
+  {
+   "id": "english-113",
+   "chapter": "The Tale of Custard the Dragon",
+   "type": "write",
+   "q": "What happened when the pirate attacked?",
+   "ans": "When the pirate attacked with a gun and knife, all the brave pets ran away in fear. Only Custard, who had always been called a coward, stood up to the pirate. He gobbled up the pirate completely, saving the entire family."
+  },
+  {
+   "id": "english-114",
+   "chapter": "The Tale of Custard the Dragon",
+   "type": "write",
+   "q": "What lesson does the poem teach?",
+   "ans": "The poem teaches that true bravery is not about boasting but about facing danger when it matters. Those who brag about their courage may not be truly brave, while those who are quiet may prove to be the most courageous in times of real danger."
+  },
+  {
+   "id": "english-115",
+   "chapter": "The Tale of Custard the Dragon",
+   "type": "write",
+   "q": "What happened after Custard defeated the pirate?",
+   "ans": "After Custard defeated the pirate, the other pets immediately started bragging again, claiming they would have done the same thing. They were hypocritical in their praise. Custard, who had actually saved them, was modest and did not claim any credit."
+  },
+  {
+   "id": "english-116",
+   "chapter": "For Anne Gregory",
+   "type": "write",
+   "q": "What is the central conflict in the poem?",
+   "ans": "The central conflict is between external appearance and internal qualities. Anne Gregory is beautiful with yellow hair, but the speaker tells her that people can only love her for her appearance, not for who she truly is on the inside."
+  },
+  {
+   "id": "english-117",
+   "chapter": "For Anne Gregory",
+   "type": "write",
+   "q": "What does the phrase 'never shall a troll be loved by me' suggest?",
+   "ans": "The phrase suggests that the speaker would never love someone who is ugly or not attractive by conventional standards. It highlights the human tendency to judge others based on their appearance rather than their character."
+  },
+  {
+   "id": "english-118",
+   "chapter": "For Anne Gregory",
+   "type": "write",
+   "q": "What message does the poem convey about love and beauty?",
+   "ans": "The poem conveys that true love should go beyond physical beauty. People often judge others by their appearance rather than their inner qualities. The poem challenges the reader to look beyond the surface and appreciate the true character of a person."
+  },
+  {
+   "id": "english-119",
+   "chapter": "For Anne Gregory",
+   "type": "write",
+   "q": "What is the difference between loving someone for their hair colour and for their inner self?",
+   "ans": "Loving someone for their hair colour or appearance is superficial and temporary. Loving someone for their inner self means appreciating their character, personality, and values. True love is based on understanding and accepting a person for who they truly are, not how they look."
+  },
+  {
+   "id": "english-120",
+   "chapter": "A Triumph of Surgery",
+   "type": "write",
+   "q": "Why did Mrs. Pumphrey take Tricki to the surgery?",
+   "ans": "Mrs. Pumphrey took Tricki to the surgery because he had become extremely fat and lazy. He had grown so large that he could barely walk. She was worried about his health and sought the veterinarian's help to save his life."
+  },
+  {
+   "id": "english-121",
+   "chapter": "A Triumph of Surgery",
+   "type": "write",
+   "q": "What was the real problem with Tricki?",
+   "ans": "Tricki's real problem was overindulgence by Mrs. Pumphrey. She fed him too much, including chocolates, cakes, and sweet biscuits. He had no exercise and spent all day sleeping on a cushion. His condition was due to pampering, not illness."
+  },
+  {
+   "id": "english-122",
+   "chapter": "A Triumph of Surgery",
+   "type": "write",
+   "q": "How did the narrator (veterinary surgeon) treat Tricki?",
+   "ans": "The narrator treated Tricki by putting him on a strict diet and giving him regular exercise. He admitted Tricki to a hospital kennel with other dogs. Tricki was given only water and no rich food. Gradually, Tricki lost weight and became active again."
+  },
+  {
+   "id": "english-123",
+   "chapter": "A Triumph of Surgery",
+   "type": "write",
+   "q": "What was the 'triumph of surgery'?",
+   "ans": "The 'triumph of surgery' is ironic because no actual surgery was performed. The real triumph was the simple treatment of diet and exercise. The title suggests that the greatest achievement was not medical intervention but lifestyle change."
+  },
+  {
+   "id": "english-124",
+   "chapter": "A Triumph of Surgery",
+   "type": "write",
+   "q": "What does the story teach about love and care for pets?",
+   "ans": "The story teaches that true love for a pet does not mean overfeeding and pampering. Giving too much food and comfort can harm a pet's health. Responsible pet care involves providing proper nutrition, exercise, and discipline. Excessive pampering can be as harmful as neglect."
+  },
+  {
+   "id": "english-125",
+   "chapter": "The Thief's Story",
+   "type": "write",
+   "q": "Who was Anil and how did the narrator meet him?",
+   "ans": "Anil was a simple, kind, and trusting young man. The narrator, a young thief named Hari Singh, met Anil at a wrestling match. Anil was watching the wrestling and Hari Singh used this opportunity to befriend him and learn about his habits."
+  },
+  {
+   "id": "english-126",
+   "chapter": "The Thief's Story",
+   "type": "write",
+   "q": "What did Hari Singh steal from Anil and what happened later?",
+   "ans": "Hari Singh stole a large bundle of notes (about six hundred rupees) from Anil while he was sleeping. However, after stealing the money, Hari Singh felt guilty and could not run away. He returned the money, keeping only a hundred rupees for himself."
+  },
+  {
+   "id": "english-127",
+   "chapter": "The Thief's Story",
+   "type": "write",
+   "q": "Why did Hari Singh return the stolen money?",
+   "ans": "Hari Singh returned the stolen money because Anil's trust and kindness touched his heart. Anil had given him food and shelter without suspicion. Hari Singh felt guilty about betraying that trust. He realized that the guilt was worse than the theft."
+  },
+  {
+   "id": "english-128",
+   "chapter": "The Thief's Story",
+   "type": "write",
+   "q": "What lesson does Anil's trust teach Hari Singh?",
+   "ans": "Anil's unconditional trust taught Hari Singh that honesty and trust are more valuable than money. Anil's kindness made Hari Singh feel ashamed of his theft. The story shows that trust and kindness have the power to change a person's heart."
+  },
+  {
+   "id": "english-129",
+   "chapter": "The Thief's Story",
+   "type": "write",
+   "q": "What is the central theme of the story?",
+   "ans": "The central theme is the transformative power of trust and kindness. Anil's trust in Hari Singh, despite being a thief, changed him. The story shows that even a thief can be reformed by genuine love and trust. It also highlights the moral dilemma between greed and conscience."
+  },
+  {
+   "id": "english-130",
+   "chapter": "The Midnight Visitor",
+   "type": "write",
+   "q": "Who was Ausable and what was his mission?",
+   "ans": "Ausable was a secret agent who worked for a special intelligence service. He had arrived in Paris on an important mission involving secret plans. He was expecting important information that he needed to protect at all costs."
+  },
+  {
+   "id": "english-131",
+   "chapter": "The Midnight Visitor",
+   "type": "write",
+   "q": "How did Max try to get the secret papers from Ausable?",
+   "ans": "Max sneaked into Ausable's apartment and held him at gunpoint. He demanded the secret papers that Ausable was supposed to receive. Max wanted to steal the information for his own agency. He believed Ausable would have no choice but to hand over the papers."
+  },
+  {
+   "id": "english-132",
+   "chapter": "The Midnight Visitor",
+   "type": "write",
+   "q": "How did Ausable get rid of Max without any weapon?",
+   "ans": "Ausable tricked Max by telling him about a balcony outside the window. He said there was a police officer waiting on the balcony. Max panicked and tried to escape through the window, falling from the sixth floor. Ausable used his quick thinking to defeat Max without any weapon."
+  },
+  {
+   "id": "english-133",
+   "chapter": "The Midnight Visitor",
+   "type": "write",
+   "q": "What is the irony in the story?",
+   "ans": "The irony is that Max fell to his death from a window where there was no balcony, because Ausable had lied about the balcony. Ausable's quick thinking saved him and the secret papers. The papers arrived through the door at that very moment, making Max's attempt futile."
+  },
+  {
+   "id": "english-134",
+   "chapter": "The Midnight Visitor",
+   "type": "write",
+   "q": "What qualities of a secret agent does Ausable display?",
+   "ans": "Ausable displays quick thinking, intelligence, calmness under pressure, and resourcefulness. Despite being in a dangerous situation with a gun pointed at him, he remained composed and devised a clever plan to eliminate the threat. He used wit instead of force."
+  },
+  {
+   "id": "english-135",
+   "chapter": "A Question of Trust",
+   "type": "write",
+   "q": "Who was Horace Danby and what was his profession?",
+   "ans": "Horace Danby was a fifty-year-old locksmith who made fine locks and was known for his honesty in his profession. However, he secretly robbed one house every year to fund his passion for rare books. He was an expert at breaking into houses."
+  },
+  {
+   "id": "english-136",
+   "chapter": "A Question of Trust",
+   "type": "write",
+   "q": "How was Horace deceived by the woman in the red coat?",
+   "ans": "The woman in the red coat tricked Horace by pretending to be the owner of the house. She claimed Horace was her friend who had come to help. She directed him to the safe, asked him to open it, and made him leave his fingerprints on the safe. Then she called the police."
+  },
+  {
+   "id": "english-137",
+   "chapter": "A Question of Trust",
+   "type": "write",
+   "q": "What lesson does the story teach about trust?",
+   "ans": "The story teaches that trust is a two-way street. Horace Danby, who broke into houses, was himself deceived by someone he trusted. The woman's cleverness showed that even the most experienced person can be outsmarted. The story also warns against trusting strangers blindly."
+  },
+  {
+   "id": "english-138",
+   "chapter": "A Question of Trust",
+   "type": "write",
+   "q": "Why was Horace Danby caught despite his careful planning?",
+   "ans": "Horace Danby was caught because he trusted the woman in the red coat, who turned out to be the real owner of the house. She manipulated him into leaving his fingerprints on the safe and then reported him. His downfall came not from carelessness but from misplaced trust."
+  },
+  {
+   "id": "english-139",
+   "chapter": "A Question of Trust",
+   "type": "write",
+   "q": "What is the irony in the title 'A Question of Trust'?",
+   "ans": "The irony is that the story is about trust being violated from both sides. Horace trusted the woman who betrayed him, while the woman used Horace's trust against him. The story questions the very nature of trust in a world where appearances can be deceiving."
+  },
+  {
+   "id": "english-140",
+   "chapter": "Footprints without Feet",
+   "type": "write",
+   "q": "Who was Griffin and what was his scientific achievement?",
+   "ans": "Griffin was a brilliant but eccentric scientist who discovered the secret of making himself invisible. He experimented with drugs that could make the human body transparent. His achievement was scientific but his intentions were criminal."
+  },
+  {
+   "id": "english-141",
+   "chapter": "Footprints without Feet",
+   "type": "write",
+   "q": "How did Griffin use his invisibility for criminal activities?",
+   "ans": "Griffin used his invisibility to commit various crimes. He robbed a shop, stole money from a theatre, and broke into a house in London. He enjoyed using his invisibility to take advantage of others and to cause chaos."
+  },
+  {
+   "id": "english-142",
+   "chapter": "Footprints without Feet",
+   "type": "write",
+   "q": "What happened when Griffin was in London?",
+   "ans": "When Griffin was in London, he was cold and homeless because he was invisible and naked. He stole clothes from a theatrical company and then robbed a shop. He broke into a house and slept there, but was discovered by the house owner. He escaped by removing his bandages and becoming invisible again."
+  },
+  {
+   "id": "english-143",
+   "chapter": "Footprints without Feet",
+   "type": "write",
+   "q": "How did the story of Footprints without Feet end?",
+   "ans": "The story ended with Griffin being pursued by the police and the public. He was eventually caught and killed. His invisibility, which he thought was a great advantage, ultimately led to his downfall because he could not survive without help from others."
+  },
+  {
+   "id": "english-144",
+   "chapter": "Footprints without Feet",
+   "type": "write",
+   "q": "What message does the story convey about the misuse of science?",
+   "ans": "The story conveys that scientific knowledge, when used for selfish and criminal purposes, leads to destruction. Griffin's invisibility could have been used for great good, but he chose to use it for crime. The story warns against the irresponsible use of scientific discoveries."
+  },
+  {
+   "id": "english-145",
+   "chapter": "The Making of a Scientist",
+   "type": "write",
+   "q": "What made Richard Ebright a successful scientist?",
+   "ans": "Richard Ebright became a successful scientist because of his curiosity, dedication, and hard work. He collected butterflies from an early age and conducted experiments to understand their behaviour. He also had a strong desire to learn and discover new things."
+  },
+  {
+   "id": "english-146",
+   "chapter": "The Making of a Scientist",
+   "type": "write",
+   "q": "What was Ebright's first scientific achievement?",
+   "ans": "Ebright's first major scientific achievement was discovering a new species of butterfly. He studied the life cycle of butterflies and published his findings in a scientific journal. His work on the gold-spot butterfly earned him recognition in the scientific community."
+  },
+  {
+   "id": "english-147",
+   "chapter": "The Making of a Scientist",
+   "type": "write",
+   "q": "How did Ebright's mother support his scientific interests?",
+   "ans": "Ebright's mother encouraged his interest in science from an early age. She took him on trips to museums and bought him a telescope, a microscope, and other scientific equipment. She also helped him with his projects and supported his experiments."
+  },
+  {
+   "id": "english-148",
+   "chapter": "The Making of a Scientist",
+   "type": "write",
+   "q": "What qualities does the story say are important for becoming a scientist?",
+   "ans": "The story says that important qualities for a scientist include curiosity, a desire to learn, hard work, and the ability to ask the right questions. It also mentions that one should be observant and have a strong passion for discovery. The ability to work independently and think critically are also essential."
+  },
+  {
+   "id": "english-149",
+   "chapter": "The Making of a Scientist",
+   "type": "write",
+   "q": "What was the significance of Ebright's poster for the science fair?",
+   "ans": "Ebright's poster on the life cycle of the gold-spot butterfly won first prize at a science fair. It was significant because it showed his ability to conduct research and present his findings clearly. This success inspired him to continue pursuing science with greater enthusiasm."
+  },
+  {
+   "id": "english-150",
+   "chapter": "The Necklace",
+   "type": "write",
+   "q": "Who was Matilda and what was her dream?",
+   "ans": "Matilda was a beautiful woman who was born into a poor family. She dreamed of a life of luxury, wealth, and fine things. She was dissatisfied with her modest life and constantly wished for the things that wealthy people had."
+  },
+  {
+   "id": "english-151",
+   "chapter": "The Necklace",
+   "type": "write",
+   "q": "Why did Matilda borrow the necklace from Madame Forestier?",
+   "ans": "Matilda borrowed the necklace because she did not have anything suitable to wear to a grand ball at the Ministry. She was afraid of appearing shabby and embarrassing herself. She asked her wealthy friend Madame Forestier for a beautiful necklace to wear."
+  },
+  {
+   "id": "english-152",
+   "chapter": "The Necklace",
+   "type": "write",
+   "q": "What happened to the necklace after the ball?",
+   "ans": "After the ball, the necklace was lost. Matilda and her husband spent ten years working to pay off the debt they incurred to buy a replacement. They lived in poverty and hardship. Only later did they discover that the necklace they borrowed was made of fake diamonds."
+  },
+  {
+   "id": "english-153",
+   "chapter": "The Necklace",
+   "type": "write",
+   "q": "What is the irony of the story?",
+   "ans": "The irony is that the necklace they spent ten years paying for was actually a fake worth only five hundred francs. The original necklace was worth only three hundred and sixty-five francs. All their suffering was caused by their assumption that the necklace was real."
+  },
+  {
+   "id": "english-154",
+   "chapter": "The Necklace",
+   "type": "write",
+   "q": "What lesson does the story teach about pride and vanity?",
+   "ans": "The story teaches that pride and vanity can lead to great suffering. Matilda's desire for a luxurious life and her shame at being poor led her to borrow the necklace. The story shows that material things are not worth sacrificing one's happiness and peace of mind."
+  },
+  {
+   "id": "english-155",
+   "chapter": "The Hack Driver",
+   "type": "write",
+   "q": "Who was the hack driver and where did the narrator meet him?",
+   "ans": "The hack driver was a charming, middle-aged man named Oliver Lutkins. The narrator met him at the railway station in the small town of Napoleon. He was hired as a hack driver to take the narrator to find a witness named Lutkins."
+  },
+  {
+   "id": "english-156",
+   "chapter": "The Hack Driver",
+   "type": "write",
+   "q": "How did the hack driver deceive the narrator?",
+   "ans": "The hack driver was actually Lutkins himself. He told the narrator that he would help find Lutkins and then led him on a wild goose chase around the town. He visited various places pretending to search for Lutkins while the narrator was completely unaware."
+  },
+  {
+   "id": "english-157",
+   "chapter": "The Hack Driver",
+   "type": "write",
+   "q": "Why was the narrator looking for Lutkins?",
+   "ans": "The narrator was a lawyer who had been sent to find a witness named Lutkins for an important legal case. The case involved a large sum of money and Lutkins' testimony was crucial. The narrator had to find him and bring him to court."
+  },
+  {
+   "id": "english-158",
+   "chapter": "The Hack Driver",
+   "type": "write",
+   "q": "How did the narrator feel when he finally discovered the truth?",
+   "ans": "When the narrator discovered that the hack driver was actually Lutkins, he felt embarrassed and angry. He had been completely fooled by Lutkins' charm and friendliness. He felt that Lutkins was a clever and cunning person who had outsmarted him."
+  },
+  {
+   "id": "english-159",
+   "chapter": "The Hack Driver",
+   "type": "write",
+   "q": "What does the story teach about first impressions?",
+   "ans": "The story teaches that first impressions can be misleading. The narrator assumed the hack driver was a helpful local man, when in fact he was the person he was looking for. We should not judge people by their appearance or charm alone, as they may not be who they seem."
+  },
+  {
+   "id": "english-160",
+   "chapter": "Bholi",
+   "type": "write",
+   "q": "What was Bholi's real name and what was her condition?",
+   "ans": "Bholi's real name was Sulekha. As a child, she fell from a horse and suffered brain damage, which affected her speech. She became a stammerer and was considered slow-witted. She was also disfigured by smallpox, which left her with pockmarks on her face."
+  },
+  {
+   "id": "english-161",
+   "chapter": "Bholi",
+   "type": "write",
+   "q": "How did Bholi's life change when she started going to school?",
+   "ans": "Bholi's life changed dramatically when she started going to school. She learned to read and write, which gave her confidence and self-respect. Her teacher, Miss Bhandari, encouraged her and helped her overcome her fear. Education transformed Bholi from a timid girl into a confident woman."
+  },
+  {
+   "id": "english-162",
+   "chapter": "Bholi",
+   "type": "write",
+   "q": "What happened at Bholi's marriage ceremony?",
+   "ans": "At her marriage ceremony, Bholi refused to marry the groom, Bishamber, when he demanded a large dowry. Despite her parents' pressure, she stood up for herself and rejected the marriage. She showed that she was no longer the timid, submissive girl she once was."
+  },
+  {
+   "id": "english-163",
+   "chapter": "Bholi",
+   "type": "write",
+   "q": "How did Bholi's parents react to her refusal?",
+   "ans": "Bholi's parents were shocked and angry when she refused to marry Bishamber. They could not believe that their daughter, who was considered unintelligent, had the courage to speak up for herself. Her father even threatened to hit her, but Bholi stood firm in her decision."
+  },
+  {
+   "id": "english-164",
+   "chapter": "Bholi",
+   "type": "write",
+   "q": "What does the story teach about education and its impact on women?",
+   "ans": "The story teaches that education is the most powerful tool for women's empowerment. Bholi's transformation from a timid, stammering girl to a confident, educated woman shows how education can change lives. It gave her the courage to stand up for herself and reject an unjust marriage."
+  },
+  {
+   "id": "english-165",
+   "chapter": "The Book that Saved the Earth",
+   "type": "write",
+   "q": "What was the name of the book that saved the earth and why was it important?",
+   "ans": "The book was 'Mother Goose' - a collection of nursery rhymes. It was important because it confused the Martian invaders who tried to understand Earth's culture through this book. The silly rhymes and stories made them think that Earthlings were so bizarre that they could not be conquered."
+  },
+  {
+   "id": "english-166",
+   "chapter": "The Book that Saved the Earth",
+   "type": "write",
+   "q": "Why did the Martians come to Earth?",
+   "ans": "The Martians came to Earth because they wanted to conquer it. They were a highly advanced civilization and believed they could easily take over the Earth. They came with an invasion force ready to capture and control the planet."
+  },
+  {
+   "id": "english-167",
+   "chapter": "The Book that Saved the Earth",
+   "type": "write",
+   "q": "How did the book 'Mother Goose' save the earth?",
+   "ans": "The book saved the earth by confusing the Martians. The nursery rhymes and stories in the book were so strange and nonsensical to the Martians that they believed Earth was a planet of crazy beings. They thought conquering such a strange planet was not worth the effort and left."
+  },
+  {
+   "id": "english-168",
+   "chapter": "The Book that Saved the Earth",
+   "type": "write",
+   "q": "What is the humour in the story?",
+   "ans": "The humour lies in the fact that a children's book of nursery rhymes could save the entire planet. The Martians, who expected to find advanced technology and powerful weapons, instead found silly stories about cats, mice, and other nursery rhyme characters. The contrast between advanced aliens and simple nursery rhymes is funny."
+  },
+  {
+   "id": "english-169",
+   "chapter": "The Book that Saved the Earth",
+   "type": "write",
+   "q": "What message does the story convey about literature?",
+   "ans": "The story conveys that literature, even children's literature, has great power. A simple book of nursery rhymes was able to save the world by showing that culture and imagination are more powerful than brute force. It celebrates the importance of books, stories, and the written word."
+  },
+  {
+   "id": "english-170",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q1. In 'A Letter to God', what destroyed Lencho's crops?\n(A) Drought\n(B) Flood\n(C) Hailstorm\n(D) Earthquake",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Hailstorm"
+  },
+  {
+   "id": "english-171",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q2. How much money did Lencho ask God to send him?\n(A) Fifty pesos\n(B) One hundred pesos\n(C) Two hundred pesos\n(D) One thousand pesos",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) One hundred pesos"
+  },
+  {
+   "id": "english-172",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q3. Who was the first Black President of South Africa?\n(A) Barack Obama\n(B) Desmond Tutu\n(C) Nelson Mandela\n(D) Mahatma Gandhi",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Nelson Mandela"
+  },
+  {
+   "id": "english-173",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q4. In 'His First Flight', the young seagull was afraid to fly because:\n(A) He was injured\n(B) He had fallen once before\n(C) He was too young\n(D) His parents forbade him",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) He had fallen once before"
+  },
+  {
+   "id": "english-174",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q5. What was the name of Anne Frank's diary?\n(A) Kitty\n(B) Diary of a Young Girl\n(C) Anne's Diary\n(D) My Story",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (A) Kitty"
+  },
+  {
+   "id": "english-175",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q6. How many dresses did Wanda Petronski really have?\n(A) A hundred\n(B) None\n(C) Ten\n(D) Fifty",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) None (she had drawn a hundred designs)"
+  },
+  {
+   "id": "english-176",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q7. In 'A Baker from Goa', the narrator's grandfather was a:\n(A) Fisherman\n(B) Farmer\n(C) Baker (Pader)\n(D) Teacher",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Baker (Pader)"
+  },
+  {
+   "id": "english-177",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q8. Coorg is located between:\n(A) Delhi and Mumbai\n(B) Mysore and Mangalore\n(C) Bangalore and Chennai\n(D) Goa and Kerala",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) Mysore and Mangalore"
+  },
+  {
+   "id": "english-178",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q9. In 'Dust of Snow', which bird shook the snow on the poet?\n(A) Eagle\n(B) Parrot\n(C) Crow\n(D) Pigeon",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Crow"
+  },
+  {
+   "id": "english-179",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q10. In 'Fire and Ice', fire symbolises:\n(A) Hatred\n(B) Desire\n(C) Fear\n(D) Love",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) Desire"
+  },
+  {
+   "id": "english-180",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q11. In 'The Ball Poem', what does the boy lose?\n(A) A kite\n(B) A ball\n(C) A toy\n(D) A book",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) A ball"
+  },
+  {
+   "id": "english-181",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q12. In 'Amanda!', Amanda imagines herself as:\n(A) A fairy\n(B) A mermaid\n(C) A princess\n(D) A bird",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) A mermaid"
+  },
+  {
+   "id": "english-182",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q13. In 'The Sermon at Benares', who was Kisa Gotami?\n(A) A queen\n(B) A young woman who lost her son\n(C) A nurse\n(D) A nun",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) A young woman who lost her son"
+  },
+  {
+   "id": "english-183",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q14. In 'The Proposal', Lomov came to Natalya's house to:\n(A) Buy her land\n(B) Propose marriage\n(C) Return her dog\n(D) Fight with her",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) Propose marriage"
+  },
+  {
+   "id": "english-184",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q15. In 'A Triumph of Surgery', what was the name of Mrs. Pumphrey's dog?\n(A) Tom\n(B) Jerry\n(C) Tricki\n(D) Spot",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Tricki"
+  },
+  {
+   "id": "english-185",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q16. In 'The Thief's Story', what was the narrator's real name?\n(A) Hari Singh\n(B) Anil\n(C) Prem\n(D) Raj",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (A) Hari Singh"
+  },
+  {
+   "id": "english-186",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q17. In 'The Midnight Visitor', how did Ausable get rid of Max?\n(A) Shot him\n(B) Pushed him from the window\n(C) Tricked him into falling\n(D) Called the police",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Tricked him into falling"
+  },
+  {
+   "id": "english-187",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q18. In 'A Question of Trust', what was Horace Danby's profession?\n(A) Painter\n(B) Writer\n(C) Locksmith\n(D) Lawyer",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Locksmith"
+  },
+  {
+   "id": "english-188",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q19. In 'The Necklace', what was the necklace actually made of?\n(A) Real diamonds\n(B) Gold\n(C) Fake diamonds\n(D) Silver",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Fake diamonds"
+  },
+  {
+   "id": "english-189",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q20. In 'The Hack Driver', the narrator was a:\n(A) Doctor\n(B) Teacher\n(C) Lawyer\n(D) Police officer",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Lawyer"
+  },
+  {
+   "id": "english-190",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q21. In 'Bholi', what was Bholi's real name?\n(A) Sulekha\n(B) Sunita\n(C) Savitri\n(D) Sarla",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (A) Sulekha"
+  },
+  {
+   "id": "english-191",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q22. In 'The Book that Saved the Earth', which book saved the planet?\n(A) Bible\n(B) Quran\n(C) Mother Goose\n(D) Harry Potter",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (C) Mother Goose"
+  },
+  {
+   "id": "english-192",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q23. In 'The Making of a Scientist', who encouraged Richard Ebright's scientific interests?\n(A) His father\n(B) His mother\n(C) His teacher\n(D) His friend",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) His mother"
+  },
+  {
+   "id": "english-193",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q24. In 'Footprints without Feet', Griffin was a:\n(A) Thief\n(B) Scientist\n(C) Doctor\n(D) Lawyer",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (B) Scientist"
+  },
+  {
+   "id": "english-194",
+   "chapter": "Objective / MCQ Questions (1 mark)",
+   "type": "mcq",
+   "q": "Q25. In 'Madam Rides the Bus', how old was Valli?\n(A) Ten years old\n(B) Eight years old\n(C) Twelve years old\n(D) Six years old",
+   "options": [
+    "(क)",
+    "(ख)",
+    "(ग)",
+    "(घ)"
+   ],
+   "answer": 0,
+   "ans": "उत्तर/Answer: (A) Ten years old"
+  },
+  {
+   "id": "english-195",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Write a letter to the editor complaining about the poor condition of roads in your locality.",
+   "ans": "Sender's Address\nDate\n\nTo,\nThe Editor\nThe Times of India\nNew Delhi\n\nSubject: Poor Condition of Roads in Our Locality\n\nSir/Madam,\n\nI wish to draw your attention to the poor condition of roads in our locality, Mohan Colony. The roads are full of potholes and ditches. During the monsoon, water accumulates in these potholes, causing great inconvenience to pedestrians and motorists. Many accidents have occurred due to these bad roads. I request you to publish this letter so that the concerned authorities take immediate action to repair the roads.\n\nThanking you,\nYours sincerely,\nRahul Kumar"
+  },
+  {
+   "id": "english-196",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Write a paragraph (100-120 words) on the importance of education in a student's life.",
+   "ans": "Education is the most important tool for a student's development. It opens doors to knowledge, wisdom, and opportunity. A well-educated person can make informed decisions and contribute positively to society. Education builds confidence, develops critical thinking, and helps students achieve their goals. In today's competitive world, education is not just about passing exams but about gaining skills that are useful in real life. Students who value education develop moral values, social awareness, and the ability to face challenges. Therefore, every student should take education seriously and use it to build a bright future for themselves and for the nation."
+  },
+  {
+   "id": "english-197",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Change the following sentences as directed:\n(a) He is taller than I. (Comparative)\n(b) She runs fast. (Negative)\n(c) They have finished the work. (Interrogative)",
+   "ans": "(a) He is the tallest in the class. / No comparative form needed as it is already comparative.\n(b) She does not run fast.\n(c) Have they finished the work?"
+  },
+  {
+   "id": "english-198",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Fill in the blanks with suitable modals:\n(a) You ______ help the poor. (moral duty)\n(b) He ______ drive a car. (ability)\n(c) ______ I come in? (permission)",
+   "ans": "(a) You should help the poor.\n(b) He can drive a car.\n(c) May I come in?"
+  },
+  {
+   "id": "english-199",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Fill in the blanks with appropriate articles (a, an, the):\n(a) He is ______ honest man.\n(b) ______ sun rises in the east.\n(c) She is ______ European.",
+   "ans": "(a) He is an honest man.\n(b) The sun rises in the east.\n(c) She is a European."
+  },
+  {
+   "id": "english-200",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Rewrite the following sentences using indirect speech:\n(a) He said, \"I am feeling unwell.\"\n(b) She said, \"I have finished my homework.\"",
+   "ans": "(a) He said that he was feeling unwell.\n(b) She said that she had finished her homework."
+  },
+  {
+   "id": "english-201",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Combine the following sentences using a suitable conjunction:\n(a) It was raining. We stayed at home.\n(b) She is intelligent. She works hard.",
+   "ans": "(a) It was raining, so we stayed at home.\n(b) She is intelligent and she works hard."
+  },
+  {
+   "id": "english-202",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Write a notice for your school notice board about an inter-school debate competition.",
+   "ans": "                              NOTICE\n                          DAV Public School\n                     Date: 15th September 2026\n\n           INTER-SCHOOL DEBATE COMPETITION\n\nStudents are informed that an inter-school debate competition will be held on 25th September 2026 in the school auditorium. The topic will be 'Technology: Boon or Bane.' Students from Classes IX to XII may participate. Interested students should give their names to the undersigned by 20th September 2026.\n\n                     Ravi Sharma\n                   Head Boy"
+  },
+  {
+   "id": "english-203",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Transform the following sentences:\n(a) Active: The teacher teaches the students.\n(b) Simple: Although he was tired, he continued working.\n(c) Exclamatory: It is a beautiful painting.",
+   "ans": "(a) Passive: The students are taught by the teacher.\n(b) Complex: He continued working though he was tired.\n(c) Exclamatory: What a beautiful painting it is!"
+  },
+  {
+   "id": "english-204",
+   "chapter": "Grammar & Writing (Important)",
+   "type": "write",
+   "q": "Write a paragraph (100-120 words) on the advantages and disadvantages of the internet.",
+   "ans": "The internet is a powerful tool that has transformed our lives. Its advantages include easy access to information, fast communication through email and social media, online education, and entertainment. Students can learn from anywhere in the world. However, the internet also has disadvantages. Excessive use can lead to addiction, health problems like eye strain, and reduced social interaction. Cybercrime, identity theft, and exposure to inappropriate content are serious concerns. Fake news and misinformation spread rapidly online. Therefore, while the internet is beneficial, it should be used wisely and responsibly to avoid its negative effects."
+  },
+  {
+   "id": "english-fb-1",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "Who wrote 'A Letter to God'?",
+   "options": [
+    "G.L. Fuentes",
+    "Ruskin Bond",
+    "R.K. Narayan",
+    "Premchand"
+   ],
+   "answer": 0,
+   "ans": "G.L. Fuentes"
+  },
+  {
+   "id": "english-fb-2",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "What did Lencho hope for?",
+   "options": [
+    "Rain",
+    "Snow",
+    "Sunshine",
+    "Wind"
+   ],
+   "answer": 0,
+   "ans": "Rain"
+  },
+  {
+   "id": "english-fb-3",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "Who is the author of 'Nelson Mandela: Long Walk to Freedom'?",
+   "options": [
+    "Nelson Mandela",
+    "Gandhi",
+    "Churchill",
+    "Lincoln"
+   ],
+   "answer": 0,
+   "ans": "Nelson Mandela"
+  },
+  {
+   "id": "english-fb-4",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "The young seagull was afraid to ___?",
+   "options": [
+    "fly",
+    "swim",
+    "sing",
+    "run"
+   ],
+   "answer": 0,
+   "ans": "fly"
+  },
+  {
+   "id": "english-fb-5",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "Who composed 'Fire and Ice'?",
+   "options": [
+    "Robert Frost",
+    "William Wordsworth",
+    "John Keats",
+    "Shelley"
+   ],
+   "answer": 0,
+   "ans": "Robert Frost"
+  },
+  {
+   "id": "english-fb-6",
+   "chapter": "Footprints without Feet",
+   "type": "mcq",
+   "q": "Griffin was a brilliant ___?",
+   "options": [
+    "scientist",
+    "doctor",
+    "teacher",
+    "soldier"
+   ],
+   "answer": 0,
+   "ans": "scientist"
+  },
+  {
+   "id": "english-fb-7",
+   "chapter": "Footprints without Feet",
+   "type": "mcq",
+   "q": "Bholi could not speak properly because of ___?",
+   "options": [
+    "a stammer",
+    "deafness",
+    "fear",
+    "disease"
+   ],
+   "answer": 0,
+   "ans": "a stammer"
+  },
+  {
+   "id": "english-fb-8",
+   "chapter": "Grammar",
+   "type": "mcq",
+   "q": "Choose the correct article: ___ apple.",
+   "options": [
+    "an",
+    "a",
+    "the",
+    "no article"
+   ],
+   "answer": 0,
+   "ans": "an"
+  },
+  {
+   "id": "english-fb-9",
+   "chapter": "Grammar",
+   "type": "mcq",
+   "q": "Plural of 'child' is?",
+   "options": [
+    "children",
+    "childs",
+    "childrens",
+    "childes"
+   ],
+   "answer": 0,
+   "ans": "children"
+  },
+  {
+   "id": "english-fb-10",
+   "chapter": "Grammar",
+   "type": "mcq",
+   "q": "Past tense of 'speak' is?",
+   "options": [
+    "spoke",
+    "speaked",
+    "spoken",
+    "speaks"
+   ],
+   "answer": 0,
+   "ans": "spoke"
+  },
+  {
+   "id": "english-fb-11",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "Who wrote the diary in 'From the Diary of Anne Frank'?",
+   "options": [
+    "Anne Frank",
+    "Helen Keller",
+    "Ruskin Bond",
+    "Tagore"
+   ],
+   "answer": 0,
+   "ans": "Anne Frank"
+  },
+  {
+   "id": "english-fb-12",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "What is the opposite of 'brave'?",
+   "options": [
+    "cowardly",
+    "strong",
+    "happy",
+    "lazy"
+   ],
+   "answer": 0,
+   "ans": "cowardly"
+  },
+  {
+   "id": "english-fb-13",
+   "chapter": "Grammar",
+   "type": "mcq",
+   "q": "The past tense of 'go' is ___?",
+   "options": [
+    "went",
+    "gone",
+    "goes",
+    "going"
+   ],
+   "answer": 0,
+   "ans": "went"
+  },
+  {
+   "id": "english-fb-14",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "Who is the main character of 'His First Flight'?",
+   "options": [
+    "A young seagull",
+    "An old man",
+    "A pilot",
+    "A child"
+   ],
+   "answer": 0,
+   "ans": "A young seagull"
+  },
+  {
+   "id": "english-fb-15",
+   "chapter": "Footprints without Feet",
+   "type": "mcq",
+   "q": "The Thief's Story is written by ___?",
+   "options": [
+    "Ruskin Bond",
+    "Premchand",
+    "O. Henry",
+    "Maupassant"
+   ],
+   "answer": 0,
+   "ans": "Ruskin Bond"
+  },
+  {
+   "id": "english-fb-16",
+   "chapter": "First Flight",
+   "type": "mcq",
+   "q": "What does 'apartheid' mean?",
+   "options": [
+    "Racial discrimination",
+    "Democracy",
+    "Freedom",
+    "Equality"
+   ],
+   "answer": 0,
+   "ans": "Racial discrimination"
+  },
+  {
+   "id": "ztop-1",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define theme. (A Letter to God)",
+   "ans": "Define theme clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-2",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain theme with an example. (A Letter to God)",
+   "ans": "Explain theme with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-3",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on theme. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of theme in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-4",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of theme? (A Letter to God)",
+   "ans": "theme is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-5",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about theme. (A Letter to God)",
+   "ans": "Mention two key facts about theme from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-6",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define character. (A Letter to God)",
+   "ans": "Define character clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-7",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain character with an example. (A Letter to God)",
+   "ans": "Explain character with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-8",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on character. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of character in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-9",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of character? (A Letter to God)",
+   "ans": "character is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-10",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about character. (A Letter to God)",
+   "ans": "Mention two key facts about character from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-11",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define moral. (A Letter to God)",
+   "ans": "Define moral clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-12",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain moral with an example. (A Letter to God)",
+   "ans": "Explain moral with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-13",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on moral. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of moral in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-14",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of moral? (A Letter to God)",
+   "ans": "moral is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-15",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about moral. (A Letter to God)",
+   "ans": "Mention two key facts about moral from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-16",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define message. (A Letter to God)",
+   "ans": "Define message clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-17",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain message with an example. (A Letter to God)",
+   "ans": "Explain message with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-18",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on message. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of message in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-19",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of message? (A Letter to God)",
+   "ans": "message is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-20",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about message. (A Letter to God)",
+   "ans": "Mention two key facts about message from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-21",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define plot. (A Letter to God)",
+   "ans": "Define plot clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-22",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain plot with an example. (A Letter to God)",
+   "ans": "Explain plot with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-23",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on plot. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of plot in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-24",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of plot? (A Letter to God)",
+   "ans": "plot is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-25",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about plot. (A Letter to God)",
+   "ans": "Mention two key facts about plot from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-26",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define setting. (A Letter to God)",
+   "ans": "Define setting clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-27",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain setting with an example. (A Letter to God)",
+   "ans": "Explain setting with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-28",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on setting. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of setting in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-29",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of setting? (A Letter to God)",
+   "ans": "setting is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-30",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about setting. (A Letter to God)",
+   "ans": "Mention two key facts about setting from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-31",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define title. (A Letter to God)",
+   "ans": "Define title clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-32",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain title with an example. (A Letter to God)",
+   "ans": "Explain title with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-33",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on title. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of title in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-34",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of title? (A Letter to God)",
+   "ans": "title is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-35",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about title. (A Letter to God)",
+   "ans": "Mention two key facts about title from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-36",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define narrator. (A Letter to God)",
+   "ans": "Define narrator clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-37",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain narrator with an example. (A Letter to God)",
+   "ans": "Explain narrator with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-38",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on narrator. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of narrator in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-39",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of narrator? (A Letter to God)",
+   "ans": "narrator is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-40",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about narrator. (A Letter to God)",
+   "ans": "Mention two key facts about narrator from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-41",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define figure of speech. (A Letter to God)",
+   "ans": "Define figure of speech clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-42",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain figure of speech with an example. (A Letter to God)",
+   "ans": "Explain figure of speech with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-43",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on figure of speech. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of figure of speech in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-44",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of figure of speech? (A Letter to God)",
+   "ans": "figure of speech is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-45",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about figure of speech. (A Letter to God)",
+   "ans": "Mention two key facts about figure of speech from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-46",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Define summary. (A Letter to God)",
+   "ans": "Define summary clearly and give an example relevant to the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-47",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Explain summary with an example. (A Letter to God)",
+   "ans": "Explain summary with a suitable example drawn from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-48",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Write a short note on summary. (A Letter to God)",
+   "ans": "Write the definition, importance and one example of summary in a short note related to 'A Letter to God'."
+  },
+  {
+   "id": "ztop-49",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "What is the importance of summary? (A Letter to God)",
+   "ans": "summary is important because it helps us understand the ideas of the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-50",
+   "chapter": "A Letter to God",
+   "type": "write",
+   "q": "Give two points about summary. (A Letter to God)",
+   "ans": "Mention two key facts about summary from the chapter 'A Letter to God'."
+  },
+  {
+   "id": "ztop-51",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Define theme. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Define theme clearly and give an example relevant to the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-52",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Explain theme with an example. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Explain theme with a suitable example drawn from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-53",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Write a short note on theme. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Write the definition, importance and one example of theme in a short note related to 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-54",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the importance of theme? (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "theme is important because it helps us understand the ideas of the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-55",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Give two points about theme. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Mention two key facts about theme from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-56",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Define character. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Define character clearly and give an example relevant to the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-57",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Explain character with an example. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Explain character with a suitable example drawn from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-58",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Write a short note on character. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Write the definition, importance and one example of character in a short note related to 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-59",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the importance of character? (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "character is important because it helps us understand the ideas of the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-60",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Give two points about character. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Mention two key facts about character from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-61",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Define moral. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Define moral clearly and give an example relevant to the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-62",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Explain moral with an example. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Explain moral with a suitable example drawn from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-63",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Write a short note on moral. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Write the definition, importance and one example of moral in a short note related to 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-64",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the importance of moral? (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "moral is important because it helps us understand the ideas of the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-65",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Give two points about moral. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Mention two key facts about moral from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-66",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Define message. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Define message clearly and give an example relevant to the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-67",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Explain message with an example. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Explain message with a suitable example drawn from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-68",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Write a short note on message. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Write the definition, importance and one example of message in a short note related to 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-69",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the importance of message? (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "message is important because it helps us understand the ideas of the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-70",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Give two points about message. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Mention two key facts about message from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-71",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Define plot. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Define plot clearly and give an example relevant to the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-72",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Explain plot with an example. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Explain plot with a suitable example drawn from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-73",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Write a short note on plot. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Write the definition, importance and one example of plot in a short note related to 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-74",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the importance of plot? (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "plot is important because it helps us understand the ideas of the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-75",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Give two points about plot. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Mention two key facts about plot from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-76",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Define setting. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Define setting clearly and give an example relevant to the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-77",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Explain setting with an example. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Explain setting with a suitable example drawn from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-78",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Write a short note on setting. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Write the definition, importance and one example of setting in a short note related to 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-79",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "What is the importance of setting? (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "setting is important because it helps us understand the ideas of the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  },
+  {
+   "id": "ztop-80",
+   "chapter": "Nelson Mandela: Long Walk to Freedom",
+   "type": "write",
+   "q": "Give two points about setting. (Nelson Mandela: Long Walk to Freedom)",
+   "ans": "Mention two key facts about setting from the chapter 'Nelson Mandela: Long Walk to Freedom'."
+  }
+ ]
+}

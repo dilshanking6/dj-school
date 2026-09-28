@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useContext, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { 
-  Users, BookOpen, MessageSquare, Bell, 
-  Award, Calendar, ShieldCheck, Zap, 
-  ArrowRight, Sparkles, MapPin, Phone, Mail, Clock, Star
+import {
+  Users, BookOpen, MessageSquare, Bell, Award, Calendar, ShieldCheck,
+  ArrowRight, MapPin, Clock, Star, ChevronRight, GraduationCap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -13,272 +12,409 @@ import axios from 'axios';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const FEATURES = [
+  { title: 'Instant messaging', description: 'Direct and class conversations with teachers and classmates.', icon: MessageSquare, tone: 'text-blue-400' },
+  { title: 'Attendance', description: 'Daily register with a running percentage for every student.', icon: Users, tone: 'text-cyan-400' },
+  { title: 'Results', description: 'Subject-wise marks and a calculated average for each exam.', icon: Award, tone: 'text-violet-400' },
+  { title: 'Study material', description: 'Notes and homework shared by teachers in one place.', icon: BookOpen, tone: 'text-emerald-400' },
+  { title: 'Notices', description: 'Announcements from the office, delivered as soon as they are posted.', icon: Bell, tone: 'text-orange-400' },
+  { title: 'Events', description: 'Functions, sports and examinations on a shared calendar.', icon: Calendar, tone: 'text-rose-400' },
+  { title: 'Teacher feedback', description: 'Students can rate their teachers once per subject.', icon: Star, tone: 'text-amber-400' },
+  { title: 'Separate portals', description: 'Dedicated dashboards for students, teachers, the office and administrators.', icon: ShieldCheck, tone: 'text-indigo-400' }
+];
+
+const PORTALS = [
+  { role: 'Students', path: '/login', detail: 'Attendance, results, homework and teacher feedback.' },
+  { role: 'Teaching staff', path: '/teacher-login', detail: 'Mark attendance, publish material and upload results.' },
+  { role: 'School office', path: '/principal-login', detail: 'Whole-school view and the student complaint desk.' }
+];
+
 const LandingPage = () => {
-  const bgRef = useRef(null);
-  const statsRef = useRef(null);
+  const rootRef = useRef(null);
   const { user } = useContext(AuthContext);
+  const [stats, setStats] = useState(null);
   const [topTeachers, setTopTeachers] = useState([]);
-  const [portalStats, setPortalStats] = useState({
-    students: 0,
-    teachers: 0,
-    courses: 0,
-    successRate: 0
-  });
-  const [allRealTeachers, setAllRealTeachers] = useState([]);
+  const [studyOutlines, setStudyOutlines] = useState([]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    let active = true;
+
+    const load = async () => {
       try {
-        const [teachersRes, statsRes, allTeachersRes] = await Promise.all([
-          axios.get('/api/ratings/top'),
-          axios.get('/api/school/portal-stats'),
-          axios.get('/api/auth/teachers')
+        const [statsRes, teachersRes] = await Promise.allSettled([
+          axios.get('/api/public/portal-stats'),
+          axios.get('/api/public/top-teachers')
         ]);
-        setTopTeachers(teachersRes.data.slice(0, 3));
-        setPortalStats(statsRes.data);
-        setAllRealTeachers(allTeachersRes.data.slice(0, 3));
-      } catch (err) {
-        console.log('Error fetching portal data');
+        if (!active) return;
+        if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+        if (teachersRes.status === 'fulfilled') setTopTeachers(teachersRes.value.data.slice(0, 3));
+      } catch {
+        if (active) setStats(null);
       }
     };
-    fetchData();
+
+    load();
+
+    // Study Hub outline sab 4 classes ke liye light-weight hai (sirf counts).
+    const loadStudy = async () => {
+      try {
+        const results = await Promise.all(
+          [9, 10, 11, 12].map((c) => axios.get(`/api/study/outline?class=${c}&subjects=5`))
+        );
+        if (!active) return;
+        setStudyOutlines(results.map((r) => r.data).filter(Boolean));
+      } catch {
+        // Outline fail ho to section chhup jata hai.
+      }
+    };
+    loadStudy();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const displayTeachers = topTeachers.length > 0 ? topTeachers : allRealTeachers;
-
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.to(".bg-circle", {
-        x: "random(-100, 100)",
-        y: "random(-100, 100)",
-        duration: "random(10, 20)",
+    const context = gsap.context(() => {
+      gsap.to('.bg-orb', {
+        x: 'random(-70, 70)',
+        y: 'random(-70, 70)',
+        duration: 'random(12, 22)',
         repeat: -1,
         yoyo: true,
-        ease: "none",
-        stagger: {
-          each: 2,
-          from: "random"
-        }
+        ease: 'none',
+        stagger: { each: 2, from: 'random' }
       });
 
-      const stats = gsap.utils.toArray(".stat-number");
-      stats.forEach(stat => {
-        const target = parseInt(stat.getAttribute("data-target"));
-        gsap.to(stat, {
-          innerText: target,
-          duration: 2,
-          snap: { innerText: 1 },
-          scrollTrigger: {
-            trigger: stat,
-            start: "top 80%",
+      gsap.utils.toArray('.stat-value').forEach((node) => {
+        const target = Number(node.dataset.target || 0);
+        if (!target) return;
+        const state = { value: 0 };
+        gsap.to(state, {
+          value: target,
+          duration: 1.4,
+          ease: 'power2.out',
+          snap: { value: 1 },
+          scrollTrigger: { trigger: node, start: 'top 88%', once: true },
+          onUpdate: () => {
+            node.textContent = state.value.toLocaleString('en-IN');
           }
         });
       });
-    }, bgRef);
+    }, rootRef);
 
-    return () => ctx.revert();
-  }, []);
+    return () => context.revert();
+  }, [stats]);
 
-  const features = [
-    { title: 'Real-time Chat', icon: <MessageSquare className="text-blue-400" />, desc: 'Connect with classmates and teachers instantly.' },
-    { title: 'Attendance', icon: <Users className="text-cyan-400" />, desc: 'Track your daily attendance with live updates.' },
-    { title: 'Results', icon: <Award className="text-purple-400" />, desc: 'View and analyze your academic performance.' },
-    { title: 'Homework', icon: <BookOpen className="text-emerald-400" />, desc: 'Access assignments and submit them digitally.' },
-    { title: 'AI Assistant', icon: <Sparkles className="text-amber-400" />, desc: 'Get instant help from our smart school bot.' },
-    { title: 'Events', icon: <Calendar className="text-rose-400" />, desc: 'Stay updated with school functions and sports.' },
-    { title: 'Notifications', icon: <Bell className="text-orange-400" />, desc: 'Never miss an announcement with live alerts.' },
-    { title: 'Admin Control', icon: <ShieldCheck className="text-indigo-400" />, desc: 'Secure and powerful management tools.' },
-  ];
+  const dashboardPath = user ? `/${user.role.toLowerCase()}` : null;
+  const hasData = stats && (stats.students > 0 || stats.teachers > 0);
 
   return (
-    <div ref={bgRef} className="relative overflow-hidden pt-20">
-      {/* Animated Background */}
-      <div className="fixed inset-0 -z-10 bg-[#0F172A]">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[120px] rounded-full bg-circle"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full bg-circle"></div>
-        <div className="absolute top-[30%] right-[10%] w-[30%] h-[30%] bg-cyan-600/10 blur-[100px] rounded-full bg-circle"></div>
+    <div ref={rootRef} className="relative overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-600/20 blur-[110px] bg-orb sm:h-[28rem] sm:w-[28rem]" />
+        <div className="absolute -bottom-32 -right-24 h-72 w-72 rounded-full bg-violet-600/20 blur-[110px] bg-orb sm:h-[28rem] sm:w-[28rem]" />
+        <div className="absolute left-1/2 top-1/3 h-64 w-64 rounded-full bg-cyan-600/10 blur-[100px] bg-orb" />
       </div>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 flex flex-col lg:flex-row items-center gap-16">
-        <div className="flex-1 text-center lg:text-left">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6">
-              <Sparkles size={14} /> NEW: DIGITAL JANTA PORTAL V1.0
-            </div>
-            <h1 className="text-5xl lg:text-7xl font-black leading-tight mb-6">
-              Janta +2 <br />
-              <span className="text-gradient">High School</span>
-            </h1>
-            <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Located in the heart of Khalari, Jharkhand. We provide quality education and a connected digital ecosystem for our students to Learn, Connect, and Grow.
-            </p>
-            
-            {user ? (
-              <Link to={`/${user.role.toLowerCase()}`} className="inline-flex items-center gap-2 px-10 py-4 bg-primary rounded-2xl font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-primary/20">
-                Go to My Dashboard <ArrowRight size={20} />
-              </Link>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <Link to="/register" className="w-full sm:w-auto px-10 py-4 bg-primary rounded-2xl font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2">
-                  Join School <ArrowRight size={20} />
-                </Link>
-                <Link to="/login" className="w-full sm:w-auto px-10 py-4 glass-effect rounded-2xl font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2">
-                  Student Login
-                </Link>
-              </div>
-            )}
-          </motion.div>
-        </div>
-
-        <div className="flex-1 relative">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-effect rounded-[3rem] p-10 border border-white/10 relative overflow-hidden"
-          >
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <MapPin className="text-primary mt-1" />
-                <div>
-                  <h3 className="font-bold">Address</h3>
-                  <p className="text-sm text-gray-400">MX2Q+4JC, Bazar tand Road, Khalari, Jharkhand 829205, India</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Clock className="text-accent mt-1" />
-                <div>
-                  <h3 className="font-bold">School Hours</h3>
-                  <p className="text-sm text-gray-400">Monday - Saturday: 08:00 AM - 02:30 PM</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Phone className="text-purple-400 mt-1" />
-                <div>
-                  <h3 className="font-bold">Contact</h3>
-                  <p className="text-sm text-gray-400">+91 (Waiting for update)</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-8 pt-8 border-t border-white/5">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-primary font-black">DJ</div>
-                <div>
-                  <h4 className="font-bold text-sm">Digital Janta Platform</h4>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">Official Smart School System</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section ref={statsRef} className="py-20 bg-secondary/30 border-y border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { label: 'Students', target: portalStats.students, suffix: '+' },
-            { label: 'Teachers', target: portalStats.teachers, suffix: '+' },
-            { label: 'Courses', target: portalStats.courses, suffix: '+' },
-            { label: 'Success Rate', target: portalStats.successRate, suffix: '%' },
-          ].map((stat, i) => (
-            <div key={i} className="text-center">
-              <div className="text-4xl lg:text-6xl font-black text-primary mb-2">
-                <span className="stat-number" data-target={stat.target}>0</span>{stat.suffix}
-              </div>
-              <div className="text-gray-500 font-bold uppercase tracking-widest text-xs">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Best Teachers Section */}
-      <section className="py-20 lg:py-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-black mb-4">Our Best <span className="text-primary">Teachers</span></h2>
-          <p className="text-gray-400">Guiding our students towards a brighter future with excellence.</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {displayTeachers.map((teacher, i) => (
-            <motion.div 
-              key={i}
-              whileHover={{ y: -10 }}
-              className="glass-effect p-8 rounded-[2.5rem] border border-white/5 text-center relative group"
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-8 lg:pb-24 lg:pt-40">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="text-center lg:text-left">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <div className="absolute top-6 right-6 flex items-center gap-1 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-500 text-xs font-black">
-                <Star size={12} fill="currentColor" /> {teacher.avg}
-              </div>
-              <div className="w-24 h-24 bg-primary/10 rounded-full mx-auto mb-6 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                <Users size={40} />
-              </div>
-              <h3 className="text-xl font-bold mb-1">{teacher.name}</h3>
-              <p className="text-sm text-primary font-bold mb-4">{teacher.subject || teacher.sub}</p>
-              <div className="inline-block px-4 py-1 bg-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-gray-500">
-                {teacher.count} TOTAL VOTES
+              <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[11px] font-bold text-primary">
+                Digital Janta Portal
+              </span>
+
+              <h1 className="text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+                Janta +2
+                <br />
+                <span className="text-gradient">High School</span>
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg lg:mx-0">
+                The official digital platform of Janta +2 High School, Khalari. Attendance,
+                results, study material and school communication for students, teachers and
+                the office.
+              </p>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+                {user ? (
+                  <Link
+                    to={dashboardPath}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-bold text-white transition-all active:scale-[0.99] glow-shadow"
+                  >
+                    Open my dashboard
+                    <ArrowRight size={18} />
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/register"
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-bold text-white transition-all active:scale-[0.99] glow-shadow"
+                    >
+                      Create student account
+                      <ArrowRight size={18} />
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="flex items-center justify-center gap-2 rounded-2xl glass-effect px-8 py-4 text-base font-bold transition-colors hover:bg-white/10"
+                    >
+                      Sign in
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
-          ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="glass-effect relative overflow-hidden rounded-3xl border border-white/10 p-6 sm:p-8"
+          >
+            <dl className="space-y-5">
+              <div className="flex items-start gap-4">
+                <MapPin className="mt-1 shrink-0 text-primary" size={20} />
+                <div className="min-w-0">
+                  <dt className="font-bold">Campus</dt>
+                  <dd className="mt-0.5 text-sm leading-relaxed text-slate-400">
+                    Bazar Tand Road, Khalari, Jharkhand 829205
+                  </dd>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <Clock className="mt-1 shrink-0 text-accent" size={20} />
+                <div className="min-w-0">
+                  <dt className="font-bold">School hours</dt>
+                  <dd className="mt-0.5 text-sm leading-relaxed text-slate-400">
+                    Monday to Saturday, 8:00 AM to 2:30 PM
+                  </dd>
+                </div>
+              </div>
+            </dl>
+
+            <div className="mt-7 flex flex-wrap gap-2 border-t border-white/5 pt-6">
+              {PORTALS.map((item) => (
+                <Link
+                  key={item.role}
+                  to={item.path}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold text-slate-300 transition-colors hover:border-primary/40 hover:text-white"
+                >
+                  {item.role}
+                  <ChevronRight size={13} />
+                </Link>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 lg:py-32 bg-background/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black mb-6">Smart Campus Features</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">Modern tools for modern learning. All integrated into one seamless platform.</p>
+      <section className="border-y border-white/5 bg-secondary/30 py-14 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {hasData ? (
+            <dl className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
+              {[
+                { label: 'Students', value: stats.students, suffix: '' },
+                { label: 'Teaching staff', value: stats.teachers, suffix: '' },
+                { label: 'Sections', value: stats.sections, suffix: '' },
+                { label: 'Average score', value: stats.averageScore, suffix: '%' }
+              ].map((item) => (
+                <div key={item.label} className="text-center">
+                  <dd className="metric-value text-primary">
+                    <span className="stat-value" data-target={item.value ?? 0}>
+                      0
+                    </span>
+                    <span className="text-2xl">{item.value ? item.suffix : ''}</span>
+                  </dd>
+                  <dt className="mt-2 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
+                    {item.label}
+                  </dt>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="text-center text-sm text-slate-500">
+              School figures appear here once the portal is in use.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {topTeachers.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="mb-10 text-center sm:mb-14">
+            <h2 className="text-2xl font-black sm:text-3xl lg:text-4xl">Faculty feedback</h2>
+            <p className="mt-3 text-slate-400">
+              Rated by students through the portal.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -5, scale: 1.02 }}
-                className="p-8 glass-effect rounded-[2rem] border border-white/10 group transition-all"
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {topTeachers.map((teacher, index) => (
+              <motion.article
+                key={teacher.id || index}
+                whileHover={{ y: -6 }}
+                className="glass-effect relative rounded-3xl border border-white/5 p-6 text-center sm:p-7"
               >
-                <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-all">
-                  {React.cloneElement(feature.icon, { size: 24 })}
-                </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-gray-400 text-xs leading-relaxed">{feature.desc}</p>
-              </motion.div>
+                <span className="absolute right-5 top-5 inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs font-black text-amber-400">
+                  <Star size={12} fill="currentColor" />
+                  {teacher.avg}
+                </span>
+
+                <span className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-white">
+                  <Users size={28} />
+                </span>
+
+                <h3 className="text-lg font-bold">{teacher.name}</h3>
+                <p className="mt-1 text-sm font-bold text-primary">{teacher.subject || 'General'}</p>
+                <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
+                  {teacher.count} ratings
+                </p>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {studyOutlines.length > 0 && (
+        <section id="study-hub" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="mb-10 text-center sm:mb-14">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-[11px] font-bold text-primary">
+              <GraduationCap size={13} />
+              Study Hub
+            </span>
+            <h2 className="text-2xl font-black sm:text-3xl lg:text-4xl">Class 9–12 study material, free</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-slate-400">
+              Chapter-wise notes, key points and thousands of practice questions — no login needed.
+              Students opening it from their portal get their own class locked in automatically.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {studyOutlines.map((outline) => {
+              const totalQuestions = outline.subjects.reduce((sum, s) => sum + (s.questionCount || 0), 0);
+              const totalChapters = outline.subjects.reduce((sum, s) => sum + (s.chapterCount || 0), 0);
+              return (
+                <motion.a
+                  key={outline.class}
+                  href={`/study/index.html?class=${outline.class}&locked=1`}
+                  whileHover={{ y: -5 }}
+                  className="glass-effect group block rounded-3xl border border-white/10 p-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-black text-gradient">{outline.class}</span>
+                    <ChevronRight size={18} className="text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                  </div>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
+                    {outline.label} class
+                  </p>
+                  <ul className="mt-5 space-y-1.5">
+                    {outline.subjects.slice(0, 4).map((subject) => (
+                      <li key={subject.id} className="flex items-center gap-2 text-sm text-slate-300">
+                        <span>{subject.emoji}</span>
+                        <span className="truncate">{subject.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-5 border-t border-white/5 pt-4 text-[11px] font-bold uppercase tracking-[0.15em] text-primary">
+                    {totalChapters} chapters · {totalQuestions.toLocaleString('en-IN')} questions
+                  </p>
+                </motion.a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section id="features" className="bg-background/50 py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="text-2xl font-black sm:text-3xl lg:text-4xl">What the portal covers</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-slate-400">
+              One place for everyday school activity across every role.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((feature) => (
+              <motion.article
+                key={feature.title}
+                whileHover={{ y: -4 }}
+                className="glass-effect rounded-3xl border border-white/10 p-6"
+              >
+                <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5">
+                  <feature.icon size={22} className={feature.tone} />
+                </span>
+                <h3 className="font-bold">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">{feature.description}</p>
+              </motion.article>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-white/5 text-center px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left mb-12">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mb-12 text-center">
+          <h2 className="text-2xl font-black sm:text-3xl lg:text-4xl">Choose your portal</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-slate-400">
+            Each role sees only the tools that apply to them.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {PORTALS.map((item) => (
+            <Link
+              key={item.role}
+              to={item.path}
+              className="glass-effect group flex flex-col rounded-3xl border border-white/10 p-6 transition-colors hover:border-primary/40"
+            >
+              <h3 className="text-lg font-bold">{item.role}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">{item.detail}</p>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-primary">
+                Sign in
+                <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <footer className="border-t border-white/5 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 sm:grid-cols-3">
             <div>
-              <h3 className="text-xl font-black mb-6 text-gradient inline-block">Digital Janta</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">The official digital portal for Janta +2 High School, Khalari. Empowering education through technology.</p>
+              <p className="text-gradient text-lg font-black">Digital Janta</p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                The official digital platform of Janta +2 High School, Khalari.
+              </p>
             </div>
             <div>
-              <h4 className="font-bold mb-6">Quick Links</h4>
-              <ul className="space-y-3 text-sm text-gray-400">
-                <li><Link to="/login" className="hover:text-primary transition-colors">Student Login</Link></li>
-                <li><Link to="/register" className="hover:text-primary transition-colors">Apply for Admission</Link></li>
-                <li><Link to="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link></li>
+              <h3 className="font-bold">Portals</h3>
+              <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
+                <li><Link to="/login" className="transition-colors hover:text-primary">Student sign in</Link></li>
+                <li><Link to="/teacher-login" className="transition-colors hover:text-primary">Teacher sign in</Link></li>
+                <li><Link to="/principal-login" className="transition-colors hover:text-primary">School office sign in</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-6">Location</h4>
-              <p className="text-sm text-gray-400 flex gap-2">
-                <MapPin size={16} className="shrink-0 text-primary" />
-                Khalari, Jharkhand 829205, India
+              <h3 className="font-bold">Campus</h3>
+              <p className="mt-4 flex items-start gap-2 text-sm text-slate-400">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
+                Bazar Tand Road, Khalari, Jharkhand 829205
               </p>
             </div>
           </div>
-          <div className="pt-8 border-t border-white/5 text-gray-600 text-[10px] uppercase tracking-widest font-bold">
-            &copy; 2026 Digital Janta | Janta +2 High School | Built by DILSHAN
+
+          <div className="mt-10 flex flex-col items-center gap-2 border-t border-white/5 pt-7 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-slate-600 sm:flex-row sm:justify-between sm:text-left">
+            <span>&copy; {new Date().getFullYear()} Digital Janta, Janta +2 High School</span>
+            <Link to="/terms" className="transition-colors hover:text-slate-400">
+              Terms and conditions
+            </Link>
           </div>
         </div>
       </footer>
