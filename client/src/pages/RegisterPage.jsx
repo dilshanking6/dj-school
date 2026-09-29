@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mail, Lock, User, BookOpen, ArrowRight, Phone, GraduationCap,
-  Camera, Plus, Loader2, ChevronLeft
+  Camera, Plus, Loader2, ChevronLeft, BadgeCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -10,6 +10,15 @@ import axios from 'axios';
 const field = 'w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 outline-none focus:border-primary/50 transition-colors text-sm placeholder:text-slate-500';
 
 const label = 'block text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-2';
+
+// Server ke `validate.js` wahi rules yahan mirror karte hain, taaki user ko
+// type karte hi pata chale password kitna strong hai.
+const PASSWORD_RULES = [
+  { label: '8+ characters', test: (value) => value.length >= 8 },
+  { label: 'A letter (a-z)', test: (value) => /[a-zA-Z]/.test(value) },
+  { label: 'A number (0-9)', test: (value) => /[0-9]/.test(value) },
+  { label: 'A symbol (@ # _)', test: (value) => /[^a-zA-Z0-9]/.test(value) }
+];
 
 const IconField = ({ icon: Icon, ...props }) => (
   <div className="relative">
@@ -30,6 +39,13 @@ const RegisterPage = ({ role = 'student' }) => {
   const [avatar, setAvatar] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [emailProof, setEmailProof] = useState('');
+  const [devCode, setDevCode] = useState('');
   const navigate = useNavigate();
 
   const loginPath = role === 'student' ? '/login' : `/${role}-login`;
@@ -58,12 +74,50 @@ const RegisterPage = ({ role = 'student' }) => {
     reader.readAsDataURL(file);
   };
 
+  const sendOtp = async () => {
+    setOtpLoading(true);
+    setError('');
+    setVerified(false);
+    setEmailProof('');
+    try {
+      const { data } = await axios.post('/api/auth/email-otp/request', { email: form.email });
+      setOtpSent(true);
+      setDevCode(data.devCode || '');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not send the verification code.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    setVerifying(true);
+    setError('');
+    try {
+      const { data } = await axios.post('/api/auth/email-otp/verify', {
+        email: form.email,
+        code: otpCode
+      });
+      setEmailProof(data.emailProof);
+      setVerified(true);
+      setDevCode('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Incorrect verification code.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const submit = async (event) => {
     event.preventDefault();
+    if (!verified) {
+      setError('Verify your email address before creating the account.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await axios.post('/api/auth/register', { ...form, role, avatar });
+      await axios.post('/api/auth/register', { ...form, role, avatar, emailProof });
       navigate(loginPath, { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
@@ -152,17 +206,26 @@ const RegisterPage = ({ role = 'student' }) => {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
-                <label className={label} htmlFor="email">Email address</label>
+                <label className={label} htmlFor="email">Email address (Gmail)</label>
                 <IconField
                   id="email"
                   icon={Mail}
                   type="email"
                   value={form.email}
-                  onChange={set('email')}
-                  placeholder="name@school.edu"
+                  onChange={(event) => {
+                    setForm((prev) => ({ ...prev, email: event.target.value }));
+                    setError('');
+                    setVerified(false);
+                    setEmailProof('');
+                    setOtpCode('');
+                  }}
+                  placeholder="name@gmail.com"
                   autoComplete="email"
                   required
                 />
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  Sirf asli Gmail chalega — account banne se pehle verify bhi karna hoga.
+                </p>
               </div>
               <div>
                 <label className={label} htmlFor="phone">Mobile number</label>
@@ -178,6 +241,52 @@ const RegisterPage = ({ role = 'student' }) => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="flex-1">
+                  <label className={label} htmlFor="emailOtp">Email verification code</label>
+                  <input
+                    id="emailOtp"
+                    inputMode="numeric"
+                    value={otpCode}
+                    onChange={(event) => { setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+                    placeholder={verified ? 'Email verified' : '6-digit code'}
+                    className={`${field} tracking-[0.3em] ${verified ? 'opacity-70' : ''}`}
+                    disabled={!otpSent || verified}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  {verified ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3.5 text-sm font-bold text-emerald-400">
+                      <BadgeCheck size={18} /> Verified
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={sendOtp}
+                        disabled={otpLoading || !form.email}
+                        className="rounded-2xl border border-white/10 px-4 py-3.5 text-sm font-bold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
+                      >
+                        {otpLoading ? <Loader2 size={16} className="animate-spin" /> : 'Send code'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={verifyOtp}
+                        disabled={verifying || otpCode.length !== 6}
+                        className="rounded-2xl bg-primary px-4 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-40"
+                      >
+                        {verifying ? <Loader2 size={16} className="animate-spin" /> : 'Verify'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+              {devCode && (
+                <p className="mt-2 text-[11px] font-bold text-amber-400">Dev code: {devCode}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -265,16 +374,27 @@ const RegisterPage = ({ role = 'student' }) => {
                   type="password"
                   value={form.password}
                   onChange={set('password')}
-                  placeholder="At least 8 characters, with a number"
+                  placeholder="At least 8 characters"
                   autoComplete="new-password"
                   className={`${field} pl-12`}
                   minLength={8}
                   required
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-500">
-                Use at least 8 characters and include both letters and numbers.
-              </p>
+              <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                {PASSWORD_RULES.map((rule) => {
+                  const ok = rule.test(form.password);
+                  return (
+                    <li
+                      key={rule.label}
+                      className={`flex items-center gap-1.5 ${ok ? 'text-emerald-400' : 'text-slate-500'}`}
+                    >
+                      {ok ? <BadgeCheck size={13} /> : <span className="inline-block h-[13px] w-[13px] rounded-full border border-current" />}
+                      {rule.label}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
 
             <button

@@ -1,7 +1,8 @@
 const express = require('express');
 const {
   requestOtp, login, register, changePassword,
-  updateProfile, listTeachers, deleteAccount
+  updateProfile, listTeachers, deleteAccount,
+  requestEmailOtp, verifyEmailOtp
 } = require('../controllers/authController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { rateLimit } = require('../middleware/rateLimit');
@@ -14,6 +15,8 @@ const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 6, message: 'Too m
 const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Too many accounts created from this network. Try again later.' });
 
 router.post('/otp/request', otpLimiter, asyncRoute(requestOtp));
+router.post('/email-otp/request', otpLimiter, asyncRoute(requestEmailOtp));
+router.post('/email-otp/verify', otpLimiter, asyncRoute(verifyEmailOtp));
 router.post('/login', loginLimiter, asyncRoute(login));
 router.post('/register', registerLimiter, asyncRoute(register));
 

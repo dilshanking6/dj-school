@@ -7,6 +7,7 @@ import {
   X, ShieldCheck, Home, GraduationCap, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 const iconClass = 'w-[22px] h-[22px] shrink-0';
 
@@ -177,6 +178,10 @@ const Sidebar = ({ role, open, onClose }) => {
         </div>
 
         <div className="border-t border-white/5 p-3">
+          <div className="flex items-center justify-between px-4 py-2">
+            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">Appearance</span>
+            <ThemeToggle />
+          </div>
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-semibold text-rose-400 transition-colors hover:bg-rose-500/10 min-h-11"

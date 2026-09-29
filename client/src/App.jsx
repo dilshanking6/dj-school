@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import AIAssistant from './components/AIAssistant';
 import LandingPage from './pages/LandingPage';
@@ -28,6 +29,33 @@ const dashboards = {
   admin: { component: AdminDashboard, loginPath: '/admin-login' }
 };
 
+const ThemedToaster = () => {
+  const { isLight } = useTheme();
+  return (
+    <Toaster
+      position="top-center"
+      toastOptions={{
+        duration: 3500,
+        style: isLight
+          ? {
+              background: '#FFFFFF',
+              color: '#0F172A',
+              border: '1px solid rgba(15,23,42,0.12)',
+              fontSize: '0.875rem',
+              maxWidth: '90vw'
+            }
+          : {
+              background: '#16213A',
+              color: '#F8FAFC',
+              border: '1px solid rgba(255,255,255,0.1)',
+              fontSize: '0.875rem',
+              maxWidth: '90vw'
+            }
+      }}
+    />
+  );
+};
+
 const PortalRoute = ({ role }) => {
   const { user, loading } = useContext(AuthContext);
   const entry = dashboards[role];
@@ -46,23 +74,12 @@ const PortalRoute = ({ role }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3500,
-            style: {
-              background: '#16213A',
-              color: '#F8FAFC',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontSize: '0.875rem',
-              maxWidth: '90vw'
-            }
-          }}
-        />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <ThemedToaster />
 
-        <div className="min-h-[100dvh] bg-background text-white font-sans">
+          <div className="min-h-[100dvh] bg-background text-white font-sans">
           <Navbar />
 
           <Routes>
@@ -92,8 +109,9 @@ function App() {
 
           <AIAssistant />
         </div>
-      </Router>
-    </AuthProvider>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

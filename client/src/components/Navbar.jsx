@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, User, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 const PORTAL_ROOTS = ['/student', '/teacher', '/principal', '/admin'];
 
@@ -112,6 +113,7 @@ const Navbar = () => {
                 </Link>
               </div>
             )}
+            <ThemeToggle className="-mr-1" />
           </div>
 
           <button
@@ -135,6 +137,10 @@ const Navbar = () => {
             className="lg:hidden overflow-hidden border-t border-white/5 glass-effect"
           >
             <div className="px-4 py-4 space-y-1" style={{ paddingBottom: 'calc(1rem + var(--safe-bottom))' }}>
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">Appearance</span>
+                <ThemeToggle />
+              </div>
               {links.map((link) => (
                 <Link
                   key={link.name}

@@ -16,9 +16,24 @@ const optionalText = (value, field, options = {}) => {
   return text(value, field, options);
 };
 
+// Sirf asli Google Mail allow hai — koi bhi free/fake provider nahi
+// (example.com, @dj.edu, ya kisi aur domain ka address register nahi hoga).
+// Isse portal par sirf wo log account banate hain jinke paas sach me
+// inbox control hai, aur email OTP bhi unhi tak pahunch sakta hai.
+const ALLOWED_EMAIL_DOMAINS = new Set(
+  (process.env.ALLOWED_EMAIL_DOMAINS || 'gmail.com')
+    .split(',')
+    .map((domain) => domain.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 const email = (value) => {
   const out = text(value, 'Email', { max: 254 }).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(out)) throw new HttpError(400, 'Enter a valid email address');
+  const domain = out.split('@')[1];
+  if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
+    throw new HttpError(400, `Only ${[...ALLOWED_EMAIL_DOMAINS].join(', ')} email addresses are allowed`);
+  }
   return out;
 };
 
@@ -30,13 +45,53 @@ const phone = (value) => {
 
 const optionalPhone = (value) => (isBlank(value) ? '' : phone(value));
 
+// Kamzor password reject karne wala list. Ye passwords itne common hain ki
+// koi serious account inhe use hi nahi karna chahiye.
+const WEAK_PASSWORDS = new Set([
+  'password', 'password1', 'password123', 'pass123', 'pass1234', '12345678',
+  '123456789', '1234567890', 'qwerty123', 'qwertyuiop', 'iloveyou',
+  'admin123', 'admin@123', 'administrator', 'welcome123', 'letmein123',
+  'abc12345', 'abcd1234', 'student123', 'teacher123', 'school123',
+  'default', 'changeme', '123456789a'
+]);
+
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 128;
+
+/**
+ * Strong password: kam se kam 8 character, aur teeno chahiye —
+ * ek letter, ek number, ek special character. Weak/common password
+ * list par bhi reject karta hai taaki account guess karna mushkil ho.
+ */
 const password = (value) => {
   const out = String(value ?? '');
-  if (out.length < 8) throw new HttpError(400, 'Password must be at least 8 characters');
-  if (out.length > 128) throw new HttpError(400, 'Password must be under 128 characters');
-  if (!/[a-zA-Z]/.test(out) || !/[0-9]/.test(out)) {
-    throw new HttpError(400, 'Password must contain both letters and numbers');
+
+  if (out.length < PASSWORD_MIN) {
+    throw new HttpError(400, `Password must be at least ${PASSWORD_MIN} characters`);
   }
+  if (out.length > PASSWORD_MAX) {
+    throw new HttpError(400, `Password must be under ${PASSWORD_MAX} characters`);
+  }
+
+  const hasLetter = /[a-zA-Z]/.test(out);
+  const hasNumber = /[0-9]/.test(out);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(out);
+
+  if (!hasLetter || !hasNumber || !hasSpecial) {
+    throw new HttpError(400, 'Password must contain a letter, a number and a special character (for example @, # or _)');
+  }
+
+  const lowered = out.toLowerCase();
+  if (WEAK_PASSWORDS.has(lowered)) {
+    throw new HttpError(400, 'This password is too common. Choose a stronger one.');
+  }
+  if (/^(.)\1+$/.test(out)) {
+    throw new HttpError(400, 'Password must not be the same character repeated.');
+  }
+  if (/^(0123456789|1234567890|abcdefghij|qwertyuiop)/i.test(lowered)) {
+    throw new HttpError(400, 'Password must not be a simple keyboard or number sequence.');
+  }
+
   return out;
 };
 
@@ -113,5 +168,6 @@ const array = (value, field, { max = 500, min = 0 } = {}) => {
 module.exports = {
   isBlank, text, optionalText, email, phone, optionalPhone, password,
   oneOf, optionalOneOf, int, isoDate, timeString, url, optionalUrl,
-  dataUrl, optionalDataUrl, array
+  dataUrl, optionalDataUrl, array,
+  ALLOWED_EMAIL_DOMAINS, PASSWORD_MIN, PASSWORD_MAX
 };

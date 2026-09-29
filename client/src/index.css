@@ -39,6 +39,65 @@ body {
   overscroll-behavior-y: none;
 }
 
+/**
+ * Light theme.
+ *
+ * Poora UI dark colours (text-slate-300, bg-white/5, border-white/10) par
+ * likha gaya hai — 300+ jagah. Un ek ek karke badalna fragile hota, isliye
+ * Tailwind ke `slate` scale ko ulta kar dete hain aur `white` ko halke
+ * ink-tone par le jaate hain. Isse wahi class light mode me bhi sahi colour
+ * de deti hai bina markup chhede.
+ */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --background: #EEF2F7;
+  --secondary: #FFFFFF;
+  --surface: #FFFFFF;
+
+  --color-slate-50: #0F172A;
+  --color-slate-100: #1E293B;
+  --color-slate-200: #334155;
+  --color-slate-300: #475569;
+  --color-slate-400: #64748B;
+  --color-slate-500: #94A3B8;
+  --color-slate-600: #CBD5E1;
+  --color-slate-700: #E2E8F0;
+  --color-slate-800: #F1F5F9;
+  --color-slate-900: #F8FAFC;
+  --color-slate-950: #FFFFFF;
+
+  --color-white: #0F172A;
+}
+
+[data-theme='light'] body {
+  color: #0F172A;
+}
+
+[data-theme='light'] .glass-effect {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.09);
+}
+
+[data-theme='light'] .page-subtitle {
+  color: #64748B;
+}
+
+[data-theme='light'] .hairline {
+  border-color: rgba(15, 23, 42, 0.10);
+}
+
+[data-theme='light'] select option {
+  background-color: #FFFFFF;
+  color: #0F172A;
+}
+
+/* Theme badalte waqt page ka ek saath flash na ho. */
+html.theme-transition,
+html.theme-transition * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+}
+
 #root {
   min-height: 100dvh;
   isolation: isolate;

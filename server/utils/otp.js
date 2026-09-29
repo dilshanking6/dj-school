@@ -20,10 +20,19 @@ timer.unref();
 
 const normalisePhone = (phone) => String(phone).replace(/[\s-]/g, '');
 
+const normaliseEmail = (email) => String(email).trim().toLowerCase();
+
 const generate = () => String(crypto.randomInt(100000, 1000000));
 
-const create = async (phone) => {
-  const key = normalisePhone(phone);
+/**
+ * Code 'phone' ya 'email' channel ke liye banaya ja sakta hai. Store key me
+ * channel ka prefix hota hai, taaki ek hi phone aur ek hi email par alag
+ * code chal sakein aur dono ek doosre ko verify na kar sakein.
+ */
+const keyFor = (kind, value) => `${kind}:${kind === 'email' ? normaliseEmail(value) : normalisePhone(value)}`;
+
+const create = async (kind, value) => {
+  const key = keyFor(kind, value);
   const now = Date.now();
   const existing = store.get(key);
 
@@ -45,8 +54,8 @@ const create = async (phone) => {
   return code;
 };
 
-const verify = async (phone, code) => {
-  const key = normalisePhone(phone);
+const verify = async (kind, value, code) => {
+  const key = keyFor(kind, value);
   const record = store.get(key);
   const fail = (message, status = 401) => {
     const error = new Error(message);
@@ -75,4 +84,4 @@ const verify = async (phone, code) => {
   return true;
 };
 
-module.exports = { create, verify, normalisePhone };
+module.exports = { create, verify, keyFor, normalisePhone, normaliseEmail };

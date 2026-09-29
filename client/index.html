@@ -13,6 +13,26 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <title>Digital Janta | Janta +2 High School, Khalari</title>
+    <script>
+      // React load hone se pehle hi theme laga do, warna dark se light
+      // switch karte waqt ek safed flash dikhta hai.
+      (function () {
+        try {
+          var stored = localStorage.getItem('dj_theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#EEF2F7');
+          }
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

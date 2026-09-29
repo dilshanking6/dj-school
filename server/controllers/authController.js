@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
-const { getSheetData, appendSheetData, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
+const crypto = require('crypto');
+const { getSheetData, appendSheetData, updateSheetData, deleteSheetData, sendEmail } = require('../utils/googleSheets');
 const { HttpError, signToken, ROLES } = require('../middleware/auth');
 const v = require('../middleware/validate');
 const otp = require('../utils/otp');
@@ -99,7 +100,7 @@ const requestOtp = async (req, res) => {
     throw new HttpError(403, 'This account has been suspended. Contact the school office.');
   }
 
-  const code = await otp.create(phone);
+  const code = await otp.create('phone', phone);
 
   const webhook = process.env.SMS_WEBHOOK_URL;
   if (webhook) {
@@ -121,12 +122,90 @@ const requestOtp = async (req, res) => {
   });
 };
 
+/**
+ * Email OTP ke baad ek chhoti si proof token milti hai. Register karte waqt
+ * ye token saath bhejna zaroori hai — iske bina koi naya account nahi ban
+ * sakta, to ek fake email address bhi aage nahi aa sakta.
+ */
+const PROOF_TTL_MS = 15 * 60 * 1000;
+const proofStore = new Map();
+
+const issueEmailProof = (email) => {
+  const proof = crypto.randomBytes(24).toString('hex');
+  proofStore.set(email, { proof, expiresAt: Date.now() + PROOF_TTL_MS });
+  return proof;
+};
+
+const consumeEmailProof = (email, proof) => {
+  const record = proofStore.get(email);
+  if (!record) {
+    throw new HttpError(400, 'Verify your email address first — request a verification code.');
+  }
+  if (record.expiresAt < Date.now()) {
+    proofStore.delete(email);
+    throw new HttpError(400, 'Email verification expired. Request a new code.');
+  }
+  if (!proof || String(proof) !== record.proof) {
+    throw new HttpError(400, 'Email verification is not valid. Request a new code.');
+  }
+  // Ek baar use hone ke baad proof khatam — dobara use nahi ho sakta.
+  proofStore.delete(email);
+  return true;
+};
+
+const requestEmailOtp = async (req, res) => {
+  const email = v.email(req.body.email);
+
+  const code = await otp.create('email', email);
+  const subject = 'Your Digital Janta verification code';
+  const body =
+    `Your verification code is ${code}\n\n` +
+    `It expires in 5 minutes. If you did not request this code you can ignore this email.`;
+
+  const send = async () => {
+    await sendEmail({ to: email, subject, body });
+  };
+
+  if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_EMAIL_CODE) {
+    try {
+      await send();
+    } catch (error) {
+      console.error('[email-otp] send failed:', error.message);
+      throw new HttpError(503, 'Could not send the verification email. Please try again in a moment.');
+    }
+  } else {
+    // Dev me email bhejne ka system nahi hota — code console me dikhata hai.
+    console.log(`[email-otp] ${email} -> ${code}`);
+  }
+
+  res.json({
+    message: 'Verification code sent to your email',
+    expiresIn: 300,
+    ...(process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_EMAIL_CODE
+      ? {}
+      : { devCode: code })
+  });
+};
+
+const verifyEmailOtp = async (req, res) => {
+  const email = v.email(req.body.email);
+  const code = v.text(req.body.code, 'Verification code', { max: 10 });
+
+  await otp.verify('email', email, code);
+
+  res.json({
+    message: 'Email verified',
+    emailProof: issueEmailProof(email),
+    expiresIn: PROOF_TTL_MS / 1000
+  });
+};
+
 const login = async (req, res) => {
   const { role, otp: code } = req.body;
 
   if (req.body.phone) {
     const phone = v.phone(v.text(req.body.phone, 'Phone number', { max: 20 }));
-    await otp.verify(phone, v.text(code, 'Verification code', { max: 10 }));
+    await otp.verify('phone', phone, v.text(code, 'Verification code', { max: 10 }));
 
     const found = await findUserByPhone(phone);
     if (!found) throw new HttpError(401, 'Account not found');
@@ -193,6 +272,9 @@ const register = async (req, res) => {
 
   const existing = await findUserByEmail(email);
   if (existing) throw new HttpError(409, 'An account with this email already exists');
+
+  // Email OTP proof ke bina account ban hi nahi sakta.
+  consumeEmailProof(email, req.body.emailProof);
 
   const phoneTaken = await findUserByPhone(phone);
   if (phoneTaken) throw new HttpError(409, 'An account with this phone number already exists');
@@ -466,6 +548,7 @@ const createUserByOffice = async (req, res) => {
 module.exports = {
   requestOtp, login, register, changePassword,
   updateProfile, listTeachers, deleteAccount, createUserByOffice,
+  requestEmailOtp, verifyEmailOtp,
   toUser, publicUser, findUserById, findUserByEmail, findUserByPhone,
   findStudentDuplicate
 };

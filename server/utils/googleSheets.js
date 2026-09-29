@@ -129,6 +129,20 @@ async function deleteSheetData(sheetName, id) {
   return true;
 }
 
+/**
+ * Email bhejne ka kaam bhi deployed Apps Script se hi hota hai, kyunki usi
+ * Google account ke paas Gmail ka access hai. Ye tab kaam karega jab script
+ * me neeche diya gaya `sendMail` handler add karke dobara deploy kiya gaya ho.
+ * Tab tak ye clear error deta hai — chup chaap fail nahi hota.
+ */
+async function sendEmail({ to, subject, body }) {
+  if (!appsScriptUrl()) {
+    throw new SheetError('Email service is not configured.', null);
+  }
+  await post({ action: 'sendMail', to, subject, body }, writeTimeout());
+  return true;
+}
+
 const storageConfigured = () => Boolean(appsScriptUrl());
 
 module.exports = {
@@ -136,6 +150,7 @@ module.exports = {
   appendSheetData,
   updateSheetData,
   deleteSheetData,
+  sendEmail,
   bustSheetCache,
   storageConfigured,
   SheetError
