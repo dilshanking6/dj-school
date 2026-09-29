@@ -22,9 +22,10 @@ const errorHandler = (err, req, res, next) => {
   }
 
   const body = {
-    // `expose` wale errors (OTP mail/SMS delivery failures) ka message khud
-    // safe hai aur user ko dikhana zaroori hai — warna "Something went wrong"
-    // dikh kar asli wajah (galat App Password, provider reject) chhup jaati thi.
+    // `expose` wale errors ka message khud user ke liye likha gaya hota hai
+    // ("Email par code nahi bhej paaye"), isliye wo seedha dikhana zaroori hai.
+    // Asli technical wajah (env var, SMTP ka raw message) hamesha log me
+    // rahegi, browser tak nahi aani chahiye.
     error: err.expose && err.message
       ? err.message
       : status >= 500

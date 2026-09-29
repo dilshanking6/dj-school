@@ -116,14 +116,19 @@ const otpHtml = (code) =>
  * Email OTP bhejta hai. Teen hisse se ek ho sakta hai:
  *  - mail configured + delivery successful -> code inbox me
  *  - dev mode (code screen par dikhaya jata hai) -> code log + response me
- *  - production me koi bhi provider nahi/fail -> saaf error, jisme wajah
- *    likhi hoti hai (warna user ko sirf "kuch gadbad ho gayi" milta tha)
+ *  - production me koi bhi provider nahi/fail -> saaf error
+ *
+ * Browser ko sirf saaf baat dikhti hai. Asli wajah (kaunsa env var missing,
+ * SMTP ka raw message) server log me jaata hai, jahan office ka admin use
+ * padh sakta hai — ek student ko `SMTP_PASS` dikhane ka koi matlab nahi,
+ * wo sirf confuse hoga. Pehle yahi env var ka naam browser par aa raha tha.
  */
+const EMAIL_UNAVAILABLE = 'Abhi email par code nahi bhej pa rahe. Mobile number se verify karo.';
+
 const deliverEmailCode = async (email, code) => {
   if (!mailConfigured()) {
-    if (!codeExposed()) {
-      throw new HttpError(503, mailStatus().reason + '. Verify with your mobile number instead.', { expose: true });
-    }
+    console.warn(`[email-otp] not configured: ${mailStatus().reason}`);
+    if (!codeExposed()) throw new HttpError(503, EMAIL_UNAVAILABLE, { expose: true });
     console.log(`[email-otp] ${email} -> ${code} (no mail provider configured)`);
     return { delivered: false };
   }
@@ -135,7 +140,7 @@ const deliverEmailCode = async (email, code) => {
   } catch (error) {
     console.error(`[email-otp] send failed to ${email}:`, error.message);
     if (!codeExposed()) {
-      throw new HttpError(503, `Could not send the verification email (${error.message}). Use mobile verification instead.`, { expose: true });
+      throw new HttpError(503, 'Email par code nahi bhej paaye. Thodi der baad try karo, ya mobile number use karo.', { expose: true });
     }
     return { delivered: false };
   }
@@ -143,16 +148,18 @@ const deliverEmailCode = async (email, code) => {
 
 /**
  * Mobile OTP bhejta hai. `messages` se har caller apni situation ke hisaab se
- * error text choose karta hai (registration vs login).
+ * error text choose karta hai (registration vs login). Wajah bhi hamesha log
+ * me jaati hai, browser text me nahi.
  */
+const PHONE_UNAVAILABLE = 'Abhi mobile par code nahi bhej pa rahe. Email se verify karo.';
+
 const deliverPhoneCode = async (phone, code, messages = {}) => {
-  const notConfigured = messages.notConfigured || 'SMS service is not configured.';
-  const failed = messages.failed || 'Could not send the SMS.';
+  const notConfigured = messages.notConfigured || PHONE_UNAVAILABLE;
+  const failed = messages.failed || 'Mobile par code nahi bhej paaye. Thodi der baad try karo.';
 
   if (!smsConfigured()) {
-    if (!codeExposed()) {
-      throw new HttpError(503, `${notConfigured} Verify with your email instead.`, { expose: true });
-    }
+    console.warn(`[phone-otp] not configured: ${smsStatus().reason}`);
+    if (!codeExposed()) throw new HttpError(503, notConfigured, { expose: true });
     console.log(`[phone-otp] ${phone} -> ${code} (no SMS provider configured)`);
     return { delivered: false };
   }
@@ -163,29 +170,31 @@ const deliverPhoneCode = async (phone, code, messages = {}) => {
     return { delivered: true, via: info.via };
   } catch (error) {
     console.error(`[phone-otp] send failed to ${phone}:`, error.message);
-    if (!codeExposed()) {
-      throw new HttpError(503, `${failed} (${error.message})`, { expose: true });
-    }
+    if (!codeExposed()) throw new HttpError(503, failed, { expose: true });
     return { delivered: false };
   }
 };
 
 /**
  * Frontend ko batata hai ki verification abhi kaunse channel par chal sakti
- * hai. Isse app un buttons ko khud disable kar deta hai, aur admin ko pata
- * chalta hai ki SMTP/SMS set karna baaki hai.
+ * hai, taaki app sirf wahi option dikhaye jo sach me kaam karega.
+ *
+ * Ye public endpoint hai, isliye sirf `available` aur `provider` jaata hai.
+ * Config ki technical wajah (`reason` jaise "SMTP_PASS missing") browser tak
+ * nahi aani chahiye — wo sirf operator ke liye `/api/status` par hai.
  */
 const otpChannels = async (req, res) => {
-  const mail = mailStatus();
-  const sms = smsStatus();
   const exposed = codeExposed();
-  // Account (SMTP wala Gmail) public nahi karna — baaki sab dikhane layak hai.
-  const publicStatus = ({ account, ...rest }) => rest;
+  const brief = (status) => ({
+    available: status.available,
+    provider: status.provider || null,
+    codeExposed: exposed
+  });
 
   res.json({
-    email: { ...publicStatus(mail), codeExposed: exposed },
-    sms: { ...publicStatus(sms), codeExposed: exposed },
-    anyAvailable: mail.available || sms.available || exposed
+    email: brief(mailStatus()),
+    sms: brief(smsStatus()),
+    anyAvailable: mailStatus().available || smsStatus().available || exposed
   });
 };
 
@@ -263,8 +272,8 @@ const requestPhoneOtp = async (req, res) => {
   const phone = v.phone(req.body.phone);
   const code = await otp.create('phone', phone);
   const { delivered } = await deliverPhoneCode(phone, code, {
-    notConfigured: 'SMS service is not configured on this server.',
-    failed: 'Could not send the SMS.'
+    notConfigured: 'Abhi mobile par code nahi bhej pa rahe. Email se verify karo.',
+    failed: 'Mobile par code nahi bhej paaye. Thodi der baad try karo.'
   });
 
   res.json({
@@ -306,8 +315,8 @@ const requestOtp = async (req, res) => {
 
   const code = await otp.create('phone', phone);
   const { delivered } = await deliverPhoneCode(phone, code, {
-    notConfigured: 'Verification codes are temporarily unavailable.',
-    failed: 'Could not send the SMS.'
+    notConfigured: 'Abhi mobile par code nahi bhej pa rahe. Password se sign in karo.',
+    failed: 'Mobile par code nahi bhej paaye. Thodi der baad try karo.'
   });
 
   res.json({

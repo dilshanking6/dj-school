@@ -73,9 +73,14 @@ Whichever channels the server can actually deliver are the ones the UI shows.
 | Email | Gmail SMTP + Google App Password | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, optional `MAIL_FROM` |
 | Mobile | a free SMS provider | `SMS_PROVIDER` + `SMS_API_KEY` (or `SMS_WEBHOOK_URL`) |
 
-`GET /api/auth/otp-channels` is public and reports what is configured, so the frontend can grey out a
-channel that cannot work. `GET /api/status` carries the same information plus `codeExposed` for
-operators. Both report provider names and reasons, never keys or passwords.
+`GET /api/auth/otp-channels` is public and reports only whether each channel works, so the frontend
+can offer just those. `GET /api/status` additionally carries the provider names and the `reason` a
+channel is unavailable, which is what an operator needs — those env var names stay in the status
+endpoint, the boot log and `npm run check:otp`, never in a page a user sees.
+
+When a channel cannot deliver, the browser gets a plain sentence ("Abhi email par code nahi bhej pa
+rahe. Mobile number se verify karo."). The technical reason is logged server-side instead of being
+pushed at the person signing up.
 
 ### Email: Gmail App Password, step by step
 
