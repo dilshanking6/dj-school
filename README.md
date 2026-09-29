@@ -116,31 +116,57 @@ Common failures, all reported verbatim in the app instead of a generic 500:
 
 ### Mobile: a free SMS provider
 
-Three providers are supported; pick one and set `SMS_PROVIDER` to match.
+Three providers are supported; pick one and set `SMS_PROVIDER` to match. They differ in what number
+format they want, so do not copy a 10-digit number into a provider expecting country code — the server
+handles each one, but it helps to know.
 
 **2Factor** (easiest, free trial credits)
 
-1. Sign up at <https://2factor.in>.
-2. Copy the API key from the dashboard ("API Key" section).
-3. `SMS_PROVIDER=2factor` and `SMS_API_KEY=<key>`. The server calls the `AUTOTP` route, which sends
-   our own code, so verification stays in our hands.
+1. Sign up at <https://2factor.in> with your mobile number.
+2. Copy the API key from the dashboard (the **API Key** box).
+3. `SMS_PROVIDER=2factor` and `SMS_API_KEY=<key>`.
+
+The server calls `GET https://2factor.in/API/V1/<key>/SMS/919876543210/AUTOTP/123456`. The `AUTOTP`
+route sends *our* code rather than generating its own, which is why verification stays in our store and
+never depends on the provider's session API.
 
 **Fast2SMS** (free signup credits, Indian numbers)
 
 1. Sign up at <https://www.fast2sms.com/dev-api> with a mobile number.
-2. Copy the API token from the developer dashboard.
-3. `SMS_PROVIDER=fast2sms` and `SMS_API_KEY=<token>`. The default route `q` is Quick SMS, which needs no
-   DLT registration. If you do have a DLT sender ID and template, set `SMS_F2S_ROUTE=dlt` plus
-   `SMS_F2S_SENDER_ID` and `SMS_F2S_TEMPLATE`.
+2. Copy the **API Authorization Key** from the Dev API dashboard.
+3. `SMS_PROVIDER=fast2sms` and `SMS_API_KEY=<token>`. Keep the default `SMS_F2S_ROUTE=q`.
+
+`q` is **Quick SMS**: no DLT registration, free text, works on a free account. The server posts to
+`/dev/bulkV2` with the key in the `Authorization` header and the number in plain 10-digit form
+(`9876543210`) — Fast2SMS rejects country-coded numbers on this route.
+
+Only move to `SMS_F2S_ROUTE=dlt` when you have a registered DLT header and template. That route sends
+`SMS_F2S_TEMPLATE` as the template ID and the OTP as `variables_values`; without an approved template
+the message is rejected. Leave it at `q` unless the office actually holds DLT registration.
 
 **Webhook** (any gateway you already have)
 
 1. Set `SMS_PROVIDER=webhook` and `SMS_WEBHOOK_URL=https://...`.
 2. The server POSTs `{ to, message, code }` and treats HTTP 200 with a truthy `error` field as a
-   failure. `to` is already in country-code form (`919876543210`).
+   failure. `to` is in country-code form (`919876543210`).
 
-Numbers are 10 digits (`9876543210`); the server adds `91`. Free tiers are limited to a few hundred
-messages per account, which is enough for a school signup day — top up or swap providers when needed.
+Numbers are entered as 10 digits (`9876543210`); the server strips a leading `0` or `91` if present and
+converts per provider. Free tiers are limited to a few hundred messages per account, which is enough
+for a school signup day — top up or swap providers when needed.
+
+### SMS not arriving? Read this first
+
+If the phone gets nothing but the app reports success, it is almost always one of these:
+
+- **Wrong number format reaching the provider.** Already handled per provider above; if you swapped
+  providers, the code handles it too.
+- **Fast2SMS `route=d` without a registered template.** Quick SMS (`q`) is the free path. Put `q` back.
+- **Free credits khatam.** Both providers stop sending silently once the trial is over. Check the
+  provider dashboard balance.
+- **2Factor free tier per-number limit.** A number can only receive a limited number of OTPs per day on
+  the trial. Test with a different number before assuming the key is wrong.
+- **The code was rate limited.** The OTP request endpoint allows 6 requests per 15 minutes per IP. The
+  app says "Please wait N seconds" — wait it out rather than retrying.
 
 ### Checking the setup
 
@@ -280,16 +306,28 @@ Isko kisi me save kar lo abhi, kyunki agle step me chahiye.
    `JWT_SECRET` khud ban jayega (`generateValue: true`).
 5. **Apply** dabao. Build ~2-3 minute lega.
 
-### Step 3 — Mobile OTP chahiye ho to (optional)
+### Step 3 — Mobile OTP (optional; email se kaam chal jaata hai)
 
-Email se kaam chal jaata hai, to ye step optional hai.
+Mobile number se OTP bhi chahiye ho to ye karo. Setup 2Factor me:
 
-- **2Factor** — <https://2factor.in> par signup karo, dashboard se API key copy karo,
-  `SMS_PROVIDER=2factor` (already set hai) aur `SMS_API_KEY` me wo key daalo.
-- **Fast2SMS** — <https://www.fast2sms.com/dev-api> par signup, API token copy karo,
-  `SMS_PROVIDER=fast2sms` kar do.
+1. <https://2factor.in> par apne mobile number se signup karo.
+2. Login karke dashboard me **API Key** wala box dhundho aur wo key copy karo.
+3. Render dashboard me apni service kholo → **Environment** → teen rows:
 
-Free trial me kuch sau SMS milte hain — school ke signup day ke liye kaafi.
+   | Key | Value |
+   | --- | --- |
+   | `SMS_PROVIDER` | `2factor` |
+   | `SMS_API_KEY` | jo abhi copy ki |
+   | `SMS_WEBHOOK_URL` | khaali chhod do |
+
+4. **Save Changes** → phir **Manual Deploy → Deploy latest commit** (env change se auto deploy nahi
+   hota).
+5. <https://2factor.in> ka free plan shuru me kuch sau free OTP deta hai — pehli baar me 10-digit
+   Indian number (`9876543210`) daal kar test karo, country code nahi.
+
+Fast2SMS chahiye to wahi tarika: <https://www.fast2sms.com/dev-api> par signup, **API Authorization
+Key** copy karo, aur `SMS_PROVIDER=fast2sms`. `SMS_F2S_ROUTE` ko `q` hi chhod do — ye Quick SMS hai,
+DLT registration nahi maangta.
 
 ### Step 4 — Verify karo ki sach me chal raha hai
 
@@ -339,8 +377,30 @@ App Password galat hai ya 2-Step Verification off hai. Render ke **Logs** tab me
 (`535 5.7.8 ...`) likha hua milega.
 
 **SMS nahi ja rahi**
-`SMS_PROVIDER` aur `SMS_API_KEY` dono Render me set hone chahiye, aur provider ka free credits abhi
-bacha hua hona chahiye. 2Factor ke free plan me har number par limited OTP hoti hai.
+Do alag alag cheezein alag se check karni hain — config set hai ya nahi, aur phir delivery.
+
+1. Live server par kya set hai:
+
+```bash
+npm run check:otp -- --url https://aapki-site.onrender.com
+```
+
+`Mobile: available | provider: 2factor` aana chahiye. (`--url` sirf config dikhata hai — usse SMS
+kahin nahi jata. Asli test agle step me hai.)
+
+2. Real delivery test: website kholo, apna 10-digit number daal kar **Send code** dabao, aur phone
+   par SMS ka intezaar karo.
+
+Agar yahan tak SMS nahi aayi:
+
+- `SMS_PROVIDER` aur `SMS_API_KEY` dono Render me set hain ye check karo, aur env change ke baad
+  **Manual Deploy** zaroor kiya hai (auto deploy env change par nahi chalta).
+- Provider ka free credits khatam to nahi hua — provider dashboard ka balance dekho.
+- 2Factor ke trial me ek number par din me limited OTP hoti hai; dusra number se test karo.
+- Fast2SMS use kar rahe ho to `SMS_F2S_ROUTE` `q` hona chahiye, `dlt` nahi (bina DLT template ke
+  message reject hota hai).
+- Number 10 digit Indian format me daalo, `+91` ya `91` ke saath nahi.
+- Render ke **Logs** tab me asli provider error likha milega — wahan `SMS_ERROR` dekho.
 
 ## First accounts
 

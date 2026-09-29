@@ -56,16 +56,25 @@ const smsConfigured = () => {
 };
 
 /**
- * Number ko E.164 (bina `+`) form me laata hai. 10 digit ka number Indian
- * maana jaata hai aur uspar `91` lagta hai; `+91...` / `9198...` jaise
- * already country code wale number ko chhoda jaata hai.
+ * Number ko 10 digit Indian form me laata hai. `+91...`, `91...`, `0987...`
+ * sab isi shape me aate hain.
  */
-const toE164 = (phone) => {
+const toLocal10 = (phone) => {
   let digits = String(phone).replace(/\D/g, '');
   // 0987... style leading zero hatao, warna number galat chala jaata hai.
   if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
-  if (digits.length === 10) digits = `91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
   return digits;
+};
+
+/**
+ * Number ko E.164 (bina `+`) form me laata hai — `919876543210`. 2Factor aur
+ * generic webhook isko samajhte hain. Fast2SMS ko iske bajaye 10 digit chahiye,
+ * isliye wo `toLocal10` use karta hai.
+ */
+const toE164 = (phone) => {
+  const local = toLocal10(phone);
+  return local.length === 10 ? `91${local}` : local;
 };
 
 const errorText = (data) => {
@@ -77,22 +86,34 @@ const errorText = (data) => {
   return String(message || '');
 };
 
-const sendViaFast2sms = async (to, message) => {
-  const response = await axios.post(
-    'https://www.fast2sms.com/dev/bulkV2',
-    {
-      // 'q' = Quick SMS (DLT ke bina). DLT template use karna ho to yahan
-      // SMS_F2S_ROUTE=dlt aur SMS_F2S_SENDER_ID / SMS_F2S_TEMPLATE set karo.
-      route: process.env.SMS_F2S_ROUTE || 'q',
-      sender_id: process.env.SMS_F2S_SENDER_ID || undefined,
-      numbers: to,
-      message
-    },
-    {
-      headers: { Authorization: apiKey(), 'Content-Type': 'application/json' },
-      timeout: timeout()
-    }
-  );
+/**
+ * Fast2SMS `/dev/bulkV2`. Do routes hain:
+ *  - `q` (Quick SMS, default): DLT ke nahi chahiye, `message` plain text hai.
+ *  - `dlt`: TRAI rule ke hisaab se approved template bhejna padta hai. Wahan
+ *    `message` template ID hoti hai aur asli code `variables_values` me jaata
+ *    hai (pipe se separated). Bina ye samjhe poora message template ID samajh
+ *    kar reject ho jayega.
+ * Number yahan 10 digit hona chahiye, country code ke saath Fast2SMSe reject
+ * ho jaata hai.
+ */
+const sendViaFast2sms = async (phone, message, code) => {
+  const route = (process.env.SMS_F2S_ROUTE || 'q').trim().toLowerCase();
+  const payload = { route, numbers: toLocal10(phone) };
+
+  if (route === 'dlt') {
+    const template = String(process.env.SMS_F2S_TEMPLATE || '').trim();
+    if (!template) throw new SmsError('SMS_F2S_TEMPLATE is missing for the dlt route');
+    payload.sender_id = process.env.SMS_F2S_SENDER_ID || '';
+    payload.message = template;
+    payload.variables_values = String(code || '');
+  } else {
+    payload.message = message;
+  }
+
+  const response = await axios.post('https://www.fast2sms.com/dev/bulkV2', payload, {
+    headers: { Authorization: apiKey(), 'Content-Type': 'application/json' },
+    timeout: timeout()
+  });
 
   const data = response.data || {};
   if (data.return === false || Number(data.status_code || 200) >= 400) {
@@ -135,17 +156,20 @@ const sendViaWebhook = async (to, message, code) => {
 };
 
 /**
- * `code` optional hai — sirf 2Factor ko chahiye. Baaqi providers poora
- * `message` padhte hain, jisme code already shamil hai.
+ * `code` optional hai — 2Factor aur Fast2SMS ke DLT route ko chahiye. Baaqi
+ * providers poora `message` padhte hain, jisme code already shamil hai.
  */
 async function sendSms({ to, message, code }) {
   if (!smsConfigured()) return false;
 
-  const number = toE164(to);
   const name = providerName();
 
   try {
-    if (name === 'fast2sms') return await sendViaFast2sms(number, message);
+    // Fast2SMS 10 digit leta hai, isliye use `to` jaise bhi diya gaya waise
+    // hi bhejte hain — wo apne aap 91/0 hatata hai. Doosre providers ko
+    // country code chahiye.
+    if (name === 'fast2sms') return await sendViaFast2sms(to, message, code);
+    const number = toE164(to);
     if (name === '2factor') return await sendVia2factor(number, code);
     return await sendViaWebhook(number, message, code);
   } catch (error) {
@@ -177,4 +201,6 @@ const smsStatus = () => {
   return { available: false, provider: name, reason: `Unknown SMS provider "${name}"` };
 };
 
-module.exports = { sendSms, smsConfigured, smsStatus, toE164, providerName, SmsError };
+module.exports = {
+  sendSms, smsConfigured, smsStatus, toE164, toLocal10, providerName, SmsError
+};

@@ -6,9 +6,10 @@
  *   npm run check:otp -- you@gmail.com      # config + wahan mail bhej kar dekho
  *   npm run check:otp -- you@gmail.com 9876543210   # mail + SMS dono
  *
- * `--url` se kisi live deployment ka status seedha puchh sakte ho, jo bahut
+ * `--url` se kisi live deployment ka config seedha puchh sakte ho, jo bahut
  * zaroori hai: local .env bharne se deployed server par set hona zaroori nahi
- * (Render/Railway par environment variables alag hote hain).
+ * hai (Render/Railway par environment variables alag hote hain). Ye sirf
+ * config dikhata hai — real SMS bhejne ke liye website ka button dabao.
  *
  *   npm run check:otp -- --url https://your-app.onrender.com
  *
@@ -54,8 +55,16 @@ async function checkLive() {
     if (!verification) throw new Error('Server par naya /api/status nahi hai — redeploy zaroori hai');
     payload = verification;
   } catch (error) {
-    bad(`Live server tak nahi pahunch saka: ${error.message}`);
-    info('URL sahi hai? Render me service "Live" honi chahiye, aur free plan me cold start me 30-50 second lag sakte hain.');
+    const code = error.response?.status;
+    if (code === 404) {
+      bad('404 — is URL par ye app nahi chal raha.');
+      info('Confirm karo: Render dashboard me service ka URL exactly yahi hai? (Render har service ko');
+      info('alag domain deta hai, e.g. digital-janta-xyz.onrender.com — repo ka naam nahi.)');
+      info('Aur code push hone ke baad redeploy hua tha? Purana build me /api/status hota hi nahi.');
+    } else {
+      bad(`Live server tak nahi pahunch saka${code ? ` (HTTP ${code})` : ''}: ${error.message}`);
+      info('Free plan me cold start me 30-50 second lagte hain — thoda rukar dobara try karo.');
+    }
     process.exit(1);
   }
 
@@ -76,6 +85,9 @@ async function checkLive() {
   } else if (!payload.email?.available && !payload.sms?.available) {
     bad('Is server par koi bhi verification channel nahi hai — yahi wajah hai ki code nahi ja raha.');
     info('Fix: SMTP_USER + SMTP_PASS (Gmail app password) ya SMS_PROVIDER + SMS_API_KEY, phir redeploy.');
+  } else {
+    info('Ye sirf live server ka config batata hai. Actual SMS bhejne ke liye apne phone se');
+    info('website kholo, "Send code" dabao, aur wahi number daal kar message ka intezaar karo.');
   }
   process.exit(0);
 }
