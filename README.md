@@ -149,19 +149,35 @@ cd server
 npm run check:otp                                 # config only, nothing is sent
 npm run check:otp -- your.school@gmail.com        # + sends a real email code
 npm run check:otp -- your.school@gmail.com 9876543210   # + a real SMS
+
+# live deployment par kya set hai (bahut zaroori — local .env ≠ deployed env)
+npm run check:otp -- --url https://your-app.onrender.com
 ```
 
-The script uses the same mailer and SMS code the app uses, prints `OK`/`FAIL` per step, never prints a
-key or password, and exits with the provider's own error message when a send fails. When
-`NODE_ENV=development` it also notes that codes are visible in the API response, which is how you test
-without spending SMS credits.
+The first form uses the same mailer and SMS code the app uses, prints `OK`/`FAIL` per step, never prints
+a key or password, and exits with the provider's own error message when a send fails.
 
-### Development without any provider
+The `--url` form asks the deployed server itself, which is the one that matters when codes are not
+arriving for real users. It reads `/api/status` (operator view, so the `reason` is included) and prints
+which channel is missing what. Local `.env` being filled in does **not** configure the deployment —
+on Render/Railway the environment variables are set separately in the dashboard and need a redeploy.
 
-In development the server returns the code as `devCode` and the register screen shows a "click to fill"
-button, so no SMTP or SMS account is needed to build the flow. `NODE_ENV=production` (or any deployment
-without the keys) disables this entirely — `ALLOW_DEV_EMAIL_CODE=true` re-enables it deliberately, and
-must never be set on a public server.
+**"Abhi email par code nahi bhej pa rahe" / "Abhi mobile par code nahi bhej pa rahe"**
+That message means the server has no working provider for that channel. Run the `--url` check above
+against the live site to see exactly which setting is missing.
+
+### Testing without any provider
+
+Codes are only returned in the API response when `ALLOW_DEV_EMAIL_CODE=true` **and**
+`NODE_ENV=production`. That is a deliberate choice: a real deployment without SMTP/SMS keys otherwise
+cannot verify anybody, so with the flag off the server says so plainly instead of pretending.
+
+For local work, keep `ALLOW_DEV_EMAIL_CODE=true` in `server/.env` — the register screen then shows a
+"tap to fill" button with the code and the whole flow works with no provider at all. Turn it off (or
+`NODE_ENV=development`) once you are testing real delivery.
+
+Never set `ALLOW_DEV_EMAIL_CODE=true` on a public school server: anyone could register with any email
+or mobile number and bypass verification.
 
 ## Google Sheet tabs
 
