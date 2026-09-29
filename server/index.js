@@ -18,6 +18,11 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 const app = express();
 const server = http.createServer(app);
 
+// Render (aur koi bhi reverse proxy) ke peeche `req.ip`/`req.protocol` asli
+// client ke naam pe resolve karne ke liye chahiye, warna rate limiter poore
+// proxy ko ek hi IP samajhta hai aur `x-forwarded-*` headers ignore hote hain.
+app.set('trust proxy', true);
+
 const allowedOrigins = () => {
   if (CLIENT_ORIGIN) {
     return CLIENT_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean);
@@ -26,16 +31,44 @@ const allowedOrigins = () => {
   return ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173'];
 };
 
-const originGuard = (origin, callback) => {
-  const allowed = allowedOrigins();
-  if (!origin) return callback(null, true);
-  if (allowed.includes(origin)) return callback(null, true);
-  return callback(new Error('Origin not allowed'));
+const firstHeaderValue = (value) => String(value || '').split(',')[0].trim();
+
+/**
+ * Apne hi domain se aaya request same-origin hai, chahe `CLIENT_ORIGIN` set ho
+ * ya na ho. Ye zaroori hai kyunki Vite ka build `<script type="module"
+ * crossorigin>` aur `<link rel="stylesheet" crossorigin>` emit karta hai —
+ * `crossorigin` hone ki wajah se browser SAME-ORIGIN requests me bhi `Origin`
+ * header bhejta hai. Pehle guard unhe reject karta tha, jisse app ka JS/CSS
+ * 500 pe fail ho jata tha aur page blank safed dikhta tha.
+ */
+const isSameOrigin = (origin, req) => {
+  if (!origin || !req || !req.headers) return false;
+  try {
+    const url = new URL(origin);
+    const host = firstHeaderValue(req.headers['x-forwarded-host'] || req.headers.host);
+    if (!host || url.host !== host) return false;
+    const proto = firstHeaderValue(req.headers['x-forwarded-proto']);
+    return !proto || url.protocol === `${proto}:`;
+  } catch {
+    return false;
+  }
+};
+
+const originAllowed = (origin, req) => {
+  if (!origin) return true;
+  if (isSameOrigin(origin, req)) return true;
+  return allowedOrigins().includes(origin);
 };
 
 const io = new Server(server, {
-  cors: { origin: originGuard, methods: ['GET', 'POST'] },
-  maxHttpBufferSize: 1e5
+  cors: {
+    origin: (origin, callback) => callback(null, originAllowed(origin)),
+    methods: ['GET', 'POST']
+  },
+  maxHttpBufferSize: 1e5,
+  // Socket.IO ka `cors.origin` ko request nahi milta, isliye same-origin check
+  // yahan `allowRequest` me hota hai jahan `req.headers` available hai.
+  allowRequest: (req, callback) => callback(null, originAllowed(req.headers.origin, req))
 });
 
 app.set('socketio', io);
@@ -48,7 +81,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors({ origin: originGuard }));
+// Allowed origin reject hone par 500 nahi — bas CORS header nahi bhejte, jisse
+// browser request ko block kar deta hai. 500 dene se poori app (JS/CSS) down
+// ho jaati thi.
+app.use(cors((req, callback) => {
+  callback(null, { origin: originAllowed(req.headers.origin, req) });
+}));
 app.use(express.json({ limit: '256kb' }));
 app.use(express.urlencoded({ limit: '256kb', extended: false }));
 app.use(rateLimit({ windowMs: 60 * 1000, max: 600, message: 'Too many requests. Please slow down.' }));
@@ -127,7 +165,10 @@ if (!storageConfigured()) {
   console.warn('[config] APPS_SCRIPT_URL is missing. Set it in server/.env so the portal can store data.');
 }
 if (IS_PRODUCTION && !CLIENT_ORIGIN) {
-  console.warn('[config] CLIENT_ORIGIN is missing. Set it to your deployed frontend origin.');
+  console.warn(
+    '[config] CLIENT_ORIGIN is missing. Apne hi domain ka traffic chalega, ' +
+      'par alag origin (jaise admin panel) host karna ho to ye set karo.'
+  );
 }
 
 server.listen(PORT, () => {
