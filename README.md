@@ -241,6 +241,107 @@ At boot the server prints one line per channel, so a missing key is visible imme
 [config] Mobile OTP is NOT configured (SMS_API_KEY is missing). ...
 ```
 
+## Deploy on Render
+
+Render par poori app ek hi service hai: Node server, jo `client/dist` bhi khud serve karta hai.
+Sirf environment variables set karne padte hain — koi alag frontend host nahi.
+
+`render.yaml` is repository me hai, so the deploy is one click. Secrets usme khud se bhare jaate hain,
+kabhi git me nahi jaate.
+
+### Step 1 — Gmail App Password bana lo (email OTP ke liye)
+
+Ye Render se pehle karna hai, kyunki ye 16-character password ek hi baar dikhta hai.
+
+1. Wo Gmail account kholo jo codes bhejega (school ka dedicated account best hai).
+2. <https://myaccount.google.com/security> kholo aur **2-Step Verification ON** karo. Google app
+   passwords tabhi deta hai jab 2-step verification chalu ho.
+3. Usi page par **App passwords** kholo. Entry nahi dikh rahi to 2-step verification sach me on nahi hua.
+4. App ka naam daalo (kuch bhi, jaise `Digital Janta OTP`), app **Mail** chuno, **Create** dabao.
+5. Google **16-character password ek hi baar** dikhayega. Turant copy kar lo, dobara nahi milega.
+
+Isko kisi me save kar lo abhi, kyunki agle step me chahiye.
+
+### Step 2 — Render me service banao
+
+1. <https://render.com> kholo aur login (GitHub se best hai).
+2. Left menu → **New** → **Blueprint**.
+3. **Connect repository** se `dilshanking6/dj-school` chuno aur **Apply**.
+4. Render ne Blueprint detect kar liya, ab wo green values dikha raha hai. Ye **4 jagah** khali hain,
+   inhe abhi bharenge:
+
+   | Variable | Kahan se laana hai |
+   | --- | --- |
+   | `APPS_SCRIPT_URL` | Google Apps Script → Deploy → New deployment → Web app → URL copy karo |
+   | `SMTP_USER` | Wo Gmail jo code bhejega, jaise `school@gmail.com` |
+   | `SMTP_PASS` | Step 1 ka 16-character App Password (quotes ya spaces ke bina) |
+   | `SMS_API_KEY` | 2Factor/Fast2SMS ki key (neeche Step 3) — SMS nahi chahiye to chhod do |
+
+   `JWT_SECRET` khud ban jayega (`generateValue: true`).
+5. **Apply** dabao. Build ~2-3 minute lega.
+
+### Step 3 — Mobile OTP chahiye ho to (optional)
+
+Email se kaam chal jaata hai, to ye step optional hai.
+
+- **2Factor** — <https://2factor.in> par signup karo, dashboard se API key copy karo,
+  `SMS_PROVIDER=2factor` (already set hai) aur `SMS_API_KEY` me wo key daalo.
+- **Fast2SMS** — <https://www.fast2sms.com/dev-api> par signup, API token copy karo,
+  `SMS_PROVIDER=fast2sms` kar do.
+
+Free trial me kuch sau SMS milte hain — school ke signup day ke liye kaafi.
+
+### Step 4 — Verify karo ki sach me chal raha hai
+
+Ye sabse zaroori step hai. Local `.env` bharne se Render par kuch nahi hota — variables wahan
+alag se set karne padte hain.
+
+Apne computer par (repo clone hai to):
+
+```bash
+cd server
+npm run check:otp -- --url https://digital-janta.onrender.com
+```
+
+Output me dono channels `available` dikhne chahiye. `NOT configured` aaye to usi channel ki wajah
+wahi line me likhi hogi.
+
+Ya seedha browser me kholo:
+
+```
+https://digital-janta.onrender.com/api/status
+```
+
+`verification.email.available: true` aur `verification.sms.available: true` hona chahiye.
+
+### Step 5 — Badlav ke baad
+
+Har git push par Render apne aap redeploy karta hai (`autoDeploy: true`). Sirf environment variable
+badla ho to **deploy nahi hota** — manually **Manual Deploy → Deploy latest commit** dabao.
+
+### Render par galtiyan jo log karte hain
+
+**App khulta hi "Something went wrong" / blank page**
+Build me `client` install ya build nahi hua. `render.yaml` ka `buildCommand` teenon install karta hai
+(`npm install` → `server` → `client` + build). Ye theek hai; apne existing service me command
+manually set karna ho to wahi copy kar lo.
+
+**Cold start me 30-50 second lagte hain**
+Free plan me service idle ho to sleep ho jaati hai. Pehla request slow hoga, uske baad theek chalega.
+
+**`SHEET_READ_TIMEOUT` errors**
+Google Apps Script free quota khatam ho sakta hai. Apps Script → Executions page dekho. Timeout
+`SHEET_READ_TIMEOUT=90000` tak barha sakte ho.
+
+**Email nahi ja rahi**
+`npm run check:otp -- --url <tera-render-url>` chalao. Agar `SMTP login verified` fail ho raha hai to
+App Password galat hai ya 2-Step Verification off hai. Render ke **Logs** tab me bhi asli SMTP error
+(`535 5.7.8 ...`) likha hua milega.
+
+**SMS nahi ja rahi**
+`SMS_PROVIDER` aur `SMS_API_KEY` dono Render me set hone chahiye, aur provider ka free credits abhi
+bacha hua hona chahiye. 2Factor ke free plan me har number par limited OTP hoti hai.
+
 ## First accounts
 
 - Students and teachers can register themselves from the portal, after verifying either their email or
@@ -262,10 +363,11 @@ At boot the server prints one line per channel, so a missing key is visible imme
 ## Checks
 
 ```bash
-# verification delivery: config check, then a real send to your own inbox/phone
+# verification delivery: local config, then the real deployment
 cd server
 npm run check:otp
 npm run check:otp -- you@gmail.com 9876543210
+npm run check:otp -- --url https://your-app.onrender.com
 
 # backend: every module must load without error
 node -e "const fs=require('fs'),p=require('path');const s=new Set(['node_modules','.git','dist']);const w=(d)=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?(s.has(e.name)?[]:w(p.join(d,e.name))):(e.name.endsWith('.js')?[p.join(d,e.name)]:[]));const f=w('.').filter(x=>!x.endsWith('index.js'));let ok=0,b=[];for(const x of f){try{require(p.resolve(x));ok++}catch(e){b.push(x+' -> '+e.message)}}console.log('LOADED',ok+'/'+f.length);if(b.length)console.log(b.join('\n'));process.exit(0);"

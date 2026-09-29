@@ -1,0 +1,66 @@
+# Render Blueprint — Digital Janta Portal
+#
+# Is file se Render par service ek click me banti hai. Render dashboard par
+# "New > Blueprint" chuno aur ye file point karo.
+#
+#   https://render.com/docs/blueprint-spec
+#
+# Zaroori: Render ko ye env vars khud se fill karne padenge (sync: false
+# isliye koi secret git me nahi jaata). Kaise bharna hai, wo README ke
+# "Deploy on Render" section me step-by-step hai.
+
+services:
+  - type: web
+    name: digital-janta
+    runtime: node
+    plan: free
+    region: singapore
+    # Client aur server dono alag npm packages hain, aur `client/dist`
+    # git-ignored hai — isliye teenon ko build me install + build karna padta
+    # hai, warna Render par app chalega hi nahi.
+    buildCommand: npm install && cd server && npm install && cd ../client && npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/status
+    # Free plan free tier me 750 khud-samay ke ghante deta hai; ek chhoti
+    # school site ke liye kaafi hai. Cold start 30-50 second lag sakte hain.
+    autoDeploy: true
+    envVars:
+      # --- Server basics -------------------------------------------------
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      # Render PORT khud deta hai; hardcode mat karo. Ye sirf fallback hai.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APPS_SCRIPT_URL
+        sync: false # Google Apps Script web app ka deployed URL
+
+      # --- Email OTP (Gmail + App Password) ------------------------------
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false # Gmail address jo code bhejega
+      - key: SMTP_PASS
+        sync: false # 16-character Google App Password
+      - key: ALLOWED_EMAIL_DOMAINS
+        value: gmail.com
+
+      # --- Mobile OTP ----------------------------------------------------
+      # Ek hi provider chuno. Doosre ko comment kar do ya khaali chhod do.
+      - key: SMS_PROVIDER
+        value: 2factor
+      - key: SMS_API_KEY
+        sync: false # 2factor.in dashboard ki API key
+
+      # --- Sheet timeouts ------------------------------------------------
+      - key: SHEET_READ_TIMEOUT
+        value: "90000"
+      - key: SHEET_WRITE_TIMEOUT
+        value: "90000"

@@ -183,14 +183,14 @@ if (mail.available) {
 } else if (codeExposed()) {
   console.log(`[config] Email OTP NOT configured (${mail.reason}) — codes will be shown on screen in this mode.`);
 } else {
-  console.warn(`[config] Email OTP is NOT configured (${mail.reason}). Users cannot verify by email. See README "Email OTP" section.`);
+  console.warn(`[config] Email OTP is NOT configured (${mail.reason}). Users cannot verify by email. See README "Verification codes" section.`);
 }
 
 const sms = smsStatus();
 if (sms.available) {
   console.log(`[config] Mobile OTP ready (${sms.provider}).`);
 } else {
-  console.warn(`[config] Mobile OTP is NOT configured (${sms.reason}). Users cannot verify by SMS. See README "Mobile OTP" section.`);
+  console.warn(`[config] Mobile OTP is NOT configured (${sms.reason}). Users cannot verify by SMS. See README "Mobile: a free SMS provider" section.`);
 }
 if (IS_PRODUCTION && !CLIENT_ORIGIN) {
   console.warn(
