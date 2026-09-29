@@ -57,8 +57,17 @@ const RegisterPage = ({ role = 'student' }) => {
   // nahi). Jo nahi chalta, uska tab chhup jaata hai — user ko bekaar click
   // karne aur phir server ke error se nahi jana padta.
   const channels = useOtpChannels();
+  // `useOtpChannels` mobile ko `sms` key ke naam se deta hai (server bhi wahi
+  // bolta hai), isliye yahan `phone` ki jagah `sms` dekhna zaroori hai. Pehle
+  // `channels[id]` likha tha jisse `channels.phone` undefined ho jata tha —
+  // aur jab tak email configured nahi tha, `working` khali rehne ki wajah se
+  // dono tabs backup list se aa jaate the. Email set karte hi mobile tab gayab
+  // ho gaya, bina koi server side kami ke.
   const working = useMemo(
-    () => ['email', 'phone'].filter((id) => channels[id]?.available),
+    () => [
+      ['email', channels.email?.available],
+      ['phone', channels.sms?.available]
+    ].filter(([, available]) => available).map(([id]) => id),
     [channels.email?.available, channels.sms?.available]
   );
 
