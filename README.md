@@ -19,7 +19,9 @@ server is the only thing that talks to Apps Script — browsers never receive th
 - Node.js 18 or newer
 - A Google Sheet with the tabs listed below
 - A deployed Google Apps Script web app (execute as the sheet owner, anyone with the link can call it)
-- An SMS provider webhook if you want phone one-time codes in production
+- A Gmail account with an App Password if you want email one-time codes in production (see
+  [Verification codes](#verification-codes-otp))
+- A free SMS provider (2Factor, Fast2SMS or a webhook) if you want phone one-time codes in production
 
 ## Install
 
@@ -36,20 +38,125 @@ PORT=5000
 JWT_SECRET=<long random string>
 APPS_SCRIPT_URL=https://script.google.com/macros/s/<id>/exec
 
-# Production only — where one-time codes are sent
-SMS_WEBHOOK_URL=https://your-sms-gateway.example/send
+# Verification codes: email (Gmail SMTP + App Password)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your.school@gmail.com
+SMTP_PASS=<16 char Google app password>
+
+# Verification codes: mobile (one free provider)
+SMS_PROVIDER=2factor
+SMS_API_KEY=<provider api key>
 
 # Production only — deployed frontend origin(s), comma separated
 CLIENT_ORIGIN=https://portal.your-school.example
 ```
 
 - `JWT_SECRET` must be set. If it is missing the server refuses to verify sessions and logs a warning at boot.
-- Without `SMS_WEBHOOK_URL`, phone sign-in codes are printed to the server console and work **only** in
-  development. In production the endpoint returns an error and asks the user to use email and password.
+- Without SMTP and SMS keys, verification codes are printed to the server console and work **only** in
+  development. In production each endpoint returns a clear error naming the missing setting, and the
+  register/login screens hide the channel that cannot work.
 - Without `CLIENT_ORIGIN`, production CORS allows no browser origins. Development defaults to
   `localhost:5173` and `127.0.0.1:5173`.
 
 Never commit `server/.env`. It is already in `.gitignore`.
+
+`server/.env.example` lists every setting with a short note on what it does.
+
+## Verification codes (OTP)
+
+Accounts and phone sign-in are gated behind a one-time code, delivered over one of two channels.
+Whichever channels the server can actually deliver are the ones the UI shows.
+
+| Channel | Needs | Env |
+| --- | --- | --- |
+| Email | Gmail SMTP + Google App Password | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, optional `MAIL_FROM` |
+| Mobile | a free SMS provider | `SMS_PROVIDER` + `SMS_API_KEY` (or `SMS_WEBHOOK_URL`) |
+
+`GET /api/auth/otp-channels` is public and reports what is configured, so the frontend can grey out a
+channel that cannot work. `GET /api/status` carries the same information plus `codeExposed` for
+operators. Both report provider names and reasons, never keys or passwords.
+
+### Email: Gmail App Password, step by step
+
+1. Sign in to the Gmail account that will send the codes (a dedicated school account is best).
+2. Open <https://myaccount.google.com/security> and turn on **2-Step Verification** (Google requires it
+   before app passwords exist). Verify with a phone number or a backup code if prompted.
+3. Back on that page, open **App passwords**. If the entry is missing, 2-Step Verification was not
+   genuinely enabled — enable it, sign out, sign back in, and check again.
+4. Name the app anything (e.g. `Digital Janta OTP`), set the app to **Mail**, and press **Create**.
+5. Google shows a **16-character password once**. Copy it immediately; it cannot be viewed again.
+6. Paste it into `server/.env` without quotes and without spaces:
+
+   ```ini
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=your.school@gmail.com
+   SMTP_PASS=abcd efgh ijkl mnop
+   ```
+
+   On Render and other hosts set the same values as environment variables, quoting nothing.
+7. Confirm the setup with `npm run check:otp -- your.school@gmail.com` from the `server` folder
+   (see below). It logs in over SMTP and sends one real test code.
+
+Common failures, all reported verbatim in the app instead of a generic 500:
+
+- `535 5.7.8 Username and Password not accepted` — the 16-character app password was not used, 2-Step
+  Verification is off, or the account is a Workspace account whose admin has disabled app passwords.
+- `ECONNECTION` / timeout — the host is blocking outbound port 587. Try a host that allows SMTP, or
+  keep codes in development mode while the office sorts it out.
+- Mail lands in spam — add the sending address to the recipient's contacts, and set `MAIL_FROM` to the
+  same address you authenticate with.
+
+### Mobile: a free SMS provider
+
+Three providers are supported; pick one and set `SMS_PROVIDER` to match.
+
+**2Factor** (easiest, free trial credits)
+
+1. Sign up at <https://2factor.in>.
+2. Copy the API key from the dashboard ("API Key" section).
+3. `SMS_PROVIDER=2factor` and `SMS_API_KEY=<key>`. The server calls the `AUTOTP` route, which sends
+   our own code, so verification stays in our hands.
+
+**Fast2SMS** (free signup credits, Indian numbers)
+
+1. Sign up at <https://www.fast2sms.com/dev-api> with a mobile number.
+2. Copy the API token from the developer dashboard.
+3. `SMS_PROVIDER=fast2sms` and `SMS_API_KEY=<token>`. The default route `q` is Quick SMS, which needs no
+   DLT registration. If you do have a DLT sender ID and template, set `SMS_F2S_ROUTE=dlt` plus
+   `SMS_F2S_SENDER_ID` and `SMS_F2S_TEMPLATE`.
+
+**Webhook** (any gateway you already have)
+
+1. Set `SMS_PROVIDER=webhook` and `SMS_WEBHOOK_URL=https://...`.
+2. The server POSTs `{ to, message, code }` and treats HTTP 200 with a truthy `error` field as a
+   failure. `to` is already in country-code form (`919876543210`).
+
+Numbers are 10 digits (`9876543210`); the server adds `91`. Free tiers are limited to a few hundred
+messages per account, which is enough for a school signup day — top up or swap providers when needed.
+
+### Checking the setup
+
+```bash
+cd server
+npm run check:otp                                 # config only, nothing is sent
+npm run check:otp -- your.school@gmail.com        # + sends a real email code
+npm run check:otp -- your.school@gmail.com 9876543210   # + a real SMS
+```
+
+The script uses the same mailer and SMS code the app uses, prints `OK`/`FAIL` per step, never prints a
+key or password, and exits with the provider's own error message when a send fails. When
+`NODE_ENV=development` it also notes that codes are visible in the API response, which is how you test
+without spending SMS credits.
+
+### Development without any provider
+
+In development the server returns the code as `devCode` and the register screen shows a "click to fill"
+button, so no SMTP or SMS account is needed to build the flow. `NODE_ENV=production` (or any deployment
+without the keys) disables this entirely — `ALLOW_DEV_EMAIL_CODE=true` re-enables it deliberately, and
+must never be set on a public server.
 
 ## Google Sheet tabs
 
@@ -103,12 +210,20 @@ npm run build    # build the client into client/dist
 npm start        # production: server serves the API and client/dist together
 ```
 
-In production set `NODE_ENV=production`, `CLIENT_ORIGIN` and `SMS_WEBHOOK_URL`. The server then serves
-`client/dist` and only the API responds to unknown `/api/*` paths.
+In production set `NODE_ENV=production`, `CLIENT_ORIGIN`, the SMTP block and one SMS provider. The
+server then serves `client/dist` and only the API responds to unknown `/api/*` paths.
+
+At boot the server prints one line per channel, so a missing key is visible immediately:
+
+```
+[config] Email OTP ready (smtp).
+[config] Mobile OTP is NOT configured (SMS_API_KEY is missing). ...
+```
 
 ## First accounts
 
-- Students and teachers can register themselves from the portal.
+- Students and teachers can register themselves from the portal, after verifying either their email or
+  their mobile number. Whichever channel the server has configured is the one offered.
 - A new teacher account is `pending` until the administrator approves it in the admin dashboard.
 - Principal and administrator accounts must be added to the `Users` tab by the school office, with a
   bcrypt hash in the password column. There is deliberately no public "create admin" endpoint.
@@ -126,8 +241,12 @@ In production set `NODE_ENV=production`, `CLIENT_ORIGIN` and `SMS_WEBHOOK_URL`. 
 ## Checks
 
 ```bash
-# backend: every module must load without error
+# verification delivery: config check, then a real send to your own inbox/phone
 cd server
+npm run check:otp
+npm run check:otp -- you@gmail.com 9876543210
+
+# backend: every module must load without error
 node -e "const fs=require('fs'),p=require('path');const s=new Set(['node_modules','.git','dist']);const w=(d)=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?(s.has(e.name)?[]:w(p.join(d,e.name))):(e.name.endsWith('.js')?[p.join(d,e.name)]:[]));const f=w('.').filter(x=>!x.endsWith('index.js'));let ok=0,b=[];for(const x of f){try{require(p.resolve(x));ok++}catch(e){b.push(x+' -> '+e.message)}}console.log('LOADED',ok+'/'+f.length);if(b.length)console.log(b.join('\n'));process.exit(0);"
 
 # frontend: must build clean
@@ -161,7 +280,19 @@ those limits if your deployment is slower.
 `APPS_SCRIPT_URL` is missing from `server/.env`.
 
 **Sign-in says codes are temporarily unavailable**
-`SMS_WEBHOOK_URL` is not set while `NODE_ENV=production`. Set it, or ask users to use email and password.
+No SMS provider is set while `NODE_ENV=production`. Set `SMS_PROVIDER` + `SMS_API_KEY` (or
+`SMS_WEBHOOK_URL`), or ask users to use email and password. `GET /api/auth/otp-channels` names the
+missing setting.
+
+**A verification code never arrives in email**
+Run `npm run check:otp -- you@gmail.com` from `server`. It verifies the SMTP login and prints the
+provider's own error (for example `535 ... Password not accepted`), which is why the app shows that
+message instead of a generic failure. See
+[Email: Gmail App Password](#email-gmail-app-password-step-by-step).
+
+**The register screen shows only one verification option**
+The UI only offers channels the server reports as available. Boot logs and `/api/status` say which
+setting is missing for the other one.
 
 **A teacher sees nothing for their class**
 The teacher's `class` column in the `Users` tab is `N/A`. Set it to `9`, `10`, `11` or `12`.

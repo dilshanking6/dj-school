@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, Phone, Key, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import useOtpChannels from '../hooks/useOtpChannels';
 
 const panel = 'w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary/50 transition-colors text-sm placeholder:text-slate-500';
 
@@ -17,8 +18,25 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
   const navigate = useNavigate();
   const otpInput = useRef(null);
 
+  // Login ka OTP sirf mobile (SMS) se chalta hai. Server par SMS provider
+  // set nahi hai to wo tab dikhaya hi nahi jaata — user ko "Mobile code"
+  // daba ke phir server ke error se nahi jana padta.
+  const channels = useOtpChannels();
+  const smsAvailable = channels.sms?.available !== false;
+
   const registerPath =
     role === 'student' ? '/register' : role === 'teacher' ? '/teacher-register' : null;
+
+  // SMS band ho to email wala hi raasta bacha hai.
+  useEffect(() => {
+    if (!smsAvailable && method === 'phone') {
+      setMethod('email');
+      setStage('credentials');
+      setForm((prev) => ({ ...prev, phone: '', otp: '' }));
+      setInfo('');
+      setError('');
+    }
+  }, [smsAvailable, method]);
 
   useEffect(() => {
     if (stage === 'otp') otpInput.current?.focus();
@@ -92,7 +110,7 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
             <p className="mt-1.5 text-sm capitalize text-slate-400">{role} portal</p>
           </div>
 
-          {role !== 'admin' && (
+          {role !== 'admin' && smsAvailable && (
             <div className="mb-7 flex gap-1 rounded-2xl bg-white/5 p-1">
               {[
                 { id: 'email', label: 'Email' },
@@ -123,6 +141,13 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
             <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
               {info}
             </div>
+          )}
+
+          {!channels.loading && role !== 'admin' && !smsAvailable && channels.sms?.reason && (
+            <p className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+              Sign in with email and password for now — mobile codes are switched off on this server
+              ({channels.sms.reason}).
+            </p>
           )}
 
           <form

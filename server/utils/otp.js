@@ -22,6 +22,17 @@ const normalisePhone = (phone) => String(phone).replace(/[\s-]/g, '');
 
 const normaliseEmail = (email) => String(email).trim().toLowerCase();
 
+/**
+ * Code ko response me wapas bhejna hai ya nahi. Development me hamesha
+ * (screen par dikhta hai, warna koi test nahi kar paata), production me sirf
+ * tab jab ALLOW_DEV_EMAIL_CODE jaan boojh kar set kiya gaya ho.
+ *
+ * Ye ek hi jagah rehta hai taaki mailer aur controller ek hi rule use karein —
+ * pehle dono jagah alag logic tha, jisse mailer mail bhejna hi chhod deta tha.
+ */
+const codeExposed = () =>
+  process.env.NODE_ENV !== 'production' || Boolean(process.env.ALLOW_DEV_EMAIL_CODE);
+
 const generate = () => String(crypto.randomInt(100000, 1000000));
 
 /**
@@ -84,4 +95,4 @@ const verify = async (kind, value, code) => {
   return true;
 };
 
-module.exports = { create, verify, keyFor, normalisePhone, normaliseEmail };
+module.exports = { create, verify, keyFor, normalisePhone, normaliseEmail, codeExposed };

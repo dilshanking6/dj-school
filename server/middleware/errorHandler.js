@@ -22,7 +22,14 @@ const errorHandler = (err, req, res, next) => {
   }
 
   const body = {
-    error: status >= 500 ? 'Something went wrong on our end. Please try again.' : err.message
+    // `expose` wale errors (OTP mail/SMS delivery failures) ka message khud
+    // safe hai aur user ko dikhana zaroori hai — warna "Something went wrong"
+    // dikh kar asli wajah (galat App Password, provider reject) chhup jaati thi.
+    error: err.expose && err.message
+      ? err.message
+      : status >= 500
+        ? 'Something went wrong on our end. Please try again.'
+        : err.message
   };
 
   if (status >= 500 && process.env.NODE_ENV !== 'production') {

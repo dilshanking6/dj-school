@@ -9,6 +9,9 @@ const { authenticateSocket, HttpError } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
 const { rateLimit } = require('./middleware/rateLimit');
 const { storageConfigured } = require('./utils/googleSheets');
+const { mailStatus } = require('./utils/mailer');
+const { smsStatus } = require('./utils/sms');
+const { codeExposed } = require('./utils/otp');
 const { assertRoomAccess, loadUser } = require('./utils/rooms');
 
 const PORT = Number(process.env.PORT || 5000);
@@ -96,7 +99,14 @@ app.get('/api/status', (req, res) => {
     status: 'ok',
     service: 'Digital Janta API',
     version: require('./package.json').version,
-    storage: storageConfigured() ? 'connected' : 'not-configured'
+    storage: storageConfigured() ? 'connected' : 'not-configured',
+    // OTP delivery ki haaliyat — OTP "kyun nahi gaya" wali problem ek nazar
+    // me solve karne ke liye (secrets ke bina).
+    verification: {
+      email: mailStatus(),
+      sms: smsStatus(),
+      codeExposed: codeExposed()
+    }
   });
 });
 
@@ -163,6 +173,24 @@ if (!process.env.JWT_SECRET) {
 }
 if (!storageConfigured()) {
   console.warn('[config] APPS_SCRIPT_URL is missing. Set it in server/.env so the portal can store data.');
+}
+
+// Verification (OTP) ke warnings — inke bina "Send code" dabane par kuch
+// nahi hota, aur user ko sirf ek generic error milti hai.
+const mail = mailStatus();
+if (mail.available) {
+  console.log(`[config] Email OTP ready (${mail.provider}).`);
+} else if (codeExposed()) {
+  console.log(`[config] Email OTP NOT configured (${mail.reason}) — codes will be shown on screen in this mode.`);
+} else {
+  console.warn(`[config] Email OTP is NOT configured (${mail.reason}). Users cannot verify by email. See README "Email OTP" section.`);
+}
+
+const sms = smsStatus();
+if (sms.available) {
+  console.log(`[config] Mobile OTP ready (${sms.provider}).`);
+} else {
+  console.warn(`[config] Mobile OTP is NOT configured (${sms.reason}). Users cannot verify by SMS. See README "Mobile OTP" section.`);
 }
 if (IS_PRODUCTION && !CLIENT_ORIGIN) {
   console.warn(

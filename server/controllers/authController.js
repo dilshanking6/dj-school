@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { getSheetData, appendSheetData, updateSheetData, deleteSheetData, sendEmail } = require('../utils/googleSheets');
+const { getSheetData, appendSheetData, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
+const { sendMail, mailConfigured, mailStatus } = require('../utils/mailer');
+const { sendSms, smsConfigured, smsStatus } = require('../utils/sms');
 const { HttpError, signToken, ROLES } = require('../middleware/auth');
 const v = require('../middleware/validate');
 const otp = require('../utils/otp');
@@ -86,6 +88,208 @@ const findStudentDuplicate = async ({ name, fatherName = '', motherName = '', ig
     });
 };
 
+/**
+ * OTP bhejne ke do channel hain — email aur mobile. Dono ka ek hi code
+ * pattern hai, sirf delivery alag hai. Code `dev` me response me wapas
+ * aa jaata hai (screen par dikhta hai), production me sirf tab jab
+ * ALLOW_DEV_EMAIL_CODE set ho. Ye rule `otp.codeExposed()` me ek jagah hai.
+ */
+const codeExposed = otp.codeExposed;
+
+const devCode = (code) => (codeExposed() ? { devCode: code } : {});
+
+const OTP_EXPIRY_SECONDS = 300;
+
+const otpMessage = (code) =>
+  `${code} is your Digital Janta verification code. It expires in 5 minutes.`;
+
+const otpSubject = 'Your Digital Janta verification code';
+
+const otpHtml = (code) =>
+  `<p style="font-family:Arial,sans-serif;font-size:16px">` +
+  `Your Digital Janta verification code is ` +
+  `<strong style="font-size:24px;letter-spacing:3px">${code}</strong></p>` +
+  `<p style="font-family:Arial,sans-serif;font-size:14px;color:#666">` +
+  `It expires in 5 minutes. If you did not request this code you can ignore this email.</p>`;
+
+/**
+ * Email OTP bhejta hai. Teen hisse se ek ho sakta hai:
+ *  - mail configured + delivery successful -> code inbox me
+ *  - dev mode (code screen par dikhaya jata hai) -> code log + response me
+ *  - production me koi bhi provider nahi/fail -> saaf error, jisme wajah
+ *    likhi hoti hai (warna user ko sirf "kuch gadbad ho gayi" milta tha)
+ */
+const deliverEmailCode = async (email, code) => {
+  if (!mailConfigured()) {
+    if (!codeExposed()) {
+      throw new HttpError(503, mailStatus().reason + '. Verify with your mobile number instead.', { expose: true });
+    }
+    console.log(`[email-otp] ${email} -> ${code} (no mail provider configured)`);
+    return { delivered: false };
+  }
+
+  try {
+    const info = await sendMail({ to: email, subject: otpSubject, text: otpMessage(code), html: otpHtml(code) });
+    console.log(`[email-otp] sent to ${email} via ${info.via}`);
+    return { delivered: true, via: info.via };
+  } catch (error) {
+    console.error(`[email-otp] send failed to ${email}:`, error.message);
+    if (!codeExposed()) {
+      throw new HttpError(503, `Could not send the verification email (${error.message}). Use mobile verification instead.`, { expose: true });
+    }
+    return { delivered: false };
+  }
+};
+
+/**
+ * Mobile OTP bhejta hai. `messages` se har caller apni situation ke hisaab se
+ * error text choose karta hai (registration vs login).
+ */
+const deliverPhoneCode = async (phone, code, messages = {}) => {
+  const notConfigured = messages.notConfigured || 'SMS service is not configured.';
+  const failed = messages.failed || 'Could not send the SMS.';
+
+  if (!smsConfigured()) {
+    if (!codeExposed()) {
+      throw new HttpError(503, `${notConfigured} Verify with your email instead.`, { expose: true });
+    }
+    console.log(`[phone-otp] ${phone} -> ${code} (no SMS provider configured)`);
+    return { delivered: false };
+  }
+
+  try {
+    const info = await sendSms({ to: phone, code, message: otpMessage(code) });
+    console.log(`[phone-otp] sent to ${phone} via ${info.via}`);
+    return { delivered: true, via: info.via };
+  } catch (error) {
+    console.error(`[phone-otp] send failed to ${phone}:`, error.message);
+    if (!codeExposed()) {
+      throw new HttpError(503, `${failed} (${error.message})`, { expose: true });
+    }
+    return { delivered: false };
+  }
+};
+
+/**
+ * Frontend ko batata hai ki verification abhi kaunse channel par chal sakti
+ * hai. Isse app un buttons ko khud disable kar deta hai, aur admin ko pata
+ * chalta hai ki SMTP/SMS set karna baaki hai.
+ */
+const otpChannels = async (req, res) => {
+  const mail = mailStatus();
+  const sms = smsStatus();
+  const exposed = codeExposed();
+  // Account (SMTP wala Gmail) public nahi karna — baaki sab dikhane layak hai.
+  const publicStatus = ({ account, ...rest }) => rest;
+
+  res.json({
+    email: { ...publicStatus(mail), codeExposed: exposed },
+    sms: { ...publicStatus(sms), codeExposed: exposed },
+    anyAvailable: mail.available || sms.available || exposed
+  });
+};
+
+/**
+ * Email OTP ke baad ek chhoti si proof token milti hai. Register karte waqt
+ * ye token saath bhejna zaroori hai — iske bina koi naya account nahi ban
+ * sakta, to ek fake email/mobile bhi aage nahi aa sakta.
+ *
+ * Proof 'email:...' ya 'phone:...' key par store hoti hai, isliye jis bhi
+ * channel se code verify kiya tha, register usi channel ki maangta hai.
+ */
+const PROOF_TTL_MS = 15 * 60 * 1000;
+const proofStore = new Map();
+
+const sweepProofs = () => {
+  const now = Date.now();
+  for (const [key, record] of proofStore) {
+    if (record.expiresAt < now) proofStore.delete(key);
+  }
+};
+const proofTimer = setInterval(sweepProofs, 60 * 1000);
+proofTimer.unref();
+
+const issueProof = (channel, value) => {
+  const key = otp.keyFor(channel, value);
+  const proof = crypto.randomBytes(24).toString('hex');
+  proofStore.set(key, { proof, expiresAt: Date.now() + PROOF_TTL_MS });
+  return proof;
+};
+
+/**
+ * `silent: true` par galat/missing proof par `false` lautata hai (register me
+ * dono channels try karne ke liye). Warna user ko seedha saaf error milta hai.
+ */
+const consumeProof = (channel, value, proof, { silent = false } = {}) => {
+  const key = otp.keyFor(channel, value);
+  const record = proofStore.get(key);
+  const fail = (message, status = 400) => {
+    if (silent) return false;
+    throw new HttpError(status, message);
+  };
+
+  if (!record) return fail('Verify your email or mobile number first — request a verification code.');
+  if (record.expiresAt < Date.now()) {
+    proofStore.delete(key);
+    return fail('Verification expired. Request a new code.');
+  }
+  if (!proof || String(proof) !== record.proof) {
+    return fail('Verification is not valid. Request a new code.');
+  }
+  // Ek baar use hone ke baad proof khatam — dobara use nahi ho sakta.
+  proofStore.delete(key);
+  return true;
+};
+
+/** Registration ke liye — email ya mobile, jis bhi kaam kare. */
+const requestEmailOtp = async (req, res) => {
+  const email = v.email(req.body.email);
+  const code = await otp.create('email', email);
+  const { delivered } = await deliverEmailCode(email, code);
+
+  res.json({
+    message: delivered ? 'Verification code sent to your email' : 'Verification code generated',
+    expiresIn: OTP_EXPIRY_SECONDS,
+    ...(delivered ? {} : devCode(code))
+  });
+};
+
+/**
+ * Registration ke liye mobile OTP. Login wale `requestOtp` se alag hai —
+ * wo sirf pehle se registered number ke liye hai, ye kisi bhi number pe
+ * kaam karta hai taaki naya account ban sake.
+ */
+const requestPhoneOtp = async (req, res) => {
+  const phone = v.phone(req.body.phone);
+  const code = await otp.create('phone', phone);
+  const { delivered } = await deliverPhoneCode(phone, code, {
+    notConfigured: 'SMS service is not configured on this server.',
+    failed: 'Could not send the SMS.'
+  });
+
+  res.json({
+    message: delivered ? 'Verification code sent to your mobile' : 'Verification code generated',
+    expiresIn: OTP_EXPIRY_SECONDS,
+    ...(delivered ? {} : devCode(code))
+  });
+};
+
+const verifyChannelOtp = (channel) => async (req, res) => {
+  const value = channel === 'email' ? v.email(req.body.email) : v.phone(req.body.phone);
+  const code = v.text(req.body.code, 'Verification code', { max: 10 });
+
+  await otp.verify(channel, value, code);
+
+  res.json({
+    message: channel === 'email' ? 'Email verified' : 'Mobile verified',
+    proof: issueProof(channel, value),
+    expiresIn: PROOF_TTL_MS / 1000
+  });
+};
+
+const verifyEmailOtp = verifyChannelOtp('email');
+const verifyPhoneOtp = verifyChannelOtp('phone');
+
 const requestOtp = async (req, res) => {
   const phone = v.phone(v.text(req.body.phone, 'Phone number', { max: 20 }));
   const email = v.email(req.body.email);
@@ -101,102 +305,15 @@ const requestOtp = async (req, res) => {
   }
 
   const code = await otp.create('phone', phone);
-
-  const webhook = process.env.SMS_WEBHOOK_URL;
-  if (webhook) {
-    const axios = require('axios');
-    await axios.post(webhook, {
-      to: phone,
-      message: `${code} is your Digital Janta verification code. It expires in 5 minutes.`
-    }, { timeout: 8000 });
-  } else if (process.env.NODE_ENV === 'production') {
-    throw new HttpError(503, 'Verification codes are temporarily unavailable. Use your email and password.');
-  } else {
-    console.log(`[otp] ${phone} -> ${code}`);
-  }
-
-  res.json({
-    message: 'Verification code sent',
-    expiresIn: 300,
-    ...(process.env.NODE_ENV === 'production' ? {} : { devCode: code })
+  const { delivered } = await deliverPhoneCode(phone, code, {
+    notConfigured: 'Verification codes are temporarily unavailable.',
+    failed: 'Could not send the SMS.'
   });
-};
-
-/**
- * Email OTP ke baad ek chhoti si proof token milti hai. Register karte waqt
- * ye token saath bhejna zaroori hai — iske bina koi naya account nahi ban
- * sakta, to ek fake email address bhi aage nahi aa sakta.
- */
-const PROOF_TTL_MS = 15 * 60 * 1000;
-const proofStore = new Map();
-
-const issueEmailProof = (email) => {
-  const proof = crypto.randomBytes(24).toString('hex');
-  proofStore.set(email, { proof, expiresAt: Date.now() + PROOF_TTL_MS });
-  return proof;
-};
-
-const consumeEmailProof = (email, proof) => {
-  const record = proofStore.get(email);
-  if (!record) {
-    throw new HttpError(400, 'Verify your email address first — request a verification code.');
-  }
-  if (record.expiresAt < Date.now()) {
-    proofStore.delete(email);
-    throw new HttpError(400, 'Email verification expired. Request a new code.');
-  }
-  if (!proof || String(proof) !== record.proof) {
-    throw new HttpError(400, 'Email verification is not valid. Request a new code.');
-  }
-  // Ek baar use hone ke baad proof khatam — dobara use nahi ho sakta.
-  proofStore.delete(email);
-  return true;
-};
-
-const requestEmailOtp = async (req, res) => {
-  const email = v.email(req.body.email);
-
-  const code = await otp.create('email', email);
-  const subject = 'Your Digital Janta verification code';
-  const body =
-    `Your verification code is ${code}\n\n` +
-    `It expires in 5 minutes. If you did not request this code you can ignore this email.`;
-
-  const send = async () => {
-    await sendEmail({ to: email, subject, body });
-  };
-
-  if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_EMAIL_CODE) {
-    try {
-      await send();
-    } catch (error) {
-      console.error('[email-otp] send failed:', error.message);
-      throw new HttpError(503, 'Could not send the verification email. Please try again in a moment.');
-    }
-  } else {
-    // Dev me email bhejne ka system nahi hota — code console me dikhata hai.
-    console.log(`[email-otp] ${email} -> ${code}`);
-  }
 
   res.json({
-    message: 'Verification code sent to your email',
-    expiresIn: 300,
-    ...(process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_EMAIL_CODE
-      ? {}
-      : { devCode: code })
-  });
-};
-
-const verifyEmailOtp = async (req, res) => {
-  const email = v.email(req.body.email);
-  const code = v.text(req.body.code, 'Verification code', { max: 10 });
-
-  await otp.verify('email', email, code);
-
-  res.json({
-    message: 'Email verified',
-    emailProof: issueEmailProof(email),
-    expiresIn: PROOF_TTL_MS / 1000
+    message: delivered ? 'Verification code sent' : 'Verification code generated',
+    expiresIn: OTP_EXPIRY_SECONDS,
+    ...(delivered ? {} : devCode(code))
   });
 };
 
@@ -273,8 +390,15 @@ const register = async (req, res) => {
   const existing = await findUserByEmail(email);
   if (existing) throw new HttpError(409, 'An account with this email already exists');
 
-  // Email OTP proof ke bina account ban hi nahi sakta.
-  consumeEmailProof(email, req.body.emailProof);
+  // Verification proof ke bina account ban hi nahi sakta. Email ya mobile —
+  // jis bhi channel se code verify kiya tha, usi ka proof chahiye.
+  const proof = req.body.proof || req.body.emailProof;
+  const proofAccepted =
+    consumeProof('email', email, proof, { silent: true }) ||
+    consumeProof('phone', phone, proof, { silent: true });
+  if (!proofAccepted) {
+    throw new HttpError(400, 'Verify your email or mobile number first — request a verification code.');
+  }
 
   const phoneTaken = await findUserByPhone(phone);
   if (phoneTaken) throw new HttpError(409, 'An account with this phone number already exists');
@@ -548,7 +672,8 @@ const createUserByOffice = async (req, res) => {
 module.exports = {
   requestOtp, login, register, changePassword,
   updateProfile, listTeachers, deleteAccount, createUserByOffice,
-  requestEmailOtp, verifyEmailOtp,
+  requestEmailOtp, requestPhoneOtp, verifyEmailOtp, verifyPhoneOtp,
+  otpChannels, codeExposed,
   toUser, publicUser, findUserById, findUserByEmail, findUserByPhone,
   findStudentDuplicate
 };

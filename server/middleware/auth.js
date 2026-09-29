@@ -3,9 +3,16 @@ const jwt = require('jsonwebtoken');
 const ROLES = ['student', 'teacher', 'principal', 'admin'];
 
 class HttpError extends Error {
-  constructor(status, message) {
+  /**
+   * `expose: true` ka matlab hai ki message user tak pohna chahiye. Ye sirf
+   * un errors ke liye hai jinka message humne khud likha hai (jaise OTP mail
+   * ya SMS na bhej paaya) — baaki sab 500 wale generic message me chhupte
+   * rehte hain.
+   */
+  constructor(status, message, { expose = false } = {}) {
     super(message);
     this.status = status;
+    this.expose = expose;
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mail, Lock, User, BookOpen, ArrowRight, Phone, GraduationCap,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import useOtpChannels from '../hooks/useOtpChannels';
 
 const field = 'w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 outline-none focus:border-primary/50 transition-colors text-sm placeholder:text-slate-500';
 
@@ -44,11 +45,45 @@ const RegisterPage = ({ role = 'student' }) => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [emailProof, setEmailProof] = useState('');
+  const [proof, setProof] = useState('');
   const [devCode, setDevCode] = useState('');
+  const [channel, setChannel] = useState('email');
+  const otpInputRef = useRef(null);
   const navigate = useNavigate();
 
   const loginPath = role === 'student' ? '/login' : `/${role}-login`;
+
+  // Server par kaunsa OTP channel sach me chalta hai (SMTP / SMS set hai ya
+  // nahi). Band channel ka tab dikhta to nahi — user ko bekaar click karne
+  // se aur "server par error" dekhne se bachata hai.
+  const channels = useOtpChannels();
+  const channelStatus = { email: channels.email, phone: channels.sms };
+  const availableChannels = useMemo(
+    () => ['email', 'phone'].filter((id) => channelStatus[id]?.available),
+    [channelStatus.email?.available, channelStatus.phone?.available]
+  );
+
+  useEffect(() => {
+    if (availableChannels.length && !availableChannels.includes(channel)) {
+      setChannel(availableChannels[0]);
+    }
+  }, [availableChannels, channel]);
+
+  // Code jis channel se maanga gaya, usi par verify hoga.
+  const otpTarget = channel === 'email' ? { key: 'email', value: form.email } : { key: 'phone', value: form.phone };
+  const otpReady = otpTarget.value.trim().length >= 5;
+  const codeSentFor = otpTarget.value.trim().toLowerCase();
+  const codeLive = otpSent === codeSentFor;
+
+  // Verification hamesha usi value par valid hai jis par code bana tha —
+  // email ya number badla to proof wapas chala jaata hai.
+  useEffect(() => {
+    setVerified(false);
+    setProof('');
+    setOtpCode('');
+    setOtpSent('');
+    setDevCode('');
+  }, [codeSentFor]);
 
   const title = useMemo(() => {
     if (isStudent) return 'Student registration';
@@ -75,34 +110,58 @@ const RegisterPage = ({ role = 'student' }) => {
   };
 
   const sendOtp = async () => {
+    if (!availableChannels.includes(channel)) {
+      setError(
+        channelStatus[channel]?.reason
+          ? `Ye channel abhi band hai: ${channelStatus[channel].reason}`
+          : 'Ye verification channel abhi available nahi hai.'
+      );
+      return;
+    }
+    if (!otpTarget.value.trim()) {
+      setError(channel === 'email' ? 'Pehle email address likho.' : 'Pehle mobile number likho.');
+      return;
+    }
     setOtpLoading(true);
     setError('');
     setVerified(false);
-    setEmailProof('');
+    setProof('');
+    setOtpCode('');
+    setDevCode('');
     try {
-      const { data } = await axios.post('/api/auth/email-otp/request', { email: form.email });
-      setOtpSent(true);
+      const { data } = await axios.post(`/api/auth/${channel}-otp/request`, {
+        [otpTarget.key]: otpTarget.value.trim()
+      });
+      setOtpSent(codeSentFor);
       setDevCode(data.devCode || '');
+      otpInputRef.current?.focus();
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not send the verification code.');
+      setError(err.response?.data?.error || 'Code bhej nahi paaya. Dobara try karo.');
     } finally {
       setOtpLoading(false);
     }
   };
 
-  const verifyOtp = async () => {
+  // `codeArg` se turant verify ho jaata hai (6 digit bharte hi), warna
+  // state se padha jaata hai (Verify button dabane par).
+  const verifyOtp = async (codeArg) => {
+    const code = String(codeArg ?? otpCode);
+    if (code.length !== 6) {
+      setError('6 digit ka code likho.');
+      return;
+    }
     setVerifying(true);
     setError('');
     try {
-      const { data } = await axios.post('/api/auth/email-otp/verify', {
-        email: form.email,
-        code: otpCode
+      const { data } = await axios.post(`/api/auth/${channel}-otp/verify`, {
+        [otpTarget.key]: otpTarget.value.trim(),
+        code
       });
-      setEmailProof(data.emailProof);
+      setProof(data.proof);
       setVerified(true);
       setDevCode('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Incorrect verification code.');
+      setError(err.response?.data?.error || 'Code galat hai.');
     } finally {
       setVerifying(false);
     }
@@ -111,13 +170,13 @@ const RegisterPage = ({ role = 'student' }) => {
   const submit = async (event) => {
     event.preventDefault();
     if (!verified) {
-      setError('Verify your email address before creating the account.');
+      setError('Account banne se pehle email ya mobile verify karo.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await axios.post('/api/auth/register', { ...form, role, avatar, emailProof });
+      await axios.post('/api/auth/register', { ...form, role, avatar, proof });
       navigate(loginPath, { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
@@ -212,13 +271,7 @@ const RegisterPage = ({ role = 'student' }) => {
                   icon={Mail}
                   type="email"
                   value={form.email}
-                  onChange={(event) => {
-                    setForm((prev) => ({ ...prev, email: event.target.value }));
-                    setError('');
-                    setVerified(false);
-                    setEmailProof('');
-                    setOtpCode('');
-                  }}
+                  onChange={set('email')}
                   placeholder="name@gmail.com"
                   autoComplete="email"
                   required
@@ -244,18 +297,74 @@ const RegisterPage = ({ role = 'student' }) => {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              {availableChannels.length ? (
+                <>
+                  <div className="mb-3 flex gap-2">
+                    {[
+                      { id: 'email', label: 'Email', icon: Mail },
+                      { id: 'phone', label: 'Mobile', icon: Phone }
+                    ]
+                      .filter((option) => availableChannels.includes(option.id))
+                      .map((option) => {
+                        const active = channel === option.id;
+                        const Icon = option.icon;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => { setChannel(option.id); setError(''); setOtpCode(''); setDevCode(''); }}
+                            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${
+                              active
+                                ? 'border-primary/50 bg-primary/15 text-white'
+                                : 'border-white/10 text-slate-400 hover:bg-white/5'
+                            }`}
+                          >
+                            <Icon size={16} />
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </>
+              ) : (
+                !channels.loading && (
+                  <p className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+                    Abhi verification ka koi channel server par set nahi hai. Registration band hai —
+                    school office se email/SMS provider setup karwao.
+                  </p>
+                )
+              )}
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1">
-                  <label className={label} htmlFor="emailOtp">Email verification code</label>
+                  <label className={label} htmlFor="codeOtp">
+                    {channel === 'email' ? 'Email verification code' : 'Mobile verification code'}
+                  </label>
                   <input
-                    id="emailOtp"
+                    id="codeOtp"
+                    ref={otpInputRef}
+                    type="text"
                     inputMode="numeric"
+                    autoComplete="one-time-code"
                     value={otpCode}
-                    onChange={(event) => { setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-                    placeholder={verified ? 'Email verified' : '6-digit code'}
-                    className={`${field} tracking-[0.3em] ${verified ? 'opacity-70' : ''}`}
-                    disabled={!otpSent || verified}
+                    onChange={(event) => {
+                      const next = event.target.value.replace(/\D/g, '').slice(0, 6);
+                      setOtpCode(next);
+                      setError('');
+                      // 6 digit bharte hi seedha verify — button dabaya karne ki zaroorat nahi.
+                      if (next.length === 6 && codeLive) verifyOtp(next);
+                    }}
+                    placeholder={verified ? 'Verified' : '6-digit code'}
+                    className={`${field} tracking-[0.35em] ${verified ? 'opacity-70' : ''}`}
+                    disabled={verified}
                   />
+                  <p className="mt-1.5 text-[11px] text-slate-500">
+                    {verified
+                      ? `${channel === 'email' ? 'Email' : 'Mobile'} verify ho gaya.`
+                      : codeLive
+                        ? `Code ${otpTarget.value.trim()} pe bheja gaya hai — yahan likho.`
+                        : `Pehle ${channel === 'email' ? 'email pe' : 'mobile pe'} code bhejo.`}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   {verified ? (
@@ -267,14 +376,14 @@ const RegisterPage = ({ role = 'student' }) => {
                       <button
                         type="button"
                         onClick={sendOtp}
-                        disabled={otpLoading || !form.email}
+                        disabled={otpLoading || !otpReady || !availableChannels.includes(channel)}
                         className="rounded-2xl border border-white/10 px-4 py-3.5 text-sm font-bold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
                       >
-                        {otpLoading ? <Loader2 size={16} className="animate-spin" /> : 'Send code'}
+                        {otpLoading ? <Loader2 size={16} className="animate-spin" /> : codeLive ? 'Resend' : 'Send code'}
                       </button>
                       <button
                         type="button"
-                        onClick={verifyOtp}
+                        onClick={() => verifyOtp()}
                         disabled={verifying || otpCode.length !== 6}
                         className="rounded-2xl bg-primary px-4 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-40"
                       >
@@ -285,7 +394,13 @@ const RegisterPage = ({ role = 'student' }) => {
                 </div>
               </div>
               {devCode && (
-                <p className="mt-2 text-[11px] font-bold text-amber-400">Dev code: {devCode}</p>
+                <button
+                  type="button"
+                  onClick={() => { setOtpCode(devCode); setError(''); }}
+                  className="mt-2 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-[11px] font-bold text-amber-400"
+                >
+                  Dev code: {devCode} — click karke bhar dein
+                </button>
               )}
             </div>
 
