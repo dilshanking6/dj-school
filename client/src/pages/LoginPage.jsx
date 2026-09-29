@@ -59,7 +59,7 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
     try {
       const res = await requestOtp(form.email.trim(), form.phone.trim());
       setStage('otp');
-      setInfo(res.devCode ? `Development mode: your code is ${res.devCode}` : 'A 6-digit code has been sent to your mobile.');
+      setInfo(res.devCode ? `Your code is ${res.devCode}` : 'A 6-digit code has been sent to your mobile.');
     } catch (err) {
       setError(err.message || 'Unable to send a verification code');
     } finally {
@@ -141,13 +141,6 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
             <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
               {info}
             </div>
-          )}
-
-          {!channels.loading && role !== 'admin' && !smsAvailable && channels.sms?.reason && (
-            <p className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
-              Sign in with email and password for now — mobile codes are switched off on this server
-              ({channels.sms.reason}).
-            </p>
           )}
 
           <form

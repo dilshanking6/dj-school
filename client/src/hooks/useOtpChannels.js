@@ -20,15 +20,19 @@ const useOtpChannels = () => {
   useEffect(() => {
     let active = true;
 
+    // `available: false` par bhi tab dikhana hai agar code screen par dikh raha
+    // hai (development). Tab koi mail/SMS bhejna hi nahi hai — code seedha
+    // response me aa jaata hai — isliye channel sach me kaam karta hai.
+    const settle = (channel) => {
+      if (!channel) return { available: true };
+      return channel.codeExposed ? { ...channel, available: true } : channel;
+    };
+
     axios
       .get('/api/auth/otp-channels')
       .then(({ data }) => {
         if (!active) return;
-        setChannels({
-          loading: false,
-          email: data.email || { available: true },
-          sms: data.sms || { available: true }
-        });
+        setChannels({ loading: false, email: settle(data.email), sms: settle(data.sms) });
       })
       .catch(() => {
         // Server purana hai ya endpoint reachable nahi — default maan lete hain

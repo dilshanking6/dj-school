@@ -54,20 +54,22 @@ const RegisterPage = ({ role = 'student' }) => {
   const loginPath = role === 'student' ? '/login' : `/${role}-login`;
 
   // Server par kaunsa OTP channel sach me chalta hai (SMTP / SMS set hai ya
-  // nahi). Band channel ka tab dikhta to nahi — user ko bekaar click karne
-  // se aur "server par error" dekhne se bachata hai.
+  // nahi). Jo nahi chalta, uska tab chhup jaata hai — user ko bekaar click
+  // karne aur phir server ke error se nahi jana padta.
   const channels = useOtpChannels();
-  const channelStatus = { email: channels.email, phone: channels.sms };
-  const availableChannels = useMemo(
-    () => ['email', 'phone'].filter((id) => channelStatus[id]?.available),
-    [channelStatus.email?.available, channelStatus.phone?.available]
+  const working = useMemo(
+    () => ['email', 'phone'].filter((id) => channels[id]?.available),
+    [channels.email?.available, channels.sms?.available]
   );
 
+  // Dono hi channel band ho to koi "sab theek hai" jhooth nahi bolenge —
+  // dono dikh jaenge aur server ka saaf error dikhega, jo asli wajah batata hai.
+  const tabs = working.length ? working : ['email', 'phone'];
+  const channelBlocked = working.length > 0 && !working.includes(channel);
+
   useEffect(() => {
-    if (availableChannels.length && !availableChannels.includes(channel)) {
-      setChannel(availableChannels[0]);
-    }
-  }, [availableChannels, channel]);
+    if (working.length && !working.includes(channel)) setChannel(working[0]);
+  }, [working, channel]);
 
   // Code jis channel se maanga gaya, usi par verify hoga.
   const otpTarget = channel === 'email' ? { key: 'email', value: form.email } : { key: 'phone', value: form.phone };
@@ -110,12 +112,8 @@ const RegisterPage = ({ role = 'student' }) => {
   };
 
   const sendOtp = async () => {
-    if (!availableChannels.includes(channel)) {
-      setError(
-        channelStatus[channel]?.reason
-          ? `Ye channel abhi band hai: ${channelStatus[channel].reason}`
-          : 'Ye verification channel abhi available nahi hai.'
-      );
+    if (channelBlocked) {
+      setError('Ye option abhi kaam nahi kar raha. Doosra try karo.');
       return;
     }
     if (!otpTarget.value.trim()) {
@@ -297,43 +295,32 @@ const RegisterPage = ({ role = 'student' }) => {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              {availableChannels.length ? (
-                <>
-                  <div className="mb-3 flex gap-2">
-                    {[
-                      { id: 'email', label: 'Email', icon: Mail },
-                      { id: 'phone', label: 'Mobile', icon: Phone }
-                    ]
-                      .filter((option) => availableChannels.includes(option.id))
-                      .map((option) => {
-                        const active = channel === option.id;
-                        const Icon = option.icon;
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => { setChannel(option.id); setError(''); setOtpCode(''); setDevCode(''); }}
-                            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${
-                              active
-                                ? 'border-primary/50 bg-primary/15 text-white'
-                                : 'border-white/10 text-slate-400 hover:bg-white/5'
-                            }`}
-                          >
-                            <Icon size={16} />
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                  </div>
-                </>
-              ) : (
-                !channels.loading && (
-                  <p className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
-                    Abhi verification ka koi channel server par set nahi hai. Registration band hai —
-                    school office se email/SMS provider setup karwao.
-                  </p>
-                )
-              )}
+              <div className="mb-3 flex gap-2">
+                {[
+                  { id: 'email', label: 'Email', icon: Mail },
+                  { id: 'phone', label: 'Mobile', icon: Phone }
+                ]
+                  .filter((option) => tabs.includes(option.id))
+                  .map((option) => {
+                    const active = channel === option.id;
+                    const Icon = option.icon;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => { setChannel(option.id); setError(''); setOtpCode(''); setDevCode(''); }}
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${
+                          active
+                            ? 'border-primary/50 bg-primary/15 text-white'
+                            : 'border-white/10 text-slate-400 hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon size={16} />
+                        {option.label}
+                      </button>
+                    );
+                  })}
+              </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1">
@@ -376,7 +363,7 @@ const RegisterPage = ({ role = 'student' }) => {
                       <button
                         type="button"
                         onClick={sendOtp}
-                        disabled={otpLoading || !otpReady || !availableChannels.includes(channel)}
+                        disabled={otpLoading || !otpReady || channelBlocked}
                         className="rounded-2xl border border-white/10 px-4 py-3.5 text-sm font-bold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
                       >
                         {otpLoading ? <Loader2 size={16} className="animate-spin" /> : codeLive ? 'Resend' : 'Send code'}
@@ -399,7 +386,7 @@ const RegisterPage = ({ role = 'student' }) => {
                   onClick={() => { setOtpCode(devCode); setError(''); }}
                   className="mt-2 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-[11px] font-bold text-amber-400"
                 >
-                  Dev code: {devCode} — click karke bhar dein
+                  Development code: {devCode} — tap to fill
                 </button>
               )}
             </div>
