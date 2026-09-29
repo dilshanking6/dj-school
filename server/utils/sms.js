@@ -80,10 +80,38 @@ const toE164 = (phone) => {
 const errorText = (data) => {
   if (!data) return '';
   if (typeof data === 'string') return data;
-  const message = data.message ?? data.error ?? data.details;
+  // Provider field ka naam alag alag hota hai: Fast2SMS `message`/`error`,
+  // 2Factor `Details` (capital D).
+  const message = data.message ?? data.error ?? data.details ?? data.Details;
   if (Array.isArray(message)) return message.join(', ');
   if (message && typeof message === 'object') return JSON.stringify(message);
   return String(message || '');
+};
+
+/**
+ * Provider ka response success hai ya nahi. 2Factor success par
+ * `{"Status":"Success","Details":"OTP Sent."}` deta hai aur error par
+ * `{"Status":"Error","Details":"..."}` — yaani `Error`, `ERROR`, `error`,
+ * kuch bhi ho sakta hai. Isliye "Success" ko case-insensitive se compare karna
+ * zaroori hai, warna asli failure chupke se success ban jati hai.
+ */
+const isProviderSuccess = (data) => {
+  if (!data) return true;
+  if (typeof data === 'string') {
+    return !/\berrors?\b|\binvalid\b|\bexpired\b|\bnot\s+allowed\b|\bcredits?\b/i.test(data) || /sent/i.test(data);
+  }
+  if (typeof data !== 'object') return true;
+
+  // Explicit status field ho to wahi source of truth hai.
+  const status = data.Status ?? data.status;
+  if (status !== undefined && status !== null && String(status).trim() !== '') {
+    return String(status).trim().toLowerCase() === 'success';
+  }
+  // Fast2SMS style: `return: true` ya `status_code` under 400.
+  if (data.return !== undefined) return data.return === true;
+  const code = Number(data.status_code);
+  if (Number.isFinite(code)) return code < 400;
+  return true;
 };
 
 /**
@@ -116,7 +144,7 @@ const sendViaFast2sms = async (phone, message, code) => {
   });
 
   const data = response.data || {};
-  if (data.return === false || Number(data.status_code || 200) >= 400) {
+  if (!isProviderSuccess(data)) {
     throw new SmsError(errorText(data) || 'SMS provider rejected the request');
   }
   return { via: 'fast2sms', id: data.request_id };
@@ -133,14 +161,14 @@ const sendVia2factor = async (to, code) => {
 
   const response = await axios.get(url, { timeout: timeout() });
   const text = response.data;
-  const body = typeof text === 'string' ? text : errorText(text);
 
-  // 2factor success par plain "OTP Sent." deta hai, error par "<Status:ERROR>..."
-  if (typeof text === 'object' && text && (text.Status === 'ERROR' || text.status === 'ERROR')) {
-    throw new SmsError(body || 'SMS provider rejected the request');
-  }
-  if (typeof text === 'string' && /error|invalid|expired/i.test(text) && !/sent/i.test(text)) {
-    throw new SmsError(text.slice(0, 200));
+  // Provider ne kya kaha — Render logs me, taaki operator dekh sake ki SMS
+  // kyun nahi gaya. Key URL me hai isliye sirf response log hota hai, key nahi.
+  const preview = typeof text === 'string' ? text.slice(0, 200) : JSON.stringify(text).slice(0, 200);
+  console.log(`[sms:2factor] ${to} -> ${preview}`);
+
+  if (!isProviderSuccess(text)) {
+    throw new SmsError(errorText(text) || 'SMS provider rejected the request');
   }
   return { via: '2factor' };
 };
