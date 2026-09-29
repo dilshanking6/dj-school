@@ -42,32 +42,75 @@ body {
 /**
  * Light theme.
  *
- * Poora UI dark colours (text-slate-300, bg-white/5, border-white/10) par
- * likha gaya hai — 300+ jagah. Un ek ek karke badalna fragile hota, isliye
- * Tailwind ke `slate` scale ko ulta kar dete hain aur `white` ko halke
- * ink-tone par le jaate hain. Isse wahi class light mode me bhi sahi colour
- * de deti hai bina markup chhede.
+ * Poora UI dark colours (text-slate-300/400/500, bg-white/5, bg-secondary,
+ * border-white/10) par likha gaya hai — 300+ jagah. Un ek ek karke badalna
+ * fragile hota, isliye Tailwind ke colour variables ko yahin override karte
+ * hain. Rules `[data-theme='light']` ke andar aur `index.css` me `@import
+ * "tailwindcss"` ke baad aate hain, isliye inki specificity hamesha utility
+ * classes se zyada hoti hai — markup chhede bina kaam ho jaata hai.
  */
 [data-theme='light'] {
   color-scheme: light;
 
-  --background: #EEF2F7;
+  /* Surfaces — dark navy se halka, thoda cool safed. */
+  --background: #F1F5F9;
   --secondary: #FFFFFF;
   --surface: #FFFFFF;
 
-  --color-slate-50: #0F172A;
-  --color-slate-100: #1E293B;
-  --color-slate-200: #334155;
-  --color-slate-300: #475569;
-  --color-slate-400: #64748B;
-  --color-slate-500: #94A3B8;
-  --color-slate-600: #CBD5E1;
-  --color-slate-700: #E2E8F0;
-  --color-slate-800: #F1F5F9;
-  --color-slate-900: #F8FAFC;
-  --color-slate-950: #FFFFFF;
+  --color-background: #F1F5F9;
+  --color-secondary: #FFFFFF;
+  --color-surface: #FFFFFF;
 
+  /* Accents — light background pe readable. Pehle wale blue/cyan
+     (#3B82F6 / #06B6D4) halke bg pe sirf ~2.5:1 dete the. */
+  --color-primary: #1D4ED8;
+  --color-accent: #0E7490;
+
+  /* Slate scale ulti ho rahi hai. 200 se 700 tak sab shades text ke liye
+     hain aur har ek light bg pe 4.5:1 se upar contrast deta hai. */
+  --color-slate-50: #FFFFFF;
+  --color-slate-100: #E2E8F0;
+  --color-slate-200: #64748B;
+  --color-slate-300: #5A6B82;
+  --color-slate-400: #475569;
+  --color-slate-500: #334155;
+  --color-slate-600: #1E293B;
+  --color-slate-700: #0F172A;
+  --color-slate-800: #0B1220;
+  --color-slate-900: #020617;
+  --color-slate-950: #020617;
+
+  /* UI dark theme me likha hai, isliye `text-white`, `bg-white/5`,
+     `border-white/10` sab is ek variable pe chalte hain. Light me isko
+     dark ink kar dete hain, jisse text parhne layak ho jaata hai aur
+     translucent white overlays halke grey surfaces ban jaate hain. */
   --color-white: #0F172A;
+}
+
+/* Coloured buttons/chips par text hamesha safed rehna chahiye, warna
+   `--color-white` dark hone se button ka label gaayab ho jaata hai.
+   Sirf wo surfaces, jinke upar text-white hota hai. Halke tint jaise
+   `bg-primary/10` chhode hain — unka text to primary colour hi rahega. */
+[data-theme='light'] .bg-primary,
+[data-theme='light'] .bg-accent,
+[data-theme='light'] .from-primary,
+[data-theme='light'] .from-accent {
+  color: #FFFFFF;
+}
+
+[data-theme='light'] .bg-primary .text-white,
+[data-theme='light'] .bg-accent .text-white,
+[data-theme='light'] .from-primary .text-white,
+[data-theme='light'] .from-accent .text-white {
+  color: #FFFFFF;
+}
+
+/* Gradient heading text — halke bg pe cyan raha to padhne nahi deta. */
+[data-theme='light'] .text-gradient {
+  background: linear-gradient(100deg, #1D4ED8, #0E7490);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 [data-theme='light'] body {
@@ -75,8 +118,9 @@ body {
 }
 
 [data-theme='light'] .glass-effect {
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(15, 23, 42, 0.09);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.10);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
 }
 
 [data-theme='light'] .page-subtitle {
