@@ -40,12 +40,16 @@ const smtpConfigured = () => Boolean(SMTP_HOST() && SMTP_USER() && SMTP_PASS());
  *   apps-script           — sirf Apps Script (Render free ke liye)
  *   smtp                  — sirf SMTP (paid host ke liye)
  *
- * Ye zaroori isliye hai kyunki `smtpConfigured()` sirf "env var bhar gaye hain"
+ * Zaroori isliye hai kyunki `smtpConfigured()` sirf "env var bhar gaye hain"
  * dekhta hai, ye nahi ki connection ban bhi payegi. Render free par SMTP creds
- * perfectly set hone ke bawajood har mail 11 second timeout par marta tha, aur
+ * perfectly set hone ke bawajood har mail 10 second timeout par marta tha, aur
  * `/api/status` + `/api/auth/otp-channels` `available: true` dikha kar user ko
- * email option dikhate the jo kabhi kaam karta hi nahi tha. Operator ab ye
- * declare karta hai, isliye availability jhooth nahi bolta.
+ * email option dikhate the jo kabhi kaam karta hi nahi tha.
+ *
+ * Ab availability do cheezon se aati hai: env vars, aur `probeSmtp()` ka
+ * natija (neeche). `MAIL_TRANSPORT` sirf ye chunta hai ki kaun sa raasta
+ * pehle try hoga — availability ka faisla probe karta hai, isliye operator ko
+ * kuch declare karne ki zaroorat nahi.
  */
 const mailTransport = () => String(process.env.MAIL_TRANSPORT || 'auto').trim().toLowerCase();
 

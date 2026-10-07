@@ -82,15 +82,26 @@ Whichever channels the server can actually deliver are the ones the UI shows.
 | `smtp` | Only Gmail SMTP. Use this on a paid Render plan or any other host. |
 | `auto` (default) | Whichever is configured — Apps Script first, SMTP as fallback. |
 
-Why the switch exists: **Render's free plan blocks outbound traffic to SMTP ports
+Why this matters: **Render's free plan blocks outbound traffic to SMTP ports
 `25`, `465` and `587`** (Render docs, since September 2025). The credentials can be
-perfectly correct and every mail still dies on an 11-second connection timeout,
-because the TCP connection is never allowed to open. SMS works because providers
-talk HTTPS (port 443), which is not blocked. Until this switch the server only
-checked "are the env vars filled in", so `/api/status` and
+perfectly correct and every mail still dies on a connection timeout, because the TCP
+connection is never allowed to open. SMS works because providers talk HTTPS (port
+443), which is not blocked.
+
+Earlier the server only checked "are the env vars filled in", so `/api/status` and
 `/api/auth/otp-channels` reported `available: true` for a channel that could never
-send anything — the UI then offered email sign-up that always failed with a 503.
-The operator now declares which path actually works, so availability is honest.
+send anything — the UI then offered email sign-up that always failed with a 503
+after an 11-second wait. On boot the server now **actually opens a socket to the
+SMTP host's port** and remembers whether it connected (`probeSmtp()` in
+`server/utils/mailer.js`). The answer feeds `available`, the transport fallback
+list, and the boot log:
+
+- port reachable → SMTP stays available and is used as the fallback
+- port blocked → SMTP is dropped from the fallback list and email reports
+  `available: false`, so the UI stops offering a channel that cannot work
+
+The result is automatic — no env var has to be declared by hand. On a paid plan or
+any normal host the probe succeeds and email keeps working exactly as before.
 
 `GET /api/auth/otp-channels` is public and reports only whether each channel works, so the frontend
 can offer just those. `GET /api/status` additionally carries the provider names and the `reason` a
@@ -419,20 +430,32 @@ Free plan me service idle ho to sleep ho jaati hai. Pehla request slow hoga, usk
 Google Apps Script free quota khatam ho sakta hai. Apps Script → Executions page dekho. Timeout
 `SHEET_READ_TIMEOUT=90000` tak barha sakte ho.
 
-**Email nahi ja rahi — 11 second baad 503**
+**Email nahi ja rahi — abhi `available: false` dikha raha hai (ya 503 aa raha hai)**
 
 Pehle ye dekho ki Render **free** plan par to nahi ho. Render free outbound SMTP ports `25`, `465`
 aur `587` **block** karta hai (official docs, Sep 2025 se). Us case me `SMTP login verified` wali
-galti kabhi nahi aati — connection banti hi nahi. `MAIL_TRANSPORT=apps-script` rakho aur
-`APPS_SCRIPT_MAIL_URL` / `APPS_SCRIPT_MAIL_TOKEN` bharo (Step 1 dekho).
+galti kabhi nahi aati — connection banti hi nahi, aur na koi `535` error milta hai.
+
+Server boot par khud ye check kar leta hai. Render ke **Logs** tab me dekho:
+
+```
+[config] SMTP port UNREACHABLE: smtp.gmail.com:587 blocked (timeout) — email will not work over SMTP on this host.
+[config] Email OTP NOT configured (...)
+```
+
+Ye matlab SMTP raasta dead hai. Fix: ek mail-only Apps Script banao aur
+`APPS_SCRIPT_MAIL_URL` / `APPS_SCRIPT_MAIL_TOKEN` bharo (Step 1 dekho). Probe ki
+wajah se status `available: true` bol kar dhoka nahi karta — email option tab tak
+UI me dikhta hi nahi.
 
 ```bash
 npm run check:otp -- --url <tera-render-url>     # transport + available dikhega
 npm run check:otp -- aapka@gmail.com             # ek asli test mail bhejta hai
 ```
 
-Agar `MAIL_TRANSPORT=smtp` (paid plan) par ho to `SMTP login verified` fail hone ka matlab App
-Password galat hai ya 2-Step Verification off hai. Asli error Render ke **Logs** tab me
+Agar **paid** plan (ya koi doosra host) par ho to boot log me `SMTP port reachable`
+aana chahiye. Uske baad bhi `SMTP login verified` fail ho raha hai to App Password
+galat hai ya 2-Step Verification off hai — asli error Render ke **Logs** tab me
 (`[email-otp] send failed ...`) likha hua milega.
 
 **SMS nahi ja rahi**

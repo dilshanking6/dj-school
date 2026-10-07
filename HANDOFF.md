@@ -69,31 +69,49 @@ string (40+ char) > Save > **Manual Deploy**.
 Saath me `SMTP_PASS` aur `SMS_API_KEY` bhi chat me gaye the → provider
 dashboards se bhi rotate kar lena.
 
-### 3.2 Email OTP — free fix ready hai, deploy baaki
+### 3.2 Email OTP — fix deployed, user ka 5-min setup baaki
 
 **Problem:** Render ka free plan outbound SMTP ports `25/465/587` block karta hai
 (Render docs, Sep 2025). Isliye `POST /api/auth/email-otp/request` → `503` after
 ~11s (`connectionTimeout: 10000`). Config bilkul theek tha, connection hi nahi
 banti thi. SMS isliye chalta hai kyunki 2factor HTTPS (443) use karta hai.
 
-**Fix banaya (code ready, push hone wala hai):**
+**Fix (commits `0ab9e17` aur `b451b2f`, dono push + deploy ho chuke hain):**
 
 1. `server/scripts/appsScriptMail.gs` — **standalone** mail-only Apps Script.
    `MailApp.sendEmail` use karta hai (HTTPS, free). Token check + hourly quota hai.
 2. `server/utils/mailer.js` — naya `MAIL_TRANSPORT` (`auto` | `apps-script` | `smtp`)
    aur `APPS_SCRIPT_MAIL_URL` / `APPS_SCRIPT_MAIL_TOKEN` support.
-3. **Availability ab jhooth nahi bolta:** `mailStatus()` `MAIL_TRANSPORT` dekhta hai,
-   sirf "env var bhar gaye" nahi. `otp-channels` se `provider` naam bhi hata diya.
+3. **Availability ab jhooth nahi bolta.** Do tarike se:
+   - `mailStatus()` ab sirf "env var bhar gaye" nahi dekhta — boot par
+     `probeSmtp()` SMTP host ke port par **asli socket** kholti hai.
+   - `otp-channels` se `provider` naam bhi hata diya (status endpoint me hi rehta hai).
 
-**Abhi user ko karna hai (5 min):**
+**Live par verified (7 Oct 2026):**
+
+| Check | Pehle | Ab |
+|---|---|---|
+| `GET /api/auth/otp-channels` ka `email.available` | `true` (jhooth) | `false` ✅ |
+| `POST /api/auth/email-otp/request` | 503 in **11.8s** | 503 in **1.9s** ✅ |
+| Boot log | "Email OTP ready (smtp)" | `[config] SMTP port UNREACHABLE ...` ✅ |
+| `sms.available` | `true` | `true` ✅ (2factor HTTPS, chalta hai) |
+
+SMTP fallback list se drop ho jaata hai, isliye timeout ab kabhi nahi hota.
+Email option tab tak UI me dikhta hi nahi — jab tak Apps Script URL set na ho.
+
+**Abhi user ko karna hai (5 min, yahi ek cheez pending hai):**
 
 1. script.google.com → New project → `appsScriptMail.gs` ka poora content paste
-2. `MAIL_TOKEN` me apni random string daalo
+2. `MAIL_TOKEN` me apni random string daalo (40+ char)
 3. Deploy > New deployment > Web app > Execute as: **Me** > Access: **Anyone**
 4. Jo URL mile wo Render me `APPS_SCRIPT_MAIL_URL` me daalo
 5. Wahi token Render me `APPS_SCRIPT_MAIL_TOKEN` me daalo
-6. **Manual Deploy**
+6. **Manual Deploy → Deploy latest commit** (env change se auto deploy nahi hota)
 7. Verify: `cd server && npm run check:otp -- koi@gmail.com`
+
+> `MAIL_TRANSPORT=apps-script` set karna **zaroori nahi** — `auto` me apps-script
+> pehle aata hai, aur SMTP probe already dead declare kar chuka hai. render.yaml
+> me ye value hai, Render blueprint env sync kare to theek, na kare tab bhi chalega.
 
 ### 3.3 Data hi nahi hai
 
