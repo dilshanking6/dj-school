@@ -250,3 +250,106 @@ test('toNumber / parseIntSafe: never return NaN', () => {
   assert.equal(rows.parseIntSafe('12abc'), 12);
   assert.equal(rows.parseIntSafe('abc'), 0);
 });
+
+// ---------------------------------------------------------------------------
+//  Mail transport selection (server/utils/mailer.js)
+//
+//  Ye isliye important hai ki `mailStatus().available` wahi batata hai jo UI
+//  ko dikhta hai. Render FREE plan par SMTP ports 25/465/587 blocked hain —
+//  wahan `MAIL_TRANSPORT=smtp` galat hai aur `available: true` jhooth hoga
+//  (user email option chunega aur 503 aayega).
+// ---------------------------------------------------------------------------
+
+const MAIL_KEYS = [
+  'MAIL_TRANSPORT', 'APPS_SCRIPT_MAIL_URL', 'APPS_SCRIPT_MAIL_TOKEN',
+  'APPS_SCRIPT_URL', 'APPS_SCRIPT_MAIL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SMTP_PORT'
+];
+
+const freshMailer = (env) => {
+  for (const k of MAIL_KEYS) delete process.env[k];
+  Object.assign(process.env, env);
+  delete require.cache[require.resolve('../utils/mailer.js')];
+  const mailer = require('../utils/mailer.js');
+  // Ek function lautate hain taaki `const m = done()` sab tests me chale.
+  // Is function ka kaam sirf mailer dena hai — env ko ye SAAF nahi karta,
+  // warna transportOrder() call ke waqt env khali milta aur sab fail hota.
+  // Cleanup agla freshMailer khud karta hai.
+  return () => mailer;
+};
+
+test('mailer: Render free (MAIL_TRANSPORT=apps-script) sirf apps-script use karta hai', () => {
+  const done = freshMailer({
+    MAIL_TRANSPORT: 'apps-script',
+    APPS_SCRIPT_MAIL_URL: 'https://script.google.com/macros/s/x/exec',
+    APPS_SCRIPT_MAIL_TOKEN: 'tok',
+    // SMTP creds set hain par free plan par ye bekaar hain — transport order
+    // me kabhi aane nahi chahiye, warna har mail 11 second timeout lega.
+    SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'a@b.com', SMTP_PASS: 'x'
+  });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), ['apps-script']);
+  const s = m.mailStatus();
+  assert.equal(s.available, true);
+  assert.equal(s.provider, 'apps-script');
+});
+
+test('mailer: apps-script transport par URL missing ho to available=false (jhooth nahi)', () => {
+  const done = freshMailer({ MAIL_TRANSPORT: 'apps-script' });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), []);
+  const s = m.mailStatus();
+  assert.equal(s.available, false);
+  assert.match(s.reason, /APPS_SCRIPT_MAIL_URL/);
+});
+
+test('mailer: paid host (MAIL_TRANSPORT=smtp) SMTP par chalta hai', () => {
+  const done = freshMailer({
+    MAIL_TRANSPORT: 'smtp',
+    SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'a@b.com', SMTP_PASS: 'x'
+  });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), ['smtp']);
+  assert.equal(m.mailStatus().provider, 'smtp');
+});
+
+test('mailer: forced smtp par creds missing ho to available=false', () => {
+  const done = freshMailer({ MAIL_TRANSPORT: 'smtp' });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), []);
+  assert.equal(m.mailStatus().available, false);
+});
+
+test('mailer: auto me apps-script pehle aata hai, phir smtp (fallback)', () => {
+  const done = freshMailer({
+    APPS_SCRIPT_MAIL_URL: 'https://script.google.com/macros/s/x/exec',
+    APPS_SCRIPT_MAIL_TOKEN: 'tok',
+    SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'a@b.com', SMTP_PASS: 'x'
+  });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), ['apps-script', 'smtp']);
+  assert.equal(m.mailStatus().provider, 'apps-script');
+});
+
+test('mailer: auto me purana behaviour — sirf SMTP creds ho to smtp hi', () => {
+  const done = freshMailer({ SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'a@b.com', SMTP_PASS: 'x' });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), ['smtp']);
+  assert.equal(m.mailStatus().provider, 'smtp');
+});
+
+test('mailer: auto + purana APPS_SCRIPT_MAIL=true bhi chalta hai (back-compat)', () => {
+  const done = freshMailer({
+    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/sheet/exec',
+    APPS_SCRIPT_MAIL: 'true'
+  });
+  const m = done();
+  assert.deepEqual(m.transportOrder(), ['apps-script']);
+});
+
+test('mailer: kuch bhi set na ho to available=false', () => {
+  const done = freshMailer({});
+  const m = done();
+  assert.deepEqual(m.transportOrder(), []);
+  assert.equal(m.mailConfigured(), false);
+  assert.equal(m.mailStatus().available, false);
+});

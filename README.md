@@ -70,19 +70,59 @@ Whichever channels the server can actually deliver are the ones the UI shows.
 
 | Channel | Needs | Env |
 | --- | --- | --- |
-| Email | Gmail SMTP + Google App Password | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, optional `MAIL_FROM` |
+| Email (free — works on Render free plan) | a separate mail-only Apps Script web app | `MAIL_TRANSPORT=apps-script`, `APPS_SCRIPT_MAIL_URL`, `APPS_SCRIPT_MAIL_TOKEN` |
+| Email (SMTP) | Gmail SMTP + Google App Password — **blocked on Render's free plan** | `MAIL_TRANSPORT=smtp`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, optional `MAIL_FROM` |
 | Mobile | a free SMS provider | `SMS_PROVIDER` + `SMS_API_KEY` (or `SMS_WEBHOOK_URL`) |
+
+`MAIL_TRANSPORT` says which of the two email paths is the real one:
+
+| Value | Meaning |
+| --- | --- |
+| `apps-script` | Only the Apps Script path. **Use this on Render's free plan.** |
+| `smtp` | Only Gmail SMTP. Use this on a paid Render plan or any other host. |
+| `auto` (default) | Whichever is configured — Apps Script first, SMTP as fallback. |
+
+Why the switch exists: **Render's free plan blocks outbound traffic to SMTP ports
+`25`, `465` and `587`** (Render docs, since September 2025). The credentials can be
+perfectly correct and every mail still dies on an 11-second connection timeout,
+because the TCP connection is never allowed to open. SMS works because providers
+talk HTTPS (port 443), which is not blocked. Until this switch the server only
+checked "are the env vars filled in", so `/api/status` and
+`/api/auth/otp-channels` reported `available: true` for a channel that could never
+send anything — the UI then offered email sign-up that always failed with a 503.
+The operator now declares which path actually works, so availability is honest.
 
 `GET /api/auth/otp-channels` is public and reports only whether each channel works, so the frontend
 can offer just those. `GET /api/status` additionally carries the provider names and the `reason` a
-channel is unavailable, which is what an operator needs — those env var names stay in the status
-endpoint, the boot log and `npm run check:otp`, never in a page a user sees.
+channel is unavailable, which is what an operator needs — those env var names and the provider name
+stay in the status endpoint, the boot log and `npm run check:otp`, never in a page a user sees.
 
 When a channel cannot deliver, the browser gets a plain sentence ("Abhi email par code nahi bhej pa
 rahe. Mobile number se verify karo."). The technical reason is logged server-side instead of being
 pushed at the person signing up.
 
+### Email: Apps Script over HTTPS (free — no SMTP ports needed)
+
+The whole setup is in [`server/scripts/appsScriptMail.gs`](server/scripts/appsScriptMail.gs); the
+short version:
+
+1. <https://script.google.com> → **New project** → paste that entire file.
+2. Set `MAIL_TOKEN` to any long random string (40+ characters).
+3. **Deploy → New deployment → Web app**; *Execute as* = **Me**, *Who has access* = **Anyone**.
+   Deploy and copy the `/exec` URL.
+4. On Render set `APPS_SCRIPT_MAIL_URL` to that URL, `APPS_SCRIPT_MAIL_TOKEN` to the same
+   `MAIL_TOKEN`, and `MAIL_TRANSPORT=apps-script`.
+5. **Manual Deploy → Deploy latest commit** (env changes never auto-deploy by themselves).
+6. Verify: `npm run check:otp -- your.school@gmail.com`.
+
+Free Gmail allows about 100 recipients a day through `MailApp`, which is plenty for a school's
+sign-ups. The script checks the shared token on every call and keeps an hourly cap, so the URL
+cannot be abused as an open relay by anyone who finds it.
+
 ### Email: Gmail App Password, step by step
+
+Skip this section if you are on the Apps Script path above — on Render's free plan SMTP is blocked
+no matter how correct these credentials are.
 
 1. Sign in to the Gmail account that will send the codes (a dedicated school account is best).
 2. Open <https://myaccount.google.com/security> and turn on **2-Step Verification** (Google requires it
@@ -275,18 +315,21 @@ Sirf environment variables set karne padte hain — koi alag frontend host nahi.
 `render.yaml` is repository me hai, so the deploy is one click. Secrets usme khud se bhare jaate hain,
 kabhi git me nahi jaate.
 
-### Step 1 — Gmail App Password bana lo (email OTP ke liye)
+### Step 1 — Email OTP ka free raasta bana lo
 
-Ye Render se pehle karna hai, kyunki ye 16-character password ek hi baar dikhta hai.
+Render **free** plan par SMTP ports blocked hain, isliye mail ke liye ek chhota
+mail-only Apps Script banana padta hai (5 minute, ek hi baar):
 
-1. Wo Gmail account kholo jo codes bhejega (school ka dedicated account best hai).
-2. <https://myaccount.google.com/security> kholo aur **2-Step Verification ON** karo. Google app
-   passwords tabhi deta hai jab 2-step verification chalu ho.
-3. Usi page par **App passwords** kholo. Entry nahi dikh rahi to 2-step verification sach me on nahi hua.
-4. App ka naam daalo (kuch bhi, jaise `Digital Janta OTP`), app **Mail** chuno, **Create** dabao.
-5. Google **16-character password ek hi baar** dikhayega. Turant copy kar lo, dobara nahi milega.
+1. <https://script.google.com> kholo → **New project**.
+2. [`server/scripts/appsScriptMail.gs`](server/scripts/appsScriptMail.gs) ka poora content paste
+   karo.
+3. Usi file me `MAIL_TOKEN` ki value apni koi bhi lambi random string (40+ char) se badal do.
+4. **Deploy → New deployment**; Type = **Web app**, *Execute as* = **Me**, *Who has access* =
+   **Anyone** → **Deploy**.
+5. Jo `/exec` URL mile aur wahi `MAIL_TOKEN` — agle step me chahiye.
 
-Isko kisi me save kar lo abhi, kyunki agle step me chahiye.
+> Gmail App Password banane ka purana tareeka (2-Step Verification → App passwords) tab hi chahiye
+> jab tum **paid** Render plan ya koi doosra host use karo. Uska section neeche hai.
 
 ### Step 2 — Render me service banao
 
@@ -298,13 +341,18 @@ Isko kisi me save kar lo abhi, kyunki agle step me chahiye.
 
    | Variable | Kahan se laana hai |
    | --- | --- |
-   | `APPS_SCRIPT_URL` | Google Apps Script → Deploy → New deployment → Web app → URL copy karo |
-   | `SMTP_USER` | Wo Gmail jo code bhejega, jaise `school@gmail.com` |
-   | `SMTP_PASS` | Step 1 ka 16-character App Password (quotes ya spaces ke bina) |
+   | `APPS_SCRIPT_URL` | Sheet wala Apps Script → Deploy → New deployment → Web app → URL |
+   | `APPS_SCRIPT_MAIL_URL` | Step 1 ka mail wala Apps Script URL (alag script hai) |
+   | `APPS_SCRIPT_MAIL_TOKEN` | Step 1 me rakha wahi `MAIL_TOKEN` |
    | `SMS_API_KEY` | 2Factor/Fast2SMS ki key (neeche Step 3) — SMS nahi chahiye to chhod do |
 
-   `JWT_SECRET` khud ban jayega (`generateValue: true`).
+   `MAIL_TRANSPORT` (`apps-script`) aur `JWT_SECRET` blueprint khud set kar leta hai.
+   **Agar `JWT_SECRET` tumne manually koi chhota/routine string kar diya hai to use abhi badal
+   do** — usse session token forge ho jaate hain.
 5. **Apply** dabao. Build ~2-3 minute lega.
+
+> `SMTP_USER` / `SMTP_PASS` free plan par bharna **kaam nahi karta** — Render un port ko hi block
+> kar deta hai. Wo sirf paid plan (`MAIL_TRANSPORT=smtp`) ke liye hain.
 
 ### Step 3 — Mobile OTP (optional; email se kaam chal jaata hai)
 
@@ -338,16 +386,16 @@ Apne computer par (repo clone hai to):
 
 ```bash
 cd server
-npm run check:otp -- --url https://digital-janta.onrender.com
+npm run check:otp -- --url https://smart-janta.onrender.com
 ```
 
-Output me dono channels `available` dikhne chahiye. `NOT configured` aaye to usi channel ki wajah
-wahi line me likhi hogi.
+Output me dono channels `available` dikhne chahiye, aur Email wali line me `transport = apps-script`
+ya `transport = smtp`. `NOT configured` aaye to usi channel ki wajah wahi line me likhi hogi.
 
 Ya seedha browser me kholo:
 
 ```
-https://digital-janta.onrender.com/api/status
+https://smart-janta.onrender.com/api/status
 ```
 
 `verification.email.available: true` aur `verification.sms.available: true` hona chahiye.
@@ -371,10 +419,21 @@ Free plan me service idle ho to sleep ho jaati hai. Pehla request slow hoga, usk
 Google Apps Script free quota khatam ho sakta hai. Apps Script → Executions page dekho. Timeout
 `SHEET_READ_TIMEOUT=90000` tak barha sakte ho.
 
-**Email nahi ja rahi**
-`npm run check:otp -- --url <tera-render-url>` chalao. Agar `SMTP login verified` fail ho raha hai to
-App Password galat hai ya 2-Step Verification off hai. Render ke **Logs** tab me bhi asli SMTP error
-(`535 5.7.8 ...`) likha hua milega.
+**Email nahi ja rahi — 11 second baad 503**
+
+Pehle ye dekho ki Render **free** plan par to nahi ho. Render free outbound SMTP ports `25`, `465`
+aur `587` **block** karta hai (official docs, Sep 2025 se). Us case me `SMTP login verified` wali
+galti kabhi nahi aati — connection banti hi nahi. `MAIL_TRANSPORT=apps-script` rakho aur
+`APPS_SCRIPT_MAIL_URL` / `APPS_SCRIPT_MAIL_TOKEN` bharo (Step 1 dekho).
+
+```bash
+npm run check:otp -- --url <tera-render-url>     # transport + available dikhega
+npm run check:otp -- aapka@gmail.com             # ek asli test mail bhejta hai
+```
+
+Agar `MAIL_TRANSPORT=smtp` (paid plan) par ho to `SMTP login verified` fail hone ka matlab App
+Password galat hai ya 2-Step Verification off hai. Asli error Render ke **Logs** tab me
+(`[email-otp] send failed ...`) likha hua milega.
 
 **SMS nahi ja rahi**
 Do alag alag cheezein alag se check karni hain — config set hai ya nahi, aur phir delivery.

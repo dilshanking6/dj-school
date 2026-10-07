@@ -4,17 +4,19 @@ const { codeExposed } = require('./otp');
 /**
  * Email bhejne ke do raaste hain:
  *
- *  1. SMTP (recommended) — Gmail SMTP + App Password. Ye reliable hai, seedha
- *     chalta hai, aur 500 mail/day tak aasaani se chalta hai. Isi ke liye
- *     `server/.env` me SMTP_USER/SMTP_PASS bharne hote hain.
- *  2. Apps Script `sendMail` — sirf tab, jab aapka apna deployed script me
- *     `sendMail` action likha ho. Ye default me BAND hai: `APPS_SCRIPT_URL`
- *     set hone ka matlab ye nahi ki script mail bhej sakti hai, aur pehle yahi
- *     galat assumption server ko "email ready" dikha rahi thi jabki koi mail
- *     jaata hi nahi tha. Chalane ke liye `APPS_SCRIPT_MAIL=true` set karo.
+ *  1. `apps-script` (free, Render free plan ke liye) — ek alag Apps Script web
+ *     app (`server/scripts/appsScriptMail.gs`) HTTPS (port 443) par mail
+ *     bhejta hai. Render ka free plan outbound SMTP ports 25/465/587 block
+ *     karta hai, isliye wahan SMTP se mail jaata hi nahi. URL
+ *     `APPS_SCRIPT_MAIL_URL` me, shared secret `APPS_SCRIPT_MAIL_TOKEN` me.
  *
- * Dono me se jo pehle configured mile use try karte hain; fail ho to doosra.
- * Dono fail = saaf error (code chup chaap nahi hota).
+ *  2. `smtp` — Gmail SMTP + App Password (port 587). Normal host par
+ *     reliable; Render **paid** plan par chalta hai. Iske liye `SMTP_USER`
+ *     aur `SMTP_PASS` chahiye.
+ *
+ * Dono configured ho to `MAIL_TRANSPORT` decide karta hai kaun sa use hoga
+ * (upar wale comment me details). Ek fail ho to doosra try hota hai.
+ * Dono fail = saaf error — code chup chaap nahi hota.
  */
 
 const SMTP_HOST = () => process.env.SMTP_HOST;
@@ -22,8 +24,58 @@ const SMTP_USER = () => process.env.SMTP_USER;
 const SMTP_PASS = () => process.env.SMTP_PASS;
 
 const smtpConfigured = () => Boolean(SMTP_HOST() && SMTP_USER() && SMTP_PASS());
-const appsScriptConfigured = () =>
+
+/**
+ * Mail bhejne ke teen possible "transport" hain:
+ *
+ *   smtp         — Gmail SMTP (port 587/465). **Render free plan par BAND hai**
+ *                  uske official firewall ki wajah se (ports 25/465/587 blocked
+ *                  since Sep 2025). Normal host par chalta hai.
+ *   apps-script  — ek alag Apps Script web app jo HTTPS (443) par mail bhejta
+ *                  hai. Free plan par ye EK MATRA free raasta hai.
+ *
+ * `MAIL_TRANSPORT` operator ye batata hai ki asli me kaun sa chal raha hai:
+ *
+ *   auto        (default) — jo bhi configured ho, pehle apps-script, phir smtp
+ *   apps-script           — sirf Apps Script (Render free ke liye)
+ *   smtp                  — sirf SMTP (paid host ke liye)
+ *
+ * Ye zaroori isliye hai kyunki `smtpConfigured()` sirf "env var bhar gaye hain"
+ * dekhta hai, ye nahi ki connection ban bhi payegi. Render free par SMTP creds
+ * perfectly set hone ke bawajood har mail 11 second timeout par marta tha, aur
+ * `/api/status` + `/api/auth/otp-channels` `available: true` dikha kar user ko
+ * email option dikhate the jo kabhi kaam karta hi nahi tha. Operator ab ye
+ * declare karta hai, isliye availability jhooth nahi bolta.
+ */
+const mailTransport = () => String(process.env.MAIL_TRANSPORT || 'auto').trim().toLowerCase();
+
+// Naya: apna alag mail-only Apps Script (server/scripts/appsScriptMail.gs).
+const dedicatedMailUrl = () => String(process.env.APPS_SCRIPT_MAIL_URL || '').trim();
+const mailToken = () => String(process.env.APPS_SCRIPT_MAIL_TOKEN || '').trim();
+
+// Purana raasta: wahi sheet wala Apps Script jisme `sendMail` action ho.
+const sharedScriptMailConfigured = () =>
   Boolean(process.env.APPS_SCRIPT_URL) && process.env.APPS_SCRIPT_MAIL === 'true';
+
+const appsScriptMailConfigured = () => Boolean(dedicatedMailUrl()) || sharedScriptMailConfigured();
+
+const appsScriptMailUrl = () => dedicatedMailUrl() || process.env.APPS_SCRIPT_URL || '';
+
+/**
+ * Kaunse transport kis order me try honge. `MAIL_TRANSPORT` explicitly diya
+ * ho to sirf wahi. `auto` me apps-script pehle — wo operator ne jaan boojh kar
+ * enable kiya hai, aur Render free par SMTP kabhi kaam nahi karegi (11s hang).
+ */
+const transportOrder = () => {
+  const forced = mailTransport();
+  if (forced === 'smtp') return smtpConfigured() ? ['smtp'] : [];
+  if (forced === 'apps-script') return appsScriptMailConfigured() ? ['apps-script'] : [];
+
+  const order = [];
+  if (appsScriptMailConfigured()) order.push('apps-script');
+  if (smtpConfigured()) order.push('smtp');
+  return order;
+};
 
 // Nodemailer transport banate waqt connection verify kar leti hai, taaki har
 // OTP request par handshake na ho. Isse failure jaldi pata chal jaati hai.
@@ -83,13 +135,17 @@ const sendViaSmtp = async ({ to, subject, text, html }) => {
 };
 
 const sendViaAppsScript = async ({ to, subject, text, html }) => {
-  const url = process.env.APPS_SCRIPT_URL;
+  const url = appsScriptMailUrl();
   if (!url) throw new MailError('Email service is not configured.');
 
   const timeout = Number(process.env.SHEET_WRITE_TIMEOUT || 30000);
   let response;
   try {
-    response = await axios.post(url, { action: 'sendMail', to, subject, body: text, html }, { timeout });
+    response = await axios.post(
+      url,
+      { action: 'sendMail', token: mailToken(), to, subject, body: text, html },
+      { timeout }
+    );
   } catch (error) {
     if (error.response) throw new MailError('Email service rejected the request', error);
     if (error.code === 'ECONNABORTED') throw new MailError('Email service timed out. Please try again.', error);
@@ -112,22 +168,18 @@ const asHtml = ({ text, html }) => html || `<p>${String(text).replace(/\n/g, '<b
 async function sendMail({ to, subject, text, html }) {
   const message = { to, subject, text, html: asHtml({ text, html }) };
   const problems = [];
+  const order = transportOrder();
 
-  if (smtpConfigured()) {
+  for (const transport of order) {
     try {
+      if (transport === 'apps-script') return await sendViaAppsScript(message);
       return await sendViaSmtp(message);
     } catch (error) {
-      resetTransport();
+      // SMTP ka transport dobara connect nahi hona chahiye (535 par wo
+      // poison ho jaata hai), isliye use reset karte hain.
+      if (transport === 'smtp') resetTransport();
       // Nodemailer ka message ("535 5.7.8 Username and Password not accepted")
-      // user ke liye useful hai, isliye wahi aage bheja jaata hai.
-      problems.push(error.message);
-    }
-  }
-
-  if (appsScriptConfigured()) {
-    try {
-      return await sendViaAppsScript(message);
-    } catch (error) {
+      // ya Apps Script ka error — dono user ke liye useful hain.
       problems.push(error.message);
     }
   }
@@ -135,13 +187,13 @@ async function sendMail({ to, subject, text, html }) {
   const error = new MailError(
     problems.length
       ? problems.join(' | ')
-      : 'Email service is not configured. Add SMTP_USER and SMTP_PASS to the server environment.'
+      : 'Email service is not configured. Set MAIL_TRANSPORT and its settings in the server environment.'
   );
   error.problems = problems;
   throw error;
 }
 
-const mailConfigured = () => smtpConfigured() || appsScriptConfigured();
+const mailConfigured = () => transportOrder().length > 0;
 
 /**
  * `false` matlab development/ALLOW_DEV_EMAIL_CODE mode — tab code screen par
@@ -149,23 +201,51 @@ const mailConfigured = () => smtpConfigured() || appsScriptConfigured();
  */
 const shouldSendMail = () => mailConfigured();
 
-/** Diagnostics endpoint / `npm run check:otp` ke liye. Secrets nahi dikhata. */
+/**
+ * Diagnostics endpoint / `npm run check:otp` ke liye. Secrets nahi dikhata.
+ *
+ * `MAIL_TRANSPORT` ko dhyan me rakhta hai — yahi wo jagah hai jahan se
+ * `available` ki haaliyat aati hai. Render free par `MAIL_TRANSPORT=smtp`
+ * hata kar `apps-script` karna zaroori hai, warna status `available: true`
+ * bolega jabki har mail 11 second timeout par marega.
+ */
 const mailStatus = () => {
-  if (smtpConfigured()) {
-    return { available: true, provider: 'smtp', account: SMTP_USER() };
+  const forced = mailTransport();
+
+  if (forced === 'smtp') {
+    if (smtpConfigured()) return { available: true, provider: 'smtp', account: SMTP_USER() };
+    return { available: false, provider: 'smtp', reason: smtpMissingReason() };
   }
-  if (appsScriptConfigured()) {
-    return { available: true, provider: 'apps-script' };
+
+  if (forced === 'apps-script') {
+    if (appsScriptMailConfigured()) return { available: true, provider: 'apps-script' };
+    return {
+      available: false,
+      provider: 'apps-script',
+      reason: dedicatedMailUrl()
+        ? 'APPS_SCRIPT_MAIL_TOKEN is missing'
+        : 'APPS_SCRIPT_MAIL_URL is missing (see server/scripts/appsScriptMail.gs)'
+    };
   }
-  if (process.env.SMTP_USER || process.env.SMTP_PASS) {
-    return { available: false, reason: 'SMTP_USER and SMTP_PASS dono chahiye (ek bhi khaali hai)' };
-  }
-  return { available: false, reason: 'SMTP_USER/SMTP_PASS missing in server env' };
+
+  // auto
+  if (appsScriptMailConfigured()) return { available: true, provider: 'apps-script' };
+  if (smtpConfigured()) return { available: true, provider: 'smtp', account: SMTP_USER() };
+  if (process.env.SMTP_USER || process.env.SMTP_PASS) return { available: false, reason: smtpMissingReason() };
+  return { available: false, reason: 'No mail transport configured (set MAIL_TRANSPORT)' };
 };
 
-/** SMTP credentials sach me kaam kar rahi hain ya nahi — bina mail bheje. */
+const smtpMissingReason = () =>
+  'SMTP_USER and SMTP_PASS dono chahiye (ek bhi khaali hai)';
+
+/**
+ * SMTP credentials sach me kaam kar rahi hain ya nahi — bina mail bheje.
+ * Sirf `smtp` transport par matlab rakhta hai; apps-script ka koi SMTP
+ * handshake nahi hai (wo HTTPS hai), isliye wahan skip ho jaata hai.
+ */
 const verifySmtp = async () => {
-  if (!smtpConfigured()) return { ok: false, reason: mailStatus().reason };
+  if (mailTransport() === 'apps-script') return { ok: true, via: 'apps-script' };
+  if (!smtpConfigured()) return { ok: false, reason: mailStatus().reason || 'SMTP is not configured' };
   try {
     const transport = await smtpTransport();
     await transport.verify();
@@ -178,5 +258,6 @@ const verifySmtp = async () => {
 
 module.exports = {
   sendMail, verifySmtp, mailConfigured, shouldSendMail, mailStatus,
-  smtpConfigured, appsScriptConfigured, codeExposed, MailError
+  smtpConfigured, appsScriptMailConfigured, mailTransport, transportOrder,
+  codeExposed, MailError
 };

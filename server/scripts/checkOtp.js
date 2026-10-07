@@ -113,21 +113,29 @@ async function checkEmail() {
   const status = mailStatus();
   if (!status.available) {
     bad(`Email: ${status.reason}`);
-    if (!codeExposed()) info('Login karo -> Security -> 2-Step Verification -> App passwords (README)');
+    if (!codeExposed()) info('Setup: server/scripts/appsScriptMail.gs (free) ya Gmail App Password (README)');
     return;
   }
-  ok(`Email: configured via ${status.provider} (${status.account || 'account hidden'})`);
+  ok(`Email: transport = ${status.provider}${status.account ? ` (${status.account})` : ''}`);
 
-  const smtp = await verifySmtp();
-  if (smtp.ok) ok('Email: SMTP login verified');
-  else bad(`Email: SMTP login failed — ${smtp.reason}`);
+  // SMTP ka handshake tabhi verify hota hai jab asli transport SMTP hi ho.
+  // Apps Script HTTPS hai — uska koi SMTP login nahi hai, aur wahan
+  // bina bheje verify karne ka koi tareeka bhi nahi.
+  if (status.provider === 'smtp') {
+    const smtp = await verifySmtp();
+    if (smtp.ok) ok('Email: SMTP login verified');
+    else bad(`Email: SMTP login failed — ${smtp.reason}`);
 
-  if (!email) {
+    if (!email) {
+      info('Email address pass nahi ki — sirf config check ho gaya');
+      return;
+    }
+    if (!smtp.ok) {
+      bad('Email: send nahi kiya, credentials theek nahi lag rahi');
+      return;
+    }
+  } else if (!email) {
     info('Email address pass nahi ki — sirf config check ho gaya');
-    return;
-  }
-  if (!smtp.ok) {
-    bad('Email: send nahi kiya, credentials theek nahi lag rahi');
     return;
   }
 

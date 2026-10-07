@@ -44,7 +44,24 @@ services:
       - key: APPS_SCRIPT_URL
         sync: false # Google Apps Script web app ka deployed URL
 
-      # --- Email OTP (Gmail + App Password) ------------------------------
+      # --- Email OTP -----------------------------------------------------
+      # IMPORTANT: Render ka FREE plan outbound SMTP ports 25/465/587 BLOCK
+      # karta hai (Render docs, Sep 2025 se). Isliye neeche SMTP_USER/SMTP_PASS
+      # bharne ke baad bhi har mail 11 second timeout par marta tha — config
+      # set tha par connection hi nahi banti thi.
+      #
+      # Free me email ke liye apna alag mail-only Apps Script banao:
+      #   server/scripts/appsScriptMail.gs  (setup steps usi file me hain)
+      # Uska URL + shared token neeche bharo, phir Manual Deploy karo.
+      - key: MAIL_TRANSPORT
+        value: apps-script # auto | apps-script | smtp
+      - key: APPS_SCRIPT_MAIL_URL
+        sync: false # Apps Script web app ka /exec URL (mail wala, alag sheet se)
+      - key: APPS_SCRIPT_MAIL_TOKEN
+        sync: false # Apps Script me MAIL_TOKEN se SAME random string
+
+      # SMTP tab tak kaam nahi karega jab tak paid plan par na jaao. Paid par
+      # MAIL_TRANSPORT=smtp kar dena aur ye do bhar dena.
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -52,9 +69,9 @@ services:
       - key: SMTP_SECURE
         value: "false"
       - key: SMTP_USER
-        sync: false # Gmail address jo code bhejega
+        sync: false # Gmail address jo code bhejega (paid plan par)
       - key: SMTP_PASS
-        sync: false # 16-character Google App Password
+        sync: false # 16-character Google App Password (paid plan par)
       - key: ALLOWED_EMAIL_DOMAINS
         value: gmail.com
 

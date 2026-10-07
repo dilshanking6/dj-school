@@ -179,15 +179,17 @@ const deliverPhoneCode = async (phone, code, messages = {}) => {
  * Frontend ko batata hai ki verification abhi kaunse channel par chal sakti
  * hai, taaki app sirf wahi option dikhaye jo sach me kaam karega.
  *
- * Ye public endpoint hai, isliye sirf `available` aur `provider` jaata hai.
+ * Ye public endpoint hai, isliye sirf `available` jaata hai. Provider ka naam
+ * (`smtp`, `2factor`) yahan se hata diya gaya — `/api/status` se wo chhupaya
+ * gaya tha par yahan se leak ho raha tha, jisse koi bhi visitor ye jaan leta
+ * tha ki school ka mail kis service se aur SMS kaunse vendor se ja raha hai.
  * Config ki technical wajah (`reason` jaise "SMTP_PASS missing") browser tak
- * nahi aani chahiye — wo sirf operator ke liye `/api/status` par hai.
+ * kabhi nahi aani chahiye — wo sirf operator ke liye `/api/status` par hai.
  */
 const otpChannels = async (req, res) => {
   const exposed = codeExposed();
   const brief = (status) => ({
-    available: status.available,
-    provider: status.provider || null,
+    available: Boolean(status.available),
     codeExposed: exposed
   });
 
