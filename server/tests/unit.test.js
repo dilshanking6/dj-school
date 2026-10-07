@@ -302,14 +302,19 @@ test('mailer: apps-script transport par URL missing ho to available=false (jhoot
   assert.match(s.reason, /APPS_SCRIPT_MAIL_URL/);
 });
 
-test('mailer: paid host (MAIL_TRANSPORT=smtp) SMTP par chalta hai', () => {
+test('mailer: forced smtp me creds ho to provider smtp, par probe tak jhooth nahi bolta', () => {
   const done = freshMailer({
     MAIL_TRANSPORT: 'smtp',
     SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'a@b.com', SMTP_PASS: 'x'
   });
   const m = done();
   assert.deepEqual(m.transportOrder(), ['smtp']);
-  assert.equal(m.mailStatus().provider, 'smtp');
+  const s = m.mailStatus();
+  assert.equal(s.provider, 'smtp');
+  // Probe abhi nahi chala — aise me `available: true` ka matlab hoga ki
+  // connection ban jaayegi, jo abhi tak kisi ne check nahi ki. Isliye false.
+  assert.equal(s.available, false);
+  assert.match(s.reason, /still running/);
 });
 
 test('mailer: forced smtp par creds missing ho to available=false', () => {
@@ -351,5 +356,83 @@ test('mailer: kuch bhi set na ho to available=false', () => {
   const m = done();
   assert.deepEqual(m.transportOrder(), []);
   assert.equal(m.mailConfigured(), false);
+  assert.equal(m.mailStatus().available, false);
+});
+
+// ---------------------------------------------------------------------------
+//  SMTP reachability probe — "creds bhar gaye" aur "connection ban jaayegi"
+//  ek hi baat nahi hai. Render FREE plan outbound SMTP ports 25/465/587 block
+//  karta hai, isliye wahan creds perfect hote hue bhi mail 10 second timeout
+//  par marta tha aur status `available: true` bolta tha. Probe server ko
+//  boot par hi bata deta hai ki port asli me khula hai ya nahi.
+// ---------------------------------------------------------------------------
+
+const net = require('net');
+
+const listen = (server) => new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const close = (server) => new Promise((resolve) => server.close(resolve));
+
+test('probe: port khula ho to available=true aur smtp fallback chalu rehta hai', async () => {
+  const server = net.createServer(() => {});
+  await listen(server);
+  try {
+    const done = freshMailer({
+      MAIL_TRANSPORT: 'smtp',
+      SMTP_HOST: '127.0.0.1',
+      SMTP_PORT: String(server.address().port),
+      SMTP_USER: 'a@b.com',
+      SMTP_PASS: 'x'
+    });
+    const m = done();
+    const probe = await m.probeSmtp();
+    assert.equal(probe.reachable, true);
+    assert.equal(m.mailStatus().available, true);
+    assert.deepEqual(m.transportOrder(), ['smtp']);
+  } finally {
+    await close(server);
+  }
+});
+
+test('probe: band port ho to available=false, order khali, aur send turant fail', async () => {
+  // Pehle port lenge aur phir chhod denge, taaki wo khaali ho jaaye —
+  // isi par ECONNREFUSED aata hai (jaise firewall drop karta hai).
+  const server = net.createServer(() => {});
+  await listen(server);
+  const port = server.address().port;
+  await close(server);
+
+  const done = freshMailer({
+    MAIL_TRANSPORT: 'smtp',
+    SMTP_HOST: '127.0.0.1',
+    SMTP_PORT: String(port),
+    SMTP_USER: 'a@b.com',
+    SMTP_PASS: 'x'
+  });
+  const m = done();
+
+  const probe = await m.probeSmtp();
+  assert.equal(probe.checked, true);
+  assert.equal(probe.reachable, false);
+
+  const status = m.mailStatus();
+  assert.equal(status.available, false);
+  assert.match(status.reason, /unreachable/i);
+
+  // Fallback hat jaata hai — 10 second timeout ab kabhi na honge.
+  assert.deepEqual(m.transportOrder(), []);
+
+  await assert.rejects(
+    m.sendMail({ to: 'a@b.com', subject: 'x', text: 'y' }),
+    /SMTP port unreachable/
+  );
+});
+
+test('probe: creds missing ho to bina network ke hi checked ho jaata hai', async () => {
+  const done = freshMailer({});
+  const m = done();
+  const probe = await m.probeSmtp();
+  assert.equal(probe.checked, true);
+  assert.equal(probe.reachable, false);
+  assert.match(probe.reason, /creds missing/);
   assert.equal(m.mailStatus().available, false);
 });

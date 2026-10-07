@@ -9,7 +9,7 @@ const { authenticateSocket, HttpError } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
 const { rateLimit } = require('./middleware/rateLimit');
 const { storageConfigured } = require('./utils/googleSheets');
-const { mailStatus } = require('./utils/mailer');
+const { mailStatus, probeSmtp, smtpConfigured } = require('./utils/mailer');
 const { smsStatus } = require('./utils/sms');
 const { codeExposed } = require('./utils/otp');
 const { assertRoomAccess, loadUser } = require('./utils/rooms');
@@ -241,14 +241,31 @@ if (!storageConfigured()) {
 
 // Verification (OTP) ke warnings — inke bina "Send code" dabane par kuch
 // nahi hota, aur user ko sirf ek generic error milti hai.
-const mail = mailStatus();
-if (mail.available) {
-  console.log(`[config] Email OTP ready (${mail.provider}).`);
-} else if (codeExposed()) {
-  console.log(`[config] Email OTP NOT configured (${mail.reason}) — codes will be shown on screen in this mode.`);
-} else {
-  console.warn(`[config] Email OTP is NOT configured (${mail.reason}). Users cannot verify by email. See README "Verification codes" section.`);
-}
+//
+// SMTP creds bhare hue hain par unka port host par khula hai ya nahi, ye
+// `mailStatus()` ab probe ke natija se batata hai. Probe fire-and-forget hai
+// (boot kabhi iska intezaar nahi karta) — isliye ye log bhi uske baad hi
+// likha jaata hai, warna "ready" likh kar baad me 503 aata.
+probeSmtp()
+  .catch((error) => ({ checked: true, reachable: false, reason: error.message }))
+  .then((probe) => {
+    if (smtpConfigured()) {
+      console.log(
+        probe.reachable
+          ? `[config] SMTP port reachable (${probe.checked ? 'probe ok' : 'unverified'}).`
+          : `[config] SMTP port UNREACHABLE: ${probe.reason} — email will not work over SMTP on this host.`
+      );
+    }
+
+    const mail = mailStatus();
+    if (mail.available) {
+      console.log(`[config] Email OTP ready (${mail.provider}).`);
+    } else if (codeExposed()) {
+      console.log(`[config] Email OTP NOT configured (${mail.reason}) — codes will be shown on screen in this mode.`);
+    } else {
+      console.warn(`[config] Email OTP is NOT configured (${mail.reason}). Users cannot verify by email. See README "Verification codes" section.`);
+    }
+  });
 
 const sms = smsStatus();
 if (sms.available) {

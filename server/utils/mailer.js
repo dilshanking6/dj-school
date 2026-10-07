@@ -68,12 +68,14 @@ const appsScriptMailUrl = () => dedicatedMailUrl() || process.env.APPS_SCRIPT_UR
  */
 const transportOrder = () => {
   const forced = mailTransport();
-  if (forced === 'smtp') return smtpConfigured() ? ['smtp'] : [];
+  if (forced === 'smtp') return smtpConfigured() && smtpReachable() ? ['smtp'] : [];
   if (forced === 'apps-script') return appsScriptMailConfigured() ? ['apps-script'] : [];
 
   const order = [];
   if (appsScriptMailConfigured()) order.push('apps-script');
-  if (smtpConfigured()) order.push('smtp');
+  // Probe ne bol diya ki is host par SMTP port band hai to fallback me ise
+  // rakhte nahi — warna har mail 10 second timeout lega aur phir bhi fail hoga.
+  if (smtpConfigured() && smtpReachable()) order.push('smtp');
   return order;
 };
 
@@ -108,6 +110,73 @@ const resetTransport = () => {
     transportPromise = null;
   }
 };
+
+/**
+ * Credentials bhar jaana alag baat hai, connection ban paana alag baat.
+ *
+ * `smtpConfigured()` sirf env vars dekhta hai. Render ka free plan outbound
+ * SMTP ports 25/465/587 block karta hai, uske official firewall ki wajah se —
+ * wahan creds bilkul sahi hone ke bawajood TCP connection banti hi nahi aur
+ * nodemailer 10 second timeout par marta hai. Isliye server boot par ek chhota
+ * sa probe chalata hai: SMTP host ke port par asli socket connect karke dekhta
+ * hai. Iska natija `smtpProbe` me rehta hai aur usi se `mailStatus()` ka
+ * `available` aur `transportOrder()` ka fallback decide hota hai.
+ *
+ * Matlab operator ko `MAIL_TRANSPORT` jaisi cheez declare karne ki zaroorat
+ * nahi — server khud jaan jaata hai ki SMTP is host par chal rahi hai ya nahi.
+ * Probe fire-and-forget hai: boot kabhi iska intezaar nahi karta.
+ */
+const SMTP_PROBE_TIMEOUT = 6000;
+let smtpProbe = { checked: false, reachable: false, reason: 'not checked yet' };
+
+const smtpReachable = () => !smtpProbe.checked || smtpProbe.reachable;
+
+const probeSmtp = () =>
+  new Promise((resolve) => {
+    if (!smtpConfigured()) {
+      smtpProbe = { checked: true, reachable: false, reason: 'SMTP creds missing' };
+      return resolve(smtpProbe);
+    }
+
+    const net = require('net');
+    const host = SMTP_HOST();
+    const port = Number(process.env.SMTP_PORT || 587);
+    let settled = false;
+    let socket;
+    let guard;
+
+    const finish = (reachable, reason) => {
+      if (settled) return;
+      settled = true;
+      if (guard) clearTimeout(guard);
+      if (socket) socket.destroy();
+      smtpProbe = { checked: true, reachable, reason };
+      resolve(smtpProbe);
+    };
+
+    // Ye promise HAMESHA resolve hona chahiye. Socket ke events kabhi na aayein
+    // to bhi ye guard natija de kar aage badhta hai — nahi to mailStatus
+    // hamesha "check is still running" hi bolta rehta.
+    guard = setTimeout(
+      () => finish(false, `${host}:${port} blocked (no response)`),
+      SMTP_PROBE_TIMEOUT + 2000
+    );
+    if (typeof guard.unref === 'function') guard.unref();
+
+    try {
+      socket = net.connect({ host, port });
+    } catch (error) {
+      finish(false, `${host}:${port} ${error.code || error.message}`);
+      return;
+    }
+
+    socket.setTimeout(SMTP_PROBE_TIMEOUT);
+    socket.once('connect', () => finish(true, ''));
+    // Timeout matlab port drop ho raha hai (Render free ka firewall aisa hi
+    // karta hai). ECONNREFUSED / EHOSTUNREACH bhi wahi batata hai.
+    socket.once('timeout', () => finish(false, `${host}:${port} blocked (timeout)`));
+    socket.once('error', (error) => finish(false, `${host}:${port} ${error.code || error.message}`));
+  });
 
 class MailError extends Error {
   constructor(message, cause) {
@@ -184,14 +253,27 @@ async function sendMail({ to, subject, text, html }) {
     }
   }
 
-  const error = new MailError(
-    problems.length
-      ? problems.join(' | ')
-      : 'Email service is not configured. Set MAIL_TRANSPORT and its settings in the server environment.'
-  );
+  const error = new MailError(problems.length ? problems.join(' | ') : noTransportMessage());
   error.problems = problems;
   throw error;
 }
+
+/**
+ * Koi transport hi available nahi hai — wajah kehti hai (logs ke liye, user ko
+ * to controller generic message dikhata hai). Probe ke natija ko yahan
+ * shaamil karna zaroori hai, warna "not configured" bolega jabki creds to
+ * bhare hain aur asli wajah blocked port hai.
+ */
+const noTransportMessage = () => {
+  if (smtpProbe.checked && !smtpProbe.reachable && !appsScriptMailConfigured()) {
+    return (
+      `SMTP port unreachable on this host (${smtpProbe.reason}). ` +
+      'Render free plan blocks outbound ports 25/465/587 — set APPS_SCRIPT_MAIL_URL ' +
+      'and APPS_SCRIPT_MAIL_TOKEN instead (see server/scripts/appsScriptMail.gs).'
+    );
+  }
+  return 'Email service is not configured. Set MAIL_TRANSPORT and its settings in the server environment.';
+};
 
 const mailConfigured = () => transportOrder().length > 0;
 
@@ -204,17 +286,17 @@ const shouldSendMail = () => mailConfigured();
 /**
  * Diagnostics endpoint / `npm run check:otp` ke liye. Secrets nahi dikhata.
  *
- * `MAIL_TRANSPORT` ko dhyan me rakhta hai — yahi wo jagah hai jahan se
- * `available` ki haaliyat aati hai. Render free par `MAIL_TRANSPORT=smtp`
- * hata kar `apps-script` karna zaroori hai, warna status `available: true`
- * bolega jabki har mail 11 second timeout par marega.
+ * `available` ki haaliyat do cheezon se aati hai: env vars configured hain, aur
+ * (SMTP ke liye) boot-time probe ne port tak connection banate dekhi hai. Isi
+ * wajah se Render free par status `available: true` nahi bolta jabki har mail
+ * 10 second timeout par marta — port par pahunch hi nahi hoti.
  */
 const mailStatus = () => {
   const forced = mailTransport();
 
   if (forced === 'smtp') {
-    if (smtpConfigured()) return { available: true, provider: 'smtp', account: SMTP_USER() };
-    return { available: false, provider: 'smtp', reason: smtpMissingReason() };
+    if (!smtpConfigured()) return { available: false, provider: 'smtp', reason: smtpMissingReason() };
+    return smtpProbeStatus('smtp');
   }
 
   if (forced === 'apps-script') {
@@ -230,9 +312,25 @@ const mailStatus = () => {
 
   // auto
   if (appsScriptMailConfigured()) return { available: true, provider: 'apps-script' };
-  if (smtpConfigured()) return { available: true, provider: 'smtp', account: SMTP_USER() };
+  if (smtpConfigured()) return smtpProbeStatus('smtp');
   if (process.env.SMTP_USER || process.env.SMTP_PASS) return { available: false, reason: smtpMissingReason() };
   return { available: false, reason: 'No mail transport configured (set MAIL_TRANSPORT)' };
+};
+
+/**
+ * SMTP creds to hain par kya port khula hai — probe ka natija.
+ * Probe abhi chal raha ho to `available: false` dikhate hain; ye jaan boojh
+ * kar hai, kyunki "bata denge" wale jhoothe `true` se hi to dikkat thi.
+ */
+const smtpProbeStatus = (provider) => {
+  const base = { provider, account: SMTP_USER() };
+  if (!smtpProbe.checked) {
+    return { ...base, available: false, reason: 'SMTP connectivity check is still running' };
+  }
+  if (!smtpProbe.reachable) {
+    return { ...base, available: false, reason: `SMTP port unreachable: ${smtpProbe.reason}` };
+  }
+  return { ...base, available: true };
 };
 
 const smtpMissingReason = () =>
@@ -259,5 +357,6 @@ const verifySmtp = async () => {
 module.exports = {
   sendMail, verifySmtp, mailConfigured, shouldSendMail, mailStatus,
   smtpConfigured, appsScriptMailConfigured, mailTransport, transportOrder,
+  probeSmtp, smtpProbe: () => smtpProbe,
   codeExposed, MailError
 };
