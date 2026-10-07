@@ -38,9 +38,17 @@ const email = (value) => {
 };
 
 const phone = (value) => {
-  const out = text(value, 'Phone number', { max: 20 });
-  if (!/^\+?[0-9][0-9\s-]{7,19}$/.test(out)) throw new HttpError(400, 'Enter a valid phone number');
-  return out.replace(/[\s-]/g, '');
+  const raw = text(value, 'Phone number', { max: 20 });
+  // Spaces/dashes pehle hata dete hain, warna regex unhe count karke bada
+  // number maan leta tha.
+  const out = raw.replace(/[\s-]/g, '');
+  // `+` ke turant baad 0 kabhi nahi hota — `+0…` matlab number galat hai.
+  // (Bina `+` ke 11 digit local number 0 se shuru ho sakta hai — `09876543210`
+  // — wo sahi hai aur sms.js me bhi isi ko handle kiya gaya hai.)
+  if (/^\+0/.test(out) || !/^\+?[0-9]{9,16}$/.test(out)) {
+    throw new HttpError(400, 'Enter a valid phone number');
+  }
+  return out;
 };
 
 const optionalPhone = (value) => (isBlank(value) ? '' : phone(value));
@@ -77,10 +85,11 @@ const password = (value) => {
   const hasNumber = /[0-9]/.test(out);
   const hasSpecial = /[^a-zA-Z0-9]/.test(out);
 
-  if (!hasLetter || !hasNumber || !hasSpecial) {
-    throw new HttpError(400, 'Password must contain a letter, a number and a special character (for example @, # or _)');
-  }
-
+  // Ye teenon "shape" checks character-class check se PEHLE chalte hain.
+  // Warna wo dono kabhi hit nahi hote: `aaaaaaaa` me koi number/special hai hi
+  // nahi (to "repeated" wala rule bekaar), aur `1234567890` me koi letter
+  // nahi (to "sequence" wala rule bhi bekaar). Ab har rule apni wajah se
+  // message deta hai.
   const lowered = out.toLowerCase();
   if (WEAK_PASSWORDS.has(lowered)) {
     throw new HttpError(400, 'This password is too common. Choose a stronger one.');
@@ -90,6 +99,10 @@ const password = (value) => {
   }
   if (/^(0123456789|1234567890|abcdefghij|qwertyuiop)/i.test(lowered)) {
     throw new HttpError(400, 'Password must not be a simple keyboard or number sequence.');
+  }
+
+  if (!hasLetter || !hasNumber || !hasSpecial) {
+    throw new HttpError(400, 'Password must contain a letter, a number and a special character (for example @, # or _)');
   }
 
   return out;

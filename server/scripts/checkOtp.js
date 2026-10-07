@@ -45,15 +45,25 @@ async function checkLive() {
   divider();
 
   let payload;
+  let detailed = false;
   try {
     const axios = require('axios');
     // `/api/status` isliye, `/api/auth/otp-channels` nahi — operator endpoint
     // hai aur `reason` deta hai (jaise "SMTP_PASS missing"), jo yahan terminal
     // me dikhana hai. Public endpoint wo jaan boojh kar nahi deta.
-    const response = await axios.get(`${base}/api/status`, { timeout: 20000 });
+    //
+    // Server par `STATUS_TOKEN` set hai to wo header bhejte hain, warna server
+    // sirf "available: true/false" bhejega (details chup-chaup nahi — pehle
+    // /api/status poora public tha aur SMTP ka account + provider leak ho raha tha).
+    const token = process.env.STATUS_TOKEN;
+    const response = await axios.get(
+      `${base}/api/status`,
+      { timeout: 20000, headers: token ? { 'x-status-token': token } : {} }
+    );
     const verification = response.data.verification;
     if (!verification) throw new Error('Server par naya /api/status nahi hai — redeploy zaroori hai');
     payload = verification;
+    detailed = Boolean(verification.email?.provider || verification.email?.reason || verification.sms?.provider);
   } catch (error) {
     const code = error.response?.status;
     if (code === 404) {
@@ -79,6 +89,13 @@ async function checkLive() {
   divider();
   show('Mobile', payload.sms || {});
   divider();
+
+  if (!detailed) {
+    info('Server ne details nahi di (provider/reason chhupaye hue). Ye normal hai — wo public');
+    info('leak band karne ke liye hai. Poori wajah dekhni ho to server par STATUS_TOKEN set karo');
+    info('aur yahan wahi value STATUS_TOKEN=... ke saath chalao.');
+    divider();
+  }
 
   if (payload.codeExposed) {
     info('Code exposure on hai — codes browser par bhi dikh rahe hain, delivery ki zaroorat nahi.');

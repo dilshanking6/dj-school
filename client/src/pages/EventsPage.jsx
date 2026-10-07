@@ -61,10 +61,22 @@ const EventsPage = () => {
 
     socket.on('new_event', onEvent);
     socket.on('new_announcement', onNotice);
+    // Server ye dono delete events bhejta tha, par yahan koi listener nahi
+    // tha — isliye koi teacher/office event ya notice delete karta to baaki sab
+    // ke screens par wo turant gayab nahi hota tha, sirf refresh ke baad.
+    // Ab doosre device par bhi delete turant live ho jaata hai.
+    socket.on('event_deleted', ({ id }) => {
+      setEvents((prev) => prev.filter((item) => item.id !== id));
+    });
+    socket.on('announcement_deleted', ({ id }) => {
+      setAnnouncements((prev) => prev.filter((item) => item.id !== id));
+    });
 
     return () => {
       socket.off('new_event', onEvent);
       socket.off('new_announcement', onNotice);
+      socket.off('event_deleted');
+      socket.off('announcement_deleted');
     };
   }, [socket, user?.role]);
 

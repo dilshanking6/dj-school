@@ -77,10 +77,49 @@ const io = new Server(server, {
 app.set('socketio', io);
 app.disable('x-powered-by');
 
+// Render khud already HSTS + X-Content-Type-Options lagata hai, par apne
+// domain ke saath wo Render ke extra subdomain pe bhi lagta hai — isliye
+// sirf apne host pe HSTS rakhte hain, warna onrender.com pe bhi lock lag jayega.
+const PUBLIC_HOST = firstHeaderValue(process.env.PUBLIC_HOST);
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'SAMEORIGIN');
   res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  if (PUBLIC_HOST && req.hostname === PUBLIC_HOST) {
+    res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+  if (IS_PRODUCTION) {
+    // Render Cloudflare ke peeche hota hai, isliye `req.secure` hamesha false
+    // rehta hai — HSTS tabhi sach me lagta hai jab `x-forwarded-proto` https
+    // bataye, warna localhost pe bhi header chala jayega.
+    const proto = firstHeaderValue(req.headers['x-forwarded-proto']) || req.protocol;
+    if (proto === 'https') {
+      res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+    }
+    res.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        // Vite ka build inline theme-boot script chalaata hai (index.html),
+        // isliye style me 'unsafe-inline' zaroori hai.
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline'",
+        // Landing page GSAP/WebGL-ish effects + YouTube embeds use karta hai.
+        "img-src 'self' data: blob: data:image/svg+xml https:",
+        "font-src 'self' data:",
+        // Google Sheets/Drive links study material me embed hote hain.
+        "connect-src 'self' https: wss:",
+        "frame-src 'self' https://www.youtube.com https://drive.google.com",
+        "media-src 'self' data: blob: https:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'self'",
+        "upgrade-insecure-requests"
+      ].join('; ')
+    );
+  }
   next();
 });
 
@@ -94,19 +133,38 @@ app.use(express.json({ limit: '256kb' }));
 app.use(express.urlencoded({ limit: '256kb', extended: false }));
 app.use(rateLimit({ windowMs: 60 * 1000, max: 600, message: 'Too many requests. Please slow down.' }));
 
+// Public health check. Ye Render ka `healthCheckPath` hai aur bina token ke
+// open hai, isliye isme koi secret nahi jaata — na SMTP ka account, na
+// provider ka naam, na "kaunsi cheez missing hai" wali reason. Ye pehle sab
+// public ho jata tha, jisse koi bhi visitor se pata kar sakta tha ki OTP kis
+// Gmail se ja raha hai aur kaunsa SMS provider use ho raha hai.
+// Details ke liye `x-status-token` header chahiye (STATUS_TOKEN env).
 app.get('/api/status', (req, res) => {
-  res.json({
+  const email = mailStatus();
+  const sms = smsStatus();
+  const base = {
     status: 'ok',
     service: 'Digital Janta API',
     version: require('./package.json').version,
     storage: storageConfigured() ? 'connected' : 'not-configured',
-    // OTP delivery ki haaliyat — OTP "kyun nahi gaya" wali problem ek nazar
-    // me solve karne ke liye (secrets ke bina).
     verification: {
-      email: mailStatus(),
-      sms: smsStatus(),
-      codeExposed: codeExposed()
+      // Sirf "chal raha hai / nahi" — configuration ka koi detail nahi.
+      email: { available: Boolean(email.available), codeExposed: codeExposed() },
+      sms: { available: Boolean(sms.available) }
     }
+  };
+
+  const expected = process.env.STATUS_TOKEN;
+  const given = String(req.headers['x-status-token'] || '');
+  if (!expected || !given || given.length !== expected.length ||
+      !require('crypto').timingSafeEqual(Buffer.from(given), Buffer.from(expected))) {
+    return res.json(base);
+  }
+
+  return res.json({
+    ...base,
+    // Token sahi hai to operator ko poori diagnosis chahiye.
+    verification: { email, sms, codeExposed: codeExposed() }
   });
 });
 
@@ -121,18 +179,24 @@ app.use('/api/chatrooms', require('./routes/chatRoomRoutes.js'));
 app.use('/api/study', require('./routes/studyRoutes.js'));
 app.use('/api/ai', require('./routes/aiRoutes.js'));
 
+// SPA fallback se PEHLE — har unknown route par 404. Ye isliye zaroori hai
+// kyunki neeche `app.get('*path')` har kuch pakad leta hai: uske bina
+// `/api/kuch-galat` par client ko 200 HTML milta tha (JSON ke bajaye), jisse
+// frontend ka `res.data` string ban jata tha aur error message user ko
+// garbage dikhta. Saath hi ye asli 404 bhi chhupa deta tha, isliye galat
+// endpoint ka pata bhi nahi chalta tha.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next(new HttpError(404, 'Endpoint not found'));
+  }
+  return next();
+});
+
 if (IS_PRODUCTION) {
   const dist = path.join(__dirname, '../client/dist');
   app.use(express.static(dist));
   app.get('*path', (req, res) => {
     res.sendFile(path.resolve(dist, 'index.html'));
-  });
-} else {
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api/')) {
-      return next(new HttpError(404, 'Endpoint not found'));
-    }
-    return next();
   });
 }
 

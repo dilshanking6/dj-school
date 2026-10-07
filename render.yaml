@@ -35,6 +35,12 @@ services:
       # Render PORT khud deta hai; hardcode mat karo. Ye sirf fallback hai.
       - key: JWT_SECRET
         generateValue: true
+      # `/api/status` ka detailed OTP diagnosis (provider + reason) sirf isi
+      # token ke saath dikhta hai. Iske bina wo hissa public rahega aur koi
+      # bhi visitor dekh sakega. `npm run check:otp -- --url <site>` isko
+      # khud padh leta hai.
+      - key: STATUS_TOKEN
+        generateValue: true
       - key: APPS_SCRIPT_URL
         sync: false # Google Apps Script web app ka deployed URL
 
@@ -64,3 +70,15 @@ services:
         value: "90000"
       - key: SHEET_WRITE_TIMEOUT
         value: "90000"
+      # --- Speed ---------------------------------------------------------
+      # Google Apps Script har read par network call hai (cold start 15-25s),
+      # isliye server do cache rakhta hai:
+      #   TTL  — is age se chhota data seedha milega.
+      #   SWR  — is age tak ka (thoda purana) data turant de diya jayega aur
+      #          fresh khaana peeche me laaya jayega (stale-while-revalidate).
+      # Har write dono cache turant khaali karta hai, isliye delete/update ke
+      # baad purana data kabhi serve nahi hota.
+      - key: SHEET_CACHE_TTL_MS
+        value: "8000"
+      - key: SHEET_CACHE_SWR_MS
+        value: "45000"

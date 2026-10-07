@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Star, Send, Loader2, User, MessageSquare, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -10,7 +8,6 @@ const field = 'w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 
 const label = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500';
 
 const TeacherRatingPage = () => {
-  const { user } = useContext(AuthContext);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

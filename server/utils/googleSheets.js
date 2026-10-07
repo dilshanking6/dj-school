@@ -91,16 +91,25 @@ const extractRows = (data) => {
 // isliye data kabhi bekar purana nahi rehta. Cache jo data deta hai wo uth
 // hi vaise ka vaise hota hai jaisa aaj tak tha — sirf lag kam hota hai.
 const cacheTTL = () => Number(process.env.SHEET_CACHE_TTL_MS || 8000);
-const cache = new Map(); // sheetName -> { ts, data }
+
+// Stale-while-revalidate ki limit. TTL ke baad bhi data turant de diya jata
+// hai (thoda purana), aur peeche me fresh khaana laaya jata hai. Isse user
+// ko Apps Script ka network wait har request me nahi dikhta — dashboard ka
+// dobara kholna turant hota hai. Har write cache turant khaali karta hai,
+// isliye delete/update ke baad purana data serve nahi hota.
+const swrTTL = () => Number(process.env.SHEET_CACHE_SWR_MS || 45000);
+
+const cache = new Map();    // sheetName -> { ts, data }
+const inflight = new Map(); // sheetName -> Promise (ek chal raha hai to baaki usi ka wait karte hain)
 
 const bustSheetCache = (sheetName) => {
-  if (cache.has(sheetName)) cache.delete(sheetName);
+  cache.delete(sheetName);
+  // Chal raha hua read bhi bekaar ho sakta hai (purana data le kar aayega) —
+  // isliye use bhi chhod dete hain taaki naya request fresh read kare.
+  inflight.delete(sheetName);
 };
 
-async function getSheetData(sheetName) {
-  const hit = cache.get(sheetName);
-  if (hit && Date.now() - hit.ts < cacheTTL()) return hit.data;
-
+const readSheet = async (sheetName) => {
   const attempts = Number(process.env.SHEET_READ_ATTEMPTS || 3);
   const data = await withRetry(
     () => post({ action: 'read', sheetName }, readTimeout()),
@@ -109,6 +118,34 @@ async function getSheetData(sheetName) {
   const rows = extractRows(data);
   cache.set(sheetName, { ts: Date.now(), data: rows });
   return rows;
+};
+
+async function getSheetData(sheetName) {
+  const hit = cache.get(sheetName);
+  const age = hit ? Date.now() - hit.ts : Infinity;
+
+  if (hit && age < cacheTTL()) return hit.data;
+
+  // Yehi sheet ka read already chal raha hai to usi ka intezaar karo.
+  // Pehle N parallel requests (dashboard + roster + attendance ek saath) me
+  // se har ek alag Apps Script call bhejta tha, to ek hi data ke liye 5-6
+  // network round-trips lag jaate the. Ab sirf ek jayegi.
+  const pending = inflight.get(sheetName);
+  if (pending) return pending;
+
+  // Thoda purana data hai par itna purana nahi ki user ko farak na dikhe —
+  // abhi turant de do, aur fresh khaana background me laa lo.
+  if (hit && age < swrTTL()) {
+    const fresh = readSheet(sheetName).finally(() => inflight.delete(sheetName));
+    inflight.set(sheetName, fresh);
+    // Background failure user ko nahi dikhani chahiye (purana data chalta rahe).
+    fresh.catch(() => {});
+    return hit.data;
+  }
+
+  const fresh = readSheet(sheetName).finally(() => inflight.delete(sheetName));
+  inflight.set(sheetName, fresh);
+  return fresh;
 }
 
 async function appendSheetData(sheetName, values) {

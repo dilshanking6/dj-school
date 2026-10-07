@@ -402,7 +402,7 @@ const RegisterPage = ({ role = 'student' }) => {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
-                <label className={label} htmlFor="fatherName">Father's name</label>
+                <label className={label} htmlFor="fatherName">Father&apos;s name</label>
                 <input
                   id="fatherName"
                   value={form.fatherName}
@@ -413,7 +413,7 @@ const RegisterPage = ({ role = 'student' }) => {
                 />
               </div>
               <div>
-                <label className={label} htmlFor="motherName">Mother's name</label>
+                <label className={label} htmlFor="motherName">Mother&apos;s name</label>
                 <input
                   id="motherName"
                   value={form.motherName}

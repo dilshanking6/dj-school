@@ -1,14 +1,21 @@
-import React, { Suspense, lazy, useContext } from 'react';
+import React, { Suspense, lazy, useContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Navbar from './components/Navbar';
-import AIAssistant from './components/AIAssistant';
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import TermsPage from './pages/TermsPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
+
+// Landing page GSAP + ScrollTrigger laata hai (~70 KB gzip), aur Login/Terms
+// page framer-motion. Pehle ye sab eager import the, isliye har visitor —
+// chahe wo seedha /login par aaye — poora 570 KB ka bundle download karta tha.
+// Ab sirf wahi chunk jo sach me chahiye uthta hai.
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const AIAssistant = lazy(() => import('./components/AIAssistant'));
 
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
@@ -65,14 +72,17 @@ const PortalRoute = ({ role }) => {
   if (user.role.toLowerCase() !== role) return <Navigate to={`/${user.role.toLowerCase()}`} replace />;
 
   const Component = entry.component;
-  return (
-    <Suspense fallback={<FullPageLoader />}>
-      <Component />
-    </Suspense>
-  );
+  return <Component />;
 };
 
-function App() {
+function App({ onReady }) {
+  // `index.html` ka boot splash hatane ka signal. Ye sirf tab chalta hai jab
+  // app sach me render ho rahi ho — Splash hata dena aur phir crash hona
+  // dono ek saath nahi hona chahiye, warna user ko ek blank screen mil jayega.
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -80,35 +90,38 @@ function App() {
           <ThemedToaster />
 
           <div className="min-h-[100dvh] bg-background text-white font-sans">
-          <Navbar />
+            <Navbar />
 
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/terms" element={<TermsPage />} />
+            {/* Ek boundary poori app ke bahar + ek routes ke andar. Bahar wala
+                theme/router crash pakadta hai, andar wala sirf ek page ka. */}
+            <ErrorBoundary>
+              <Suspense fallback={<FullPageLoader />}>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/terms" element={<TermsPage />} />
 
-            <Route path="/login" element={<LoginPage role="student" />} />
-            <Route path="/register" element={<Suspense fallback={<FullPageLoader />}><RegisterPage role="student" /></Suspense>} />
+                  <Route path="/login" element={<LoginPage role="student" />} />
+                  <Route path="/register" element={<RegisterPage role="student" />} />
 
-            <Route path="/teacher-login" element={<LoginPage role="teacher" title="Teacher sign in" />} />
-            <Route
-              path="/teacher-register"
-              element={<Suspense fallback={<FullPageLoader />}><RegisterPage role="teacher" /></Suspense>}
-            />
+                  <Route path="/teacher-login" element={<LoginPage role="teacher" title="Teacher sign in" />} />
+                  <Route path="/teacher-register" element={<RegisterPage role="teacher" />} />
 
-            <Route path="/principal-login" element={<LoginPage role="principal" title="Principal sign in" />} />
+                  <Route path="/principal-login" element={<LoginPage role="principal" title="Principal sign in" />} />
+                  <Route path="/admin-login" element={<LoginPage role="admin" title="Administrator sign in" />} />
 
-            <Route path="/admin-login" element={<LoginPage role="admin" title="Administrator sign in" />} />
+                  <Route path="/student/*" element={<PortalRoute role="student" />} />
+                  <Route path="/teacher/*" element={<PortalRoute role="teacher" />} />
+                  <Route path="/principal/*" element={<PortalRoute role="principal" />} />
+                  <Route path="/admin/*" element={<PortalRoute role="admin" />} />
 
-            <Route path="/student/*" element={<PortalRoute role="student" />} />
-            <Route path="/teacher/*" element={<PortalRoute role="teacher" />} />
-            <Route path="/principal/*" element={<PortalRoute role="principal" />} />
-            <Route path="/admin/*" element={<PortalRoute role="admin" />} />
+                  {/* Pehle yahan silent redirect tha. Ab asli 404 page. */}
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-
-          <AIAssistant />
-        </div>
+                <AIAssistant />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
         </Router>
       </AuthProvider>
     </ThemeProvider>

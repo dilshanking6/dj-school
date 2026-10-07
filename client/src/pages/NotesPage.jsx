@@ -60,7 +60,16 @@ const NotesPage = () => {
     };
 
     socket.on('new_note', onNote);
-    return () => socket.off('new_note', onNote);
+    // Server `note_deleted` bhejta tha par yahan listener nahi tha — matlab
+    // teacher ne material delete kiya to baaki sab ke screen par wo turant
+    // hatta nahi tha, sirf page refresh karne par gaya. Ab live hota hai.
+    socket.on('note_deleted', ({ id }) => {
+      setNotes((prev) => prev.filter((note) => note.id !== id));
+    });
+    return () => {
+      socket.off('new_note', onNote);
+      socket.off('note_deleted');
+    };
   }, [socket, user?.class, canShare]);
 
   const handleAddNote = async (event) => {
