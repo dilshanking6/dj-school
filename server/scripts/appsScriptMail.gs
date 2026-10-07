@@ -38,9 +38,10 @@
 // Random banane ke liye: https://randomkeygen.com  ya koi bhi 40+ char string.
 var MAIL_TOKEN = 'YAHAN_APNA_LAMBA_RANDOM_TOKEN_DALO_KOI_BHI_40_CHAR_KI';
 
-// "Digital Janta" <aapka@gmail.com> — agar khali chhodoge to script ke
-// owner ka Gmail address use hoga.
-var MAIL_FROM_NAME = 'Digital Janta';
+// Mail ka "From" naam — user ke inbox me yahi dikhta hai.
+// Server `fromName` bhej sakta hai (mailFromName payload me), tab ye fallback
+// kaam aata hai. Dono me school ka naam rakho.
+var MAIL_FROM_NAME = 'Janta +2 High School';
 
 /**
  * Ek fixed reply-to — school ka official address. Students seedha yahan
@@ -95,7 +96,11 @@ function doPost(e) {
 
   // 4. Bhejo.
   try {
-    var options = { name: MAIL_FROM_NAME, htmlBody: html || undefined, body: text };
+    // Server school ka naam bhej sakta hai (`mailFromName`) — taaki naam
+    // badalne par sirf server ka env var badalna pade, ye file dobara paste
+    // na karni pade. Naam na aaye to neeche wala MAIL_FROM_NAME use hota hai.
+    var fromName = String(body.mailFromName || '').trim() || MAIL_FROM_NAME;
+    var options = { name: fromName, htmlBody: html || undefined, body: text };
     if (REPLY_TO) options.replyTo = REPLY_TO;
 
     MailApp.sendEmail(to, subject, text, options);

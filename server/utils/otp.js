@@ -1,7 +1,10 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
-const TTL_MS = Number(process.env.OTP_TTL_MS || 5 * 60 * 1000);
+// 10 minute — 5 min bahut kam tha. Mail/SMS aane me der ho sakti hai, aur
+// user dobara mobile dhundh kar code type karne me time leta hai. Expired code
+// par "Request a new code" wala round-trip bilkul bekaar hai.
+const TTL_MS = Number(process.env.OTP_TTL_MS || 10 * 60 * 1000);
 const MAX_ATTEMPTS = 5;
 const RESEND_COOLDOWN_MS = 30 * 1000;
 const SWEEP_INTERVAL_MS = 60 * 1000;

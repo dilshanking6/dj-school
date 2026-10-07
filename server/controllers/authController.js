@@ -98,19 +98,27 @@ const codeExposed = otp.codeExposed;
 
 const devCode = (code) => (codeExposed() ? { devCode: code } : {});
 
-const OTP_EXPIRY_SECONDS = 300;
+// School ka naam — OTP ke subject/body, aur mail ka "From" name yahin se aata
+// hai. `BRAND_NAME` env se override ho sakta hai (jab school ka naam badle to
+// sirf Render ka ek env var, code chhune ki zaroorat nahi).
+const BRAND_NAME = String(process.env.BRAND_NAME || 'Janta +2 High School').trim() || 'Janta +2 High School';
+
+// otp.js ke TTL se hi aata hai, taaki "expires in 5 minutes" likha hua aur
+// asli expiry kabhi alag na ho.
+const OTP_EXPIRY_SECONDS = Math.round(Number(process.env.OTP_TTL_MS || 10 * 60 * 1000) / 1000);
+const OTP_EXPIRY_MINUTES = Math.max(1, Math.round(OTP_EXPIRY_SECONDS / 60));
 
 const otpMessage = (code) =>
-  `${code} is your Digital Janta verification code. It expires in 5 minutes.`;
+  `${code} is your ${BRAND_NAME} verification code. It expires in ${OTP_EXPIRY_MINUTES} minutes.`;
 
-const otpSubject = 'Your Digital Janta verification code';
+const otpSubject = `Your ${BRAND_NAME} verification code`;
 
 const otpHtml = (code) =>
   `<p style="font-family:Arial,sans-serif;font-size:16px">` +
-  `Your Digital Janta verification code is ` +
+  `Your ${BRAND_NAME} verification code is ` +
   `<strong style="font-size:24px;letter-spacing:3px">${code}</strong></p>` +
   `<p style="font-family:Arial,sans-serif;font-size:14px;color:#666">` +
-  `It expires in 5 minutes. If you did not request this code you can ignore this email.</p>`;
+  `It expires in ${OTP_EXPIRY_MINUTES} minutes. If you did not request this code you can ignore this email.</p>`;
 
 /**
  * Email OTP bhejta hai. Teen hisse se ek ho sakta hai:

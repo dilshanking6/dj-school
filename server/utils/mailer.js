@@ -23,6 +23,11 @@ const SMTP_HOST = () => process.env.SMTP_HOST;
 const SMTP_USER = () => process.env.SMTP_USER;
 const SMTP_PASS = () => process.env.SMTP_PASS;
 
+// School ka naam — mail ke "From" me dikhta hai. authController bhi yahi
+// naam OTP ke subject/body ke liye use karta hai (wahan BRAND_NAME).
+const brandName = () =>
+  String(process.env.BRAND_NAME || 'Janta +2 High School').trim() || 'Janta +2 High School';
+
 const smtpConfigured = () => Boolean(SMTP_HOST() && SMTP_USER() && SMTP_PASS());
 
 /**
@@ -198,7 +203,7 @@ class MailError extends Error {
 const sendViaSmtp = async ({ to, subject, text, html }) => {
   const transport = await smtpTransport();
   const info = await transport.sendMail({
-    from: process.env.MAIL_FROM || `"Digital Janta" <${SMTP_USER()}>`,
+    from: process.env.MAIL_FROM || `"${brandName()}" <${SMTP_USER()}>`,
     to,
     subject,
     text,
@@ -216,7 +221,9 @@ const sendViaAppsScript = async ({ to, subject, text, html }) => {
   try {
     response = await axios.post(
       url,
-      { action: 'sendMail', token: mailToken(), to, subject, body: text, html },
+      // `mailFromName` se school ka naam server se aata hai — naam badalne par
+      // Apps Script dobara paste nahi karna padta.
+      { action: 'sendMail', token: mailToken(), to, subject, body: text, html, mailFromName: brandName() },
       { timeout }
     );
   } catch (error) {

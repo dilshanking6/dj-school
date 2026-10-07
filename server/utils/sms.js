@@ -155,9 +155,18 @@ const sendViaFast2sms = async (phone, message, code) => {
 const sendVia2factor = async (to, code) => {
   if (!code) throw new SmsError('SMS provider needs the OTP value');
 
+  // 2factor ke do alag endpoints hain:
+  //   /SMS/{number}/AUTOTP         -> wo khud code generate karta hai
+  //   /SMS/{number}/{otp}          -> hamara apna code
+  // Hamare paas apna code hai (bcrypt se verify hota hai), isliye doosra wala
+  // chahiye. Pehle `/AUTOTP/{code}` likha gaya tha — 2factor use galat
+  // samajh kar ya to auto-generate karta tha ya kuch bhejta hi nahi tha,
+  // jisse SMS user tak pahunchta hi nahi tha.
+  //
+  // Number E.164 form me jaata hai (`91...`) — 2factor ki documented format.
   const url =
     'https://2factor.in/API/V1/' +
-    `${encodeURIComponent(apiKey())}/SMS/${encodeURIComponent(to)}/AUTOTP/${encodeURIComponent(code)}`;
+    `${encodeURIComponent(apiKey())}/SMS/${encodeURIComponent(toE164(to))}/${encodeURIComponent(code)}`;
 
   const response = await axios.get(url, { timeout: timeout() });
   const text = response.data;
