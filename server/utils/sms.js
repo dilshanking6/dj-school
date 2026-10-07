@@ -160,13 +160,14 @@ const sendVia2factor = async (to, code) => {
   //   /SMS/{number}/{otp}          -> hamara apna code
   // Hamare paas apna code hai (bcrypt se verify hota hai), isliye doosra wala
   // chahiye. Pehle `/AUTOTP/{code}` likha gaya tha — 2factor use galat
-  // samajh kar ya to auto-generate karta tha ya kuch bhejta hi nahi tha,
-  // jisse SMS user tak pahunchta hi nahi tha.
+  // samajh kar message user tak pahunchta hi nahi tha.
   //
-  // Number E.164 form me jaata hai (`91...`) — 2factor ki documented format.
+  // Number 10 digit Indian form me jaata hai — 2factor khud validate karta
+  // hai (`Length Mismatch(Expected: 10)`), `91...` prefix dene par wo
+  // request accept kar leta hai par deliver nahi hota.
   const url =
     'https://2factor.in/API/V1/' +
-    `${encodeURIComponent(apiKey())}/SMS/${encodeURIComponent(toE164(to))}/${encodeURIComponent(code)}`;
+    `${encodeURIComponent(apiKey())}/SMS/${encodeURIComponent(toLocal10(to))}/${encodeURIComponent(code)}`;
 
   const response = await axios.get(url, { timeout: timeout() });
   const text = response.data;
