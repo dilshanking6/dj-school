@@ -436,3 +436,159 @@ test('probe: creds missing ho to bina network ke hi checked ho jaata hai', async
   assert.match(probe.reason, /creds missing/);
   assert.equal(m.mailStatus().available, false);
 });
+
+
+// ------------------------------------------------------------------ forms
+//
+// Principal ka form builder — inhi pure functions par poora feature tikta
+// hai: kya HTML safe hai, kaise field banate hain, aur student ko kaunsa
+// form dikhta hai. Yahan bug matlab student ko adhura form dikhta hai ya
+// principal ka HTML script chala jaata hai.
+
+const forms = require('../controllers/formController');
+const { uploadFile, fileStoreStatus, mimeFor, MAX_FILE_MB } = require('../utils/fileStore');
+
+test('form sanitizeHtml: script aur onclick hata deta hai, text nahi', () => {
+  const dirty = '<p>Namaste</p><script>alert(1)</script><img src=x onerror="alert(2)">'
+    + '<a href="javascript:alert(3)">click</a>';
+  const clean = forms.sanitizeHtml(dirty);
+
+  assert.ok(clean.includes('<p>Namaste</p>'), 'legit text rehna chahiye');
+  assert.ok(!/script/i.test(clean), '<script> tag hatna chahiye');
+  assert.ok(!/onerror/i.test(clean), 'onerror handler hatna chahiye');
+  assert.ok(!/javascript:/i.test(clean), 'javascript: URI hatna chahiye');
+});
+
+test('form sanitizeHtml: unclosed script tag aur iframe bhi hatate hain', () => {
+  // Band `</script>` wala case.
+  const closed = forms.sanitizeHtml('ok<iframe src="https://evil"></iframe><script>while(1){}</script>done');
+  assert.ok(!/iframe/i.test(closed));
+  assert.ok(!/while\(1\)/.test(closed));
+  assert.equal(closed.startsWith('ok'), true);
+
+  // Unclosed `<script>` — uske baad ka pura text bhi hatna chahiye,
+  // warna script ka body HTML me reh jaata.
+  const unclosed = forms.sanitizeHtml('<p>hi</p><script>while(1){}');
+  assert.equal(unclosed, '<p>hi</p>');
+
+  // Ekla tag (koi body hi nahi) bhi hat jaata hai.
+  assert.equal(forms.sanitizeHtml('<script src="http://x/y.js">'), '');
+});
+
+test('form normaliseFields: key khud ban jaata hai aur duplicate rok deta hai', () => {
+  const fields = forms.normaliseFields([
+    { label: 'Roll Number', type: 'text', required: true },
+    { label: 'Class', type: 'select', options: ['9', '10'] }
+  ]);
+
+  assert.equal(fields.length, 2);
+  assert.equal(fields[0].key, 'f1');
+  assert.equal(fields[0].required, true);
+  assert.deepEqual(fields[1].options, ['9', '10']);
+
+  // Do field ka key same ho to answer collision ho jaata — isliye reject.
+  throwsHttp(() => forms.normaliseFields([
+    { label: 'A', type: 'text', key: 'same' },
+    { label: 'B', type: 'text', key: 'same' }
+  ]), 400, 'Duplicate');
+});
+
+test('form normaliseFields: galat type, khali list, select bina option ke — sab 400', () => {
+  throwsHttp(() => forms.normaliseFields([]), 400, 'at least 1');
+  throwsHttp(() => forms.normaliseFields([{ label: 'A', type: 'rich' }]), 400, 'type');
+  throwsHttp(() => forms.normaliseFields([{ label: 'A', type: 'select', options: [] }]), 400, 'at least 1');
+  throwsHttp(() => forms.normaliseFields([{ type: 'text' }]), 400, 'label');
+});
+
+test('form validateAnswers: required khali ho to 400', () => {
+  const fields = forms.normaliseFields([
+    { label: 'Name', type: 'text', required: true },
+    { label: 'Note', type: 'text' }
+  ]);
+
+  throwsHttp(() => forms.validateAnswers(fields, { f1: '   ' }), 400, 'Name');
+  assert.deepEqual(forms.validateAnswers(fields, { f1: 'Ram' }), { f1: 'Ram', f2: '' });
+});
+
+test('form validateAnswers: number, date, select ka type check hota hai', () => {
+  const fields = forms.normaliseFields([
+    { label: 'Marks', type: 'number', required: true },
+    { label: 'Dob', type: 'date', required: true },
+    { label: 'Section', type: 'select', required: true, options: ['A', 'B'] }
+  ]);
+
+  throwsHttp(() => forms.validateAnswers(fields, { f1: 'abc', f2: '2020-01-01', f3: 'A' }), 400, 'number');
+  throwsHttp(() => forms.validateAnswers(fields, { f1: '10', f2: '01/01/2020', f3: 'A' }), 400, 'date');
+  throwsHttp(() => forms.validateAnswers(fields, { f1: '10', f2: '2020-01-01', f3: 'Z' }), 400, 'Section');
+
+  const ok = forms.validateAnswers(fields, { f1: '10', f2: '2020-01-01', f3: 'B' });
+  assert.deepEqual(ok, { f1: '10', f2: '2020-01-01', f3: 'B' });
+});
+
+test('form validateAnswers: student ke extra keys ignore ho jaati hain', () => {
+  const fields = forms.normaliseFields([{ label: 'Answer', type: 'text' }]);
+  assert.deepEqual(
+    forms.validateAnswers(fields, { f1: 'haan', admin: 'true', status: 'accepted' }),
+    { f1: 'haan' }
+  );
+});
+
+test('form visibleToStudent: draft/closed kabhi nahi dikhta, open+audience dikhta hai', () => {
+  const student = { id: 'S1', class: '10' };
+  const other = { id: 'S2', class: '11' };
+  const base = { audience: 'All', status: 'open' };
+
+  assert.equal(forms.visibleToStudent({ ...base, status: 'draft' }, student), false);
+  assert.equal(forms.visibleToStudent({ ...base, status: 'closed' }, student), false);
+  assert.equal(forms.visibleToStudent(base, student), true);
+
+  // Class-specific form sirf usi class ko.
+  assert.equal(forms.visibleToStudent({ ...base, audience: '10' }, student), true);
+  assert.equal(forms.visibleToStudent({ ...base, audience: '10' }, other), false);
+  // Class 9 ke student (jinka class field ho) par bhi kaam karta hai.
+  assert.equal(forms.visibleToStudent({ ...base, audience: '9' }, { class: '9' }), true);
+});
+
+// ------------------------------------------------------------------ files
+
+test('file store: bina setup ke available=false aur upload seedha 503', async () => {
+  const status = fileStoreStatus();
+  assert.equal(status.available, false);
+  assert.equal(status.maxMB, MAX_FILE_MB);
+  assert.equal(status.transport, 'none');
+
+  await assert.rejects(
+    uploadFile({ name: 'report.pdf', data: Buffer.from('x') }),
+    (err) => err instanceof HttpError && err.status === 503 && /APPS_SCRIPT_FILE_URL/.test(err.message)
+  );
+});
+
+test('file store: mime type extension se pehchana jaata hai', () => {
+  assert.equal(mimeFor('a.pdf'), 'application/pdf');
+  assert.equal(mimeFor('photo.JPEG'), 'image/jpeg');
+  assert.equal(mimeFor('clip.mp4'), 'video/mp4');
+  // HTML/SVG kabhi nahi — agar link kisi page me embed hua to script chal sakta.
+  assert.equal(mimeFor('evil.html'), null);
+  assert.equal(mimeFor('pic.svg'), null);
+  assert.equal(mimeFor('unknown', 'text/html'), null);
+  assert.equal(mimeFor('ok.txt', ''), 'text/plain');
+});
+
+test('file store: setup ke saath bhi galat file 413/415/400 me ruk jaati hai', async () => {
+  const hadUrl = process.env.APPS_SCRIPT_FILE_URL;
+  const hadToken = process.env.APPS_SCRIPT_FILE_TOKEN;
+  process.env.APPS_SCRIPT_FILE_URL = 'https://example.invalid/exec';
+  process.env.APPS_SCRIPT_FILE_TOKEN = 'test-token';
+
+  try {
+    await assert.rejects(uploadFile({ name: 'a.pdf', data: Buffer.alloc(0) }), (err) => err.status === 400);
+    await assert.rejects(uploadFile({ name: 'evil.html', data: Buffer.from('<h1>x</h1>') }), (err) => err.status === 415);
+    await assert.rejects(
+      uploadFile({ name: 'big.mp4', data: Buffer.alloc(MAX_FILE_MB * 1024 * 1024 + 1) }),
+      (err) => err.status === 413 && /too large/i.test(err.message)
+    );
+  } finally {
+    if (hadUrl === undefined) delete process.env.APPS_SCRIPT_FILE_URL; else process.env.APPS_SCRIPT_FILE_URL = hadUrl;
+    if (hadToken === undefined) delete process.env.APPS_SCRIPT_FILE_TOKEN; else process.env.APPS_SCRIPT_FILE_TOKEN = hadToken;
+  }
+});

@@ -11,6 +11,7 @@ const { rateLimit } = require('./middleware/rateLimit');
 const { storageConfigured } = require('./utils/googleSheets');
 const { mailStatus, probeSmtp, smtpConfigured } = require('./utils/mailer');
 const { smsStatus } = require('./utils/sms');
+const { fileStoreStatus } = require('./utils/fileStore');
 const { codeExposed } = require('./utils/otp');
 const { assertRoomAccess, loadUser } = require('./utils/rooms');
 
@@ -129,6 +130,14 @@ app.use((req, res, next) => {
 app.use(cors((req, callback) => {
   callback(null, { origin: originAllowed(req.headers.origin, req) });
 }));
+
+// File upload (max 25 MB) ko global `express.json({limit: '256kb'})` se pehle
+// mount karna padta hai — warna 2 MB se badi PDF bhi 413 ho jaati aur file
+// kabhi bhi upload route tak nahi pahunchti. Yahan sirf /api/files ke liye
+// badi limit lagi hai, baaki app 256 kb par hi rehta hai.
+app.use('/api/files', express.json({ limit: '35mb' }));
+app.use('/api/files', require('./routes/fileRoutes.js'));
+
 app.use(express.json({ limit: '256kb' }));
 app.use(express.urlencoded({ limit: '256kb', extended: false }));
 app.use(rateLimit({ windowMs: 60 * 1000, max: 600, message: 'Too many requests. Please slow down.' }));
@@ -142,6 +151,7 @@ app.use(rateLimit({ windowMs: 60 * 1000, max: 600, message: 'Too many requests. 
 app.get('/api/status', (req, res) => {
   const email = mailStatus();
   const sms = smsStatus();
+  const files = fileStoreStatus();
   const base = {
     status: 'ok',
     service: 'Digital Janta API',
@@ -150,7 +160,8 @@ app.get('/api/status', (req, res) => {
     verification: {
       // Sirf "chal raha hai / nahi" — configuration ka koi detail nahi.
       email: { available: Boolean(email.available), codeExposed: codeExposed() },
-      sms: { available: Boolean(sms.available) }
+      sms: { available: Boolean(sms.available) },
+      files: { available: Boolean(files.available), maxMB: files.maxMB }
     }
   };
 
@@ -164,7 +175,7 @@ app.get('/api/status', (req, res) => {
   return res.json({
     ...base,
     // Token sahi hai to operator ko poori diagnosis chahiye.
-    verification: { email, sms, codeExposed: codeExposed() }
+    verification: { email, sms, files, codeExposed: codeExposed() }
   });
 });
 
@@ -178,6 +189,7 @@ app.use('/api/school', require('./routes/schoolRoutes.js'));
 app.use('/api/chatrooms', require('./routes/chatRoomRoutes.js'));
 app.use('/api/study', require('./routes/studyRoutes.js'));
 app.use('/api/ai', require('./routes/aiRoutes.js'));
+app.use('/api/forms', require('./routes/formRoutes.js'));
 
 // SPA fallback se PEHLE — har unknown route par 404. Ye isliye zaroori hai
 // kyunki neeche `app.get('*path')` har kuch pakad leta hai: uske bina
