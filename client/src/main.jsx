@@ -2,7 +2,12 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { installSlowHint } from './api/slowHint.js'
 import './index.css'
+
+// Har axios request par cold-start hint — Render ka pehla request 30-60 second
+// leta hai, aur us waqt user ko sirf spinner dikhta hai.
+installSlowHint()
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
 

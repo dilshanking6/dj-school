@@ -544,6 +544,21 @@ those limits if your deployment is slower.
 **`/api/status` says `storage: not-configured`**
 `APPS_SCRIPT_URL` is missing from `server/.env`.
 
+**Every sign-in fails with 502 / 503 and the log says `Unauthorized`**
+`APPS_SCRIPT_URL` is pointing at the wrong Apps Script — most often the mail or the Drive helper instead of
+the sheet one. Both live on `script.google.com`, so the mistake is easy to make and the whole portal goes
+down with it (every read fails, so even `/api/auth/login` cannot look the user up).
+
+Open the URL by hand to see which script answers:
+
+```
+curl "https://script.google.com/macros/s/<id>/exec"
+```
+
+The mail helper answers `{"ok":true,"service":"Digital Janta mail"}`. The sheet script answers with the
+school data. The server names the wrong script in its error message, so the login screen itself tells you
+what is wired up. Put the sheet script's `/exec` URL in `APPS_SCRIPT_URL` and redeploy.
+
 **Sign-in says codes are temporarily unavailable**
 No SMS provider is set while `NODE_ENV=production`. Set `SMS_PROVIDER` + `SMS_API_KEY` (or
 `SMS_WEBHOOK_URL`), or ask users to use email and password. `GET /api/auth/otp-channels` names the
