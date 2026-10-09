@@ -108,7 +108,11 @@ export const AuthProvider = ({ children }) => {
       notifyTokenChanged();
       return nextUser;
     } catch (err) {
-      throw err.response?.data?.error || 'Unable to sign in right now';
+      // String throw karne se caller ka `err.message` undefined ho jaata tha
+      // aur login screen sirf generic "Unable to sign in" dikhati thi — asli
+      // server message (galat password, account pending, storage error) kabhi
+      // nahi milta tha. Isliye hamesha Error object throw karte hain.
+      throw new Error(err?.response?.data?.error || err?.message || 'Unable to sign in right now');
     }
   };
 
@@ -117,7 +121,7 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.post('/api/auth/otp/request', { email, phone });
       return res.data;
     } catch (err) {
-      throw err.response?.data?.error || 'Unable to send a verification code';
+      throw new Error(err?.response?.data?.error || err?.message || 'Unable to send a verification code');
     }
   };
 

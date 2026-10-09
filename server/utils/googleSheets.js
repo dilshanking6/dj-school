@@ -8,24 +8,45 @@ const readTimeout = () => Number(process.env.SHEET_READ_TIMEOUT || 30000);
 const writeTimeout = () => Number(process.env.SHEET_WRITE_TIMEOUT || 30000);
 
 class SheetError extends Error {
-  constructor(message, cause) {
+  constructor(message, cause, { status = 502, expose = false, retryable = false } = {}) {
     super(message);
     this.name = 'SheetError';
-    this.status = 502;
+    this.status = status;
+    // expose=true = message user tak dikhao. Ye sirf un errors ke liye hai
+    // jiska fix operator khud kar sakta hai (jaise sheet tab na hona).
+    this.expose = expose;
+    // retryable = ye ek aisi failure hai jo cold start / quota spike ki wajah
+    // se ho sakti hai, isliye withRetry ise dobara try kare. Pehle ye
+    // message-text se pakda jaata tha, jisse DNS/network errors (jo asli me
+    // retryable hote hain) kabhi retry nahi hote the.
+    this.retryable = retryable;
     this.cause = cause;
   }
 }
 
-// Apps Script cold start aur shared-quota spikes par read fail hota hai.
-// Ye wo errors hain jo retry se theek ho sakte hain (timeout / unreachable /
-// quota-ki reject). Ek baar reject = seedha error nahi, retry karo.
-const RETRYABLE = [
-  'Storage service timed out. Please try again.',
-  'Storage service is unreachable',
-  'Storage service rejected the request'
-];
-const isRetryable = (error) =>
-  error instanceof SheetError && RETRYABLE.includes(error.message);
+const isRetryable = (error) => error instanceof SheetError && error.retryable;
+
+/**
+ * Error ka chhota, saaf tukda — browser tak bhejne ke liye.
+ * Do cheezein hataani hain: (1) HTML tags, (2) koi bhi URL — Apps Script ka
+ * URL browser kabhi nahi milna chahiye (wo poora datastore ka darwaza hai).
+ */
+const publicDetail = (value, max = 200) =>
+  String(value || '')
+    .replace(/https?:\/\/\S+/gi, '[link]')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+
+// Network-level failures jinme Google ka jawab hi nahi mila (DNS, connection
+// refused/reset). Ye waqai retry se theek ho sakti hain — Render ke free plan
+// par aisi cheezein ek baar me aam hain.
+const NETWORK_CODES = new Set([
+  'ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH',
+  'ENETUNREACH', 'ETIMEDOUT', 'EPIPE', 'ERR_SOCKET_CONNECTION_TIMEOUT',
+  'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'
+]);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -53,7 +74,11 @@ const withRetry = async (fn, { attempts, baseDelay }) => {
 const post = async (payload, timeout) => {
   const url = appsScriptUrl();
   if (!url) {
-    throw new SheetError('Storage service is not configured. Add APPS_SCRIPT_URL to the server environment.');
+    throw new SheetError(
+      'School data service is not configured (APPS_SCRIPT_URL is missing on the server).',
+      null,
+      { status: 503, expose: true }
+    );
   }
 
   let response;
@@ -61,19 +86,95 @@ const post = async (payload, timeout) => {
     response = await axios.post(url, payload, { timeout });
   } catch (error) {
     if (error.response) {
-      throw new SheetError('Storage service rejected the request', error);
+      const httpStatus = Number(error.response.status) || 0;
+      const body = publicDetail(error.response.data, 140);
+      // 429/5xx = Google ka server ya quota ka jhatka, apne aap theek ho
+      // sakta hai. 401/403/404 = deployment galat hai, retry ka koi fayda nahi.
+      const transient = [408, 429, 500, 502, 503, 504].includes(httpStatus);
+      throw new SheetError(
+        `Storage service rejected the request (HTTP ${httpStatus}${body ? `: ${body}` : ''})`,
+        error,
+        { status: 503, expose: true, retryable: transient }
+      );
     }
+
     if (error.code === 'ECONNABORTED') {
-      throw new SheetError('Storage service timed out. Please try again.', error);
+      throw new SheetError('Storage service timed out. Please try again.', error, {
+        status: 504,
+        expose: true,
+        retryable: true
+      });
     }
-    throw new SheetError('Storage service is unreachable', error);
+
+    const code = String(error.code || '');
+    const detail = publicDetail(`${code ? `${code}: ` : ''}${error.message || error.name}`, 140);
+
+    // Env var me galti (trailing space, tuta hua URL) — retry se kuch nahi
+    // hoga, aur user ko saaf batana zaroori hai warna wo bas retry karta rahega.
+    if (code === 'ERR_INVALID_URL' || /invalid url/i.test(error.message || '')) {
+      throw new SheetError(
+        'APPS_SCRIPT_URL on the server is not a valid URL. Fix it and redeploy.',
+        error,
+        { status: 503, expose: true }
+      );
+    }
+
+    // DNS/connection failure = network ka ek waqt ka jhatka, retryable.
+    throw new SheetError(
+      `Could not reach the storage service (${detail}). Please try again in a moment.`,
+      error,
+      { status: 503, expose: true, retryable: NETWORK_CODES.has(code) }
+    );
   }
 
-  if (response.data && response.data.error) {
-    throw new SheetError(String(response.data.error), null);
+  const data = response.data;
+
+  // Apps Script kabhi HTML (sign-in / redirect page) bhej deta hai — pehle ye
+  // chup-chaap "khali sheet" ban jaata tha, jisse har login par galat
+  // "Incorrect email or password" dikhta tha aur asli wajah kabhi pata hi
+  // nahi chalti thi.
+  if (typeof data === 'string') {
+    let parsed = null;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      parsed = null;
+    }
+    if (parsed && typeof parsed === 'object') return parsed;
+
+    const looksLikePage = /<\s*(!doctype|html)\b/i.test(data);
+    throw new SheetError(
+      looksLikePage
+        ? 'The storage service sent a web page instead of data. The Apps Script deployment access must be set to "Anyone" (Deploy → Manage deployments → edit).'
+        : `The storage service sent an unexpected answer (${publicDetail(data, 120)})`,
+      null,
+      { status: 503, expose: true }
+    );
   }
 
-  return response.data;
+  if (data && typeof data === 'object' && data.error) {
+    const raw = String(data.error);
+
+    // "Sheet not found: X" — ye code ki galti nahi, spreadsheet me wo tab hi
+    // nahi bana. Bina iske user ko sirf "Something went wrong" dikhta tha aur
+    // wo kabhi samajh nahi pata ki Forms/FormSubmissions tab banana padta hai.
+    const missing = /^Sheet not found:\s*(.+)$/.exec(raw);
+    if (missing) {
+      const tab = missing[1].trim();
+      throw new SheetError(
+        `The "${tab}" tab is missing in the school spreadsheet. Open the spreadsheet, add a tab named exactly "${tab}" with a header row in the first line, then try again.`,
+        null,
+        { status: 503, expose: true }
+      );
+    }
+
+    throw new SheetError(`Storage service said: ${publicDetail(raw, 160)}`, null, {
+      status: 503,
+      expose: true
+    });
+  }
+
+  return data;
 };
 
 const extractRows = (data) => {

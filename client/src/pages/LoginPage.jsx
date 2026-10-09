@@ -7,6 +7,12 @@ import useOtpChannels from '../hooks/useOtpChannels';
 
 const panel = 'w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:border-primary/50 transition-colors text-sm placeholder:text-slate-500';
 
+// AuthContext Error throw karta hai, par purane callers string bhi throw kar
+// sakte hain — dono case me asli message dikhana zaroori hai, warna user ko
+// hamesha generic "Unable to sign in" dikhta tha.
+const messageOf = (err, fallback) =>
+  (typeof err === 'string' && err) || err?.message || fallback;
+
 const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
   const [method, setMethod] = useState('email');
   const [stage, setStage] = useState('credentials');
@@ -61,7 +67,7 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
       setStage('otp');
       setInfo(res.devCode ? `Your code is ${res.devCode}` : 'A 6-digit code has been sent to your mobile.');
     } catch (err) {
-      setError(err.message || 'Unable to send a verification code');
+      setError(messageOf(err, 'Unable to send a verification code'));
     } finally {
       setLoading(false);
     }
@@ -78,7 +84,7 @@ const LoginPage = ({ role = 'student', title = 'Sign in' }) => {
           : await login({ phone: form.phone.trim(), otp: form.otp.trim(), role });
       navigate(`/${nextUser.role.toLowerCase()}`, { replace: true });
     } catch (err) {
-      setError(err.message || 'Unable to sign in');
+      setError(messageOf(err, 'Unable to sign in right now'));
       if (method === 'phone') setStage('credentials');
     } finally {
       setLoading(false);
