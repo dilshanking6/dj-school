@@ -8,7 +8,7 @@ require('dotenv').config();
 const { authenticateSocket, HttpError } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
 const { rateLimit } = require('./middleware/rateLimit');
-const { storageConfigured } = require('./utils/googleSheets');
+const { storageConfigured, getSheetData } = require('./utils/googleSheets');
 const { mailStatus, probeSmtp, smtpConfigured } = require('./utils/mailer');
 const { smsStatus } = require('./utils/sms');
 const { fileStoreStatus } = require('./utils/fileStore');
@@ -294,4 +294,17 @@ if (IS_PRODUCTION && !CLIENT_ORIGIN) {
 
 server.listen(PORT, () => {
   console.log(`Digital Janta API listening on port ${PORT} (${IS_PRODUCTION ? 'production' : 'development'})`);
+
+  // Boot par hi Users sheet ka ek background read — Render ka cold start aur
+  // Apps Script ka cold start dono ek saath user ke pehle login par na lagein.
+  // Isse pehla sign-in aadha-second nahi, poora 15-30 second nahi leta.
+  // Ye ek hi execution hai, quota par asar nahi padta.
+  if (storageConfigured()) {
+    setTimeout(() => {
+      getSheetData('Users').catch(() => {
+        // Warm-up fail hon par boot nahi rukna chahiye — user ko asli error
+        // tab hi dikhega jab wo khud kuch karega.
+      });
+    }, 1500);
+  }
 });

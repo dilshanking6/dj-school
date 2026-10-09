@@ -16,9 +16,20 @@ const setIntervalCleanup = () => {
 setIntervalCleanup();
 
 const clientKey = (req) => {
+  // Cloudflare har request par ye header khud set karta hai — client ise
+  // chhoo nahi sakta, isliye sabse bharosemand key yahi hai.
+  const cf = req.headers['cf-connecting-ip'];
+  if (cf) return String(cf).split(',')[0].trim();
+
+  // `trust proxy` true hone ki wajah se `req.ip` already XFF se nikla hua
+  // client hai.
+  if (req.ip) return req.ip;
+
+  // Fallback: purana behaviour. Iska pehla value client khud bhi bhej sakta
+  // hai (XFF spoofing) — isliye ye aakhri option hai.
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) return String(forwarded).split(',')[0].trim();
-  return req.ip || req.socket.remoteAddress || 'unknown';
+  return req.socket.remoteAddress || 'unknown';
 };
 
 const rateLimit = ({ windowMs = 60 * 1000, max = 60, message } = {}) => (req, res, next) => {

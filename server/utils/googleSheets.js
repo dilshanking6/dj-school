@@ -30,6 +30,29 @@ class SheetError extends Error {
 const isRetryable = (error) => error instanceof SheetError && error.retryable;
 
 /**
+ * `Unauthorized` aane par URL par ek GET kar ke pata chalta hai ki wo kis
+ * script ka hai. Mail/file script ka URL galti se `APPS_SCRIPT_URL` me chala
+ * jaata hai aur tab tak poora portal down rehta hai — isliye error me hi
+ * script ka naam aa jaye to operator ko dhundhna nahi padta.
+ */
+const identified = new Map();
+
+const identifyScript = async (target) => {
+  const cached = identified.get(target);
+  if (cached && Date.now() - cached.ts < 60 * 1000) return cached.service;
+
+  try {
+    const { data } = await axios.get(target, { timeout: 10000, responseType: 'text' });
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    const service = parsed && parsed.service ? String(parsed.service).slice(0, 80) : '';
+    identified.set(target, { service, ts: Date.now() });
+    return service;
+  } catch {
+    return '';
+  }
+};
+
+/**
  * Error ka chhota, saaf tukda — browser tak bhejne ke liye.
  * Do cheezein hataani hain: (1) HTML tags, (2) koi bhi URL — Apps Script ka
  * URL browser kabhi nahi milna chahiye (wo poora datastore ka darwaza hai).
@@ -169,8 +192,11 @@ const post = async (payload, timeout) => {
     // wajah browser tak jaani chahiye — warna sirf "Something went wrong"
     // dikhta tha aur login hamesha fail rehta tha.
     if (/^\s*unauthorized\s*$/i.test(raw)) {
+      const service = await identifyScript(url);
       throw new SheetError(
-        'APPS_SCRIPT_URL answered "Unauthorized" — either that URL belongs to a different Apps Script (mail/file), or this sheet script now requires a token. Point APPS_SCRIPT_URL at the sheet script\'s /exec URL and set APPS_SCRIPT_TOKEN if that script checks one, then redeploy.',
+        service
+          ? `APPS_SCRIPT_URL is pointing at the "${service}" script, not the school sheet. Replace that env value with the sheet script's /exec URL and redeploy.`
+          : 'APPS_SCRIPT_URL answered "Unauthorized" — either that URL belongs to a different Apps Script (mail/file), or this sheet script now requires a token. Point APPS_SCRIPT_URL at the sheet script\'s /exec URL and set APPS_SCRIPT_TOKEN if that script checks one, then redeploy.',
         null,
         { status: 503, expose: true }
       );
