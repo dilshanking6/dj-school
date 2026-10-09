@@ -16,6 +16,16 @@ const optionalText = (value, field, options = {}) => {
   return text(value, field, options);
 };
 
+// Sirf format check — login aur office-created accounts ke liye. Domain ki rok
+// sirf wahan lagti hai jahan mail sach me pahunchna zaroori ho (self-register
+// aur email OTP). School office jo email record me daalta hai (ya jo server
+// khud `@dj.edu` bana ke deta hai) usse login hona chahiye.
+const emailFormat = (value) => {
+  const out = text(value, 'Email', { max: 254 }).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(out)) throw new HttpError(400, 'Enter a valid email address');
+  return out;
+};
+
 // Sirf asli Google Mail allow hai — koi bhi free/fake provider nahi
 // (example.com, @dj.edu, ya kisi aur domain ka address register nahi hoga).
 // Isse portal par sirf wo log account banate hain jinke paas sach me
@@ -28,8 +38,7 @@ const ALLOWED_EMAIL_DOMAINS = new Set(
 );
 
 const email = (value) => {
-  const out = text(value, 'Email', { max: 254 }).toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(out)) throw new HttpError(400, 'Enter a valid email address');
+  const out = emailFormat(value);
   const domain = out.split('@')[1];
   if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
     throw new HttpError(400, `Only ${[...ALLOWED_EMAIL_DOMAINS].join(', ')} email addresses are allowed`);
@@ -179,7 +188,7 @@ const array = (value, field, { max = 500, min = 0 } = {}) => {
 };
 
 module.exports = {
-  isBlank, text, optionalText, email, phone, optionalPhone, password,
+  isBlank, text, optionalText, email, emailFormat, phone, optionalPhone, password,
   oneOf, optionalOneOf, int, isoDate, timeString, url, optionalUrl,
   dataUrl, optionalDataUrl, array,
   ALLOWED_EMAIL_DOMAINS, PASSWORD_MIN, PASSWORD_MAX

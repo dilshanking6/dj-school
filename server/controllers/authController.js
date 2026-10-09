@@ -358,7 +358,7 @@ const login = async (req, res) => {
     return res.json({ token: signToken(found.user), user: publicUser(found.user) });
   }
 
-  const email = v.email(v.text(req.body.email, 'Email', { max: 254 }));
+  const email = v.emailFormat(req.body.email);
   const rawPassword = String(req.body.password ?? '');
   if (!rawPassword) throw new HttpError(400, 'Password is required');
   if (rawPassword.length > 128) throw new HttpError(400, 'Password is too long');
@@ -498,7 +498,7 @@ const updateProfile = async (req, res) => {
   const updates = {};
 
   if (!v.isBlank(req.body.email)) {
-    const email = v.email(req.body.email);
+    const email = v.emailFormat(req.body.email);
     if (email !== found.user.email) {
       const taken = await findUserByEmail(email);
       if (taken && taken.user.id !== found.user.id) {
@@ -596,7 +596,7 @@ const createUserByOffice = async (req, res) => {
   }
 
   const fullName = v.text(req.body.name, 'Full name', { max: 120 });
-  let email = req.body.email ? v.email(req.body.email) : '';
+  let email = req.body.email ? v.emailFormat(req.body.email) : '';
   let password = String(req.body.password || '').trim();
   if (!password) {
     if (role !== 'student') throw new HttpError(400, 'Password chahiye student/teacher account ke liye');
@@ -606,8 +606,16 @@ const createUserByOffice = async (req, res) => {
   }
   if (!email) {
     if (role !== 'student') throw new HttpError(400, 'Email address chahiye');
-    const slug = String(`${req.body.rollNumber || ''}-${req.body.className || ''}`).replace(/[^a-z0-9]/g, '');
-    email = `student${slug ? `-${slug}` : ''}-${Date.now().toString().slice(-6)}@dj.edu`;
+    // Roll/class se slug banake ek local email. `findUserByEmail` se takraav
+    // (do students, ek hi roll, ek hi second) par dobara try karte hain —
+    // pehle sirf 6 digit timestamp tha, jisse clash sambhav tha aur tab
+    // student ka login hi nahi hota.
+    const slug = String(`${req.body.rollNumber || ''}-${req.body.className || ''}`).replace(/[^a-z0-9]/gi, '').toLowerCase();
+    let attempt = 0;
+    do {
+      email = `student${slug ? `-${slug}` : ''}-${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}@dj.edu`;
+      attempt += 1;
+    } while (attempt < 5 && (await findUserByEmail(email)));
   }
   const phone = v.optionalPhone(req.body.phone);
   const gender = v.optionalOneOf(req.body.gender, ['male', 'female'], 'Gender');

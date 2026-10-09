@@ -32,25 +32,41 @@ const clientKey = (req) => {
   return req.socket.remoteAddress || 'unknown';
 };
 
-const rateLimit = ({ windowMs = 60 * 1000, max = 60, message } = {}) => (req, res, next) => {
-  const key = `${req.method}:${req.baseUrl}${req.path}:${clientKey(req)}`;
-  const now = Date.now();
-  const bucket = buckets.get(key);
+/**
+ * Har limiter ko apna unique scope milta hai.
+ *
+ * Pehle key sirf `method + path + ip` thi — aur kyunki global limiter
+ * (`app.use`, baseUrl khali) aur route wala limiter (jaise `/login`) dono ka
+ * `baseUrl + path` bilkul same nikalta tha, unka bucket ek hi ban jaata tha.
+ * Nateeja: ek request par dono limiter apna-apna count badhate the (count
+ * double), aur `resetAt` bhi ek doosre ko overwrite kar deta tha — isliye
+ * login ka 15-minute window sach me ~5 tries/minute ban gaya tha.
+ */
+let limiterSeq = 0;
 
-  if (!bucket || bucket.resetAt < now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
+const rateLimit = ({ windowMs = 60 * 1000, max = 60, message, name } = {}) => {
+  const scope = name || `rl${++limiterSeq}`;
+
+  return (req, res, next) => {
+    const key = `${scope}:${req.method}:${req.baseUrl}${req.path}:${clientKey(req)}`;
+    const now = Date.now();
+    const bucket = buckets.get(key);
+
+    if (!bucket || bucket.resetAt < now) {
+      buckets.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    bucket.count += 1;
+
+    if (bucket.count > max) {
+      const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
+      res.set('Retry-After', String(retryAfter));
+      return next(new HttpError(429, message || `Too many requests. Try again in ${retryAfter} seconds.`));
+    }
+
     return next();
-  }
-
-  bucket.count += 1;
-
-  if (bucket.count > max) {
-    const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
-    res.set('Retry-After', String(retryAfter));
-    return next(new HttpError(429, message || `Too many requests. Try again in ${retryAfter} seconds.`));
-  }
-
-  return next();
+  };
 };
 
 module.exports = { rateLimit };

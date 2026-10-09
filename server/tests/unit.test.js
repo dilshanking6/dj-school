@@ -16,6 +16,7 @@ const otp = require('../utils/otp');
 const rows = require('../utils/rows');
 const { toLocal10, toE164 } = require('../utils/sms');
 const { HttpError } = require('../middleware/auth');
+const { rateLimit } = require('../middleware/rateLimit');
 
 // Helper: ye function HttpError throw kare, warna test fail.
 const throwsHttp = (fn, status, messagePart) => {
@@ -49,6 +50,20 @@ test('email: rejects malformed input', () => {
 
 test('email: accepts subaddressed gmail', () => {
   assert.equal(v.email('ram.kumar+9@gmail.com'), 'ram.kumar+9@gmail.com');
+});
+
+// emailFormat = login/office path. Yahan domain ki rok nahi honi chahiye,
+// warna office ka banaya student (jiska email server khud
+// `student-...@dj.edu` banata hai) kabhi login hi nahi kar paata.
+test('emailFormat: accepts the school-generated domain that login must allow', () => {
+  assert.equal(v.emailFormat('  Student-12-ABC@DJ.edu '), 'student-12-abc@dj.edu');
+  assert.equal(v.emailFormat('someone@yahoo.com'), 'someone@yahoo.com');
+});
+
+test('emailFormat: still rejects malformed input', () => {
+  for (const bad of ['', '   ', 'no-at-sign', 'a@b', '@gmail.com', 'a@.com', 'a b@gmail.com']) {
+    throwsHttp(() => v.emailFormat(bad), 400);
+  }
 });
 
 // -------------------------------------------------------------- password
@@ -573,6 +588,47 @@ test('file store: mime type extension se pehchana jaata hai', () => {
   assert.equal(mimeFor('unknown', 'text/html'), null);
   assert.equal(mimeFor('ok.txt', ''), 'text/plain');
 });
+
+// ----------------------------------------------------------- rate limiting
+
+const fakeReq = () => ({
+  method: 'POST', baseUrl: '/api/auth', path: '/login',
+  headers: {}, ip: '203.0.113.9', socket: {}
+});
+
+const runLimiter = (limiter) => {
+  let status = null;
+  limiter(fakeReq(), { set() {} }, (err) => {
+    if (err) status = err.status;
+  });
+  return status;
+};
+
+test('rateLimit: ek hi route ke do limiter apna bucket share nahi karte', () => {
+  const outer = rateLimit({ windowMs: 60000, max: 3 });
+  const inner = rateLimit({ windowMs: 60000, max: 3 });
+
+  // Dono ke apne-apne 3 attempts. Pehle inme se koi bhi ek doosre ka count
+  // nahi badhata — warna live login par limit aadhi reh jaati thi.
+  assert.equal(runLimiter(outer), null);
+  assert.equal(runLimiter(inner), null);
+  assert.equal(runLimiter(outer), null);
+  assert.equal(runLimiter(inner), null);
+  assert.equal(runLimiter(outer), null);
+  assert.equal(runLimiter(inner), null);
+
+  assert.equal(runLimiter(outer), 429);
+  assert.equal(runLimiter(inner), 429);
+});
+
+test('rateLimit: ek limiter apne max ke baad rok deta hai', () => {
+  const limiter = rateLimit({ windowMs: 60000, max: 2 });
+  assert.equal(runLimiter(limiter), null);
+  assert.equal(runLimiter(limiter), null);
+  assert.equal(runLimiter(limiter), 429);
+});
+
+// ------------------------------------------------------------------ files
 
 test('file store: setup ke saath bhi galat file 413/415/400 me ruk jaati hai', async () => {
   const hadUrl = process.env.APPS_SCRIPT_FILE_URL;

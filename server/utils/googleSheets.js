@@ -250,7 +250,17 @@ const swrTTL = () => Number(process.env.SHEET_CACHE_SWR_MS || 45000);
 const cache = new Map();    // sheetName -> { ts, data }
 const inflight = new Map(); // sheetName -> Promise (ek chal raha hai to baaki usi ka wait karte hain)
 
+// Har sheet ka apna version. Ek write version badha deta hai, aur jo read us
+// write se pehle shuru hui thi wo apna purana jawab cache me nahi likhti.
+// Warna ye hota tha: write → cache khaali → usi waqt chal rahi purani read
+// apna (purana) data cache me daal deti thi, aur naye student ko login karne
+// par "Incorrect email or password" aata tha jab tak TTL khatam na ho.
+const versions = new Map();
+
+const sheetVersion = (sheetName) => versions.get(sheetName) || 0;
+
 const bustSheetCache = (sheetName) => {
+  versions.set(sheetName, sheetVersion(sheetName) + 1);
   cache.delete(sheetName);
   // Chal raha hua read bhi bekaar ho sakta hai (purana data le kar aayega) —
   // isliye use bhi chhod dete hain taaki naya request fresh read kare.
@@ -258,13 +268,17 @@ const bustSheetCache = (sheetName) => {
 };
 
 const readSheet = async (sheetName) => {
+  const startedAt = sheetVersion(sheetName);
   const attempts = Number(process.env.SHEET_READ_ATTEMPTS || 3);
   const data = await withRetry(
     () => post({ action: 'read', sheetName }, readTimeout()),
     { attempts, baseDelay: 700 }
   );
   const rows = extractRows(data);
-  cache.set(sheetName, { ts: Date.now(), data: rows });
+  // Beech me koi write hua ho to is jawab ko cache mat banao.
+  if (sheetVersion(sheetName) === startedAt) {
+    cache.set(sheetName, { ts: Date.now(), data: rows });
+  }
   return rows;
 };
 
