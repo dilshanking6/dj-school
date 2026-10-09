@@ -134,21 +134,22 @@ const post = async (payload, timeout) => {
     );
   }
 
-  const data = response.data;
+  let data = response.data;
 
-  // Apps Script kabhi HTML (sign-in / redirect page) bhej deta hai — pehle ye
-  // chup-chaap "khali sheet" ban jaata tha, jisse har login par galat
-  // "Incorrect email or password" dikhta tha aur asli wajah kabhi pata hi
-  // nahi chalti thi.
+  // Apps Script kabhi JSON ko `text/plain` me bhej deta hai — pehle parse kar
+  // lo, taaki uska `error` baad ka check miss na ho.
   if (typeof data === 'string') {
-    let parsed = null;
     try {
-      parsed = JSON.parse(data);
+      data = JSON.parse(data);
     } catch {
-      parsed = null;
+      // parse fail = asli me HTML/text aaya hai, neeche handle hoga
     }
-    if (parsed && typeof parsed === 'object') return parsed;
+  }
 
+  // HTML (sign-in / redirect page) aane par pehle ye chup-chaap "khali sheet"
+  // ban jaata tha, jisse har login par galat "Incorrect email or password"
+  // dikhta tha aur asli wajah kabhi pata hi nahi chalti thi.
+  if (typeof data === 'string') {
     const looksLikePage = /<\s*(!doctype|html)\b/i.test(data);
     throw new SheetError(
       looksLikePage
