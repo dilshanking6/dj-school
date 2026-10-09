@@ -4,6 +4,9 @@ const axios = require('axios');
 // Apps Script cold start me 15-25s lag sakte hain, isliye read timeout
 // generous rakha gaya hai. Override karne ke liye SHEET_READ_TIMEOUT set karo.
 const appsScriptUrl = () => process.env.APPS_SCRIPT_URL;
+// Agar sheet wala Apps Script token maangta hai to Render me ye env bharo.
+// Optional hai — jisme token nahi wo script ise ignore kar deta hai.
+const appsScriptToken = () => String(process.env.APPS_SCRIPT_TOKEN || '').trim();
 const readTimeout = () => Number(process.env.SHEET_READ_TIMEOUT || 30000);
 const writeTimeout = () => Number(process.env.SHEET_WRITE_TIMEOUT || 30000);
 
@@ -83,7 +86,11 @@ const post = async (payload, timeout) => {
 
   let response;
   try {
-    response = await axios.post(url, payload, { timeout });
+    // Token body me bhejte hain — Apps Script `e.parameter` / parsed body se
+    // ise padh leta hai, alag header ki zaroorat nahi padti.
+    const token = appsScriptToken();
+    const body = token ? { ...payload, token } : payload;
+    response = await axios.post(url, body, { timeout });
   } catch (error) {
     if (error.response) {
       const httpStatus = Number(error.response.status) || 0;
@@ -154,6 +161,19 @@ const post = async (payload, timeout) => {
 
   if (data && typeof data === 'object' && data.error) {
     const raw = String(data.error);
+
+    // Script "Unauthorized" tab bolta hai jab uska token match na ho — ya jab
+    // APPS_SCRIPT_URL galat script (mail/file wala) ko point kar raha ho. Ye
+    // env fix karne wali baat hai, code se theek nahi hoti, isliye poori
+    // wajah browser tak jaani chahiye — warna sirf "Something went wrong"
+    // dikhta tha aur login hamesha fail rehta tha.
+    if (/^\s*unauthorized\s*$/i.test(raw)) {
+      throw new SheetError(
+        'APPS_SCRIPT_URL answered "Unauthorized" — either that URL belongs to a different Apps Script (mail/file), or this sheet script now requires a token. Point APPS_SCRIPT_URL at the sheet script\'s /exec URL and set APPS_SCRIPT_TOKEN if that script checks one, then redeploy.',
+        null,
+        { status: 503, expose: true }
+      );
+    }
 
     // "Sheet not found: X" — ye code ki galti nahi, spreadsheet me wo tab hi
     // nahi bana. Bina iske user ko sirf "Something went wrong" dikhta tha aur
