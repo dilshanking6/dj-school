@@ -648,3 +648,103 @@ test('file store: setup ke saath bhi galat file 413/415/400 me ruk jaati hai', a
     if (hadToken === undefined) delete process.env.APPS_SCRIPT_FILE_TOKEN; else process.env.APPS_SCRIPT_FILE_TOKEN = hadToken;
   }
 });
+
+// --------------------------------------------------------- academic session
+
+const session = require('../utils/session');
+
+test('session: saal 1 April se badalta hai (IST)', () => {
+  // 31 Mar ab bhi purana saal, 1 Apr se naya.
+  assert.equal(session.currentSession(new Date('2026-03-31T12:00:00+05:30')), '2025-26');
+  assert.equal(session.currentSession(new Date('2026-04-01T12:00:00+05:30')), '2026-27');
+  assert.equal(session.currentSession(new Date('2026-12-31T12:00:00+05:30')), '2026-27');
+  assert.equal(session.currentSession(new Date('2027-01-15T12:00:00+05:30')), '2026-27');
+});
+
+test('session: label do digit ke saath aur nextSession ek saal aage', () => {
+  assert.equal(session.nextSession('2026-27'), '2027-28');
+  assert.equal(session.nextSession('2029-30'), '2030-31');
+  // Invalid par aaj ka session (crash nahi).
+  assert.equal(session.isValidSession('2026-27'), true);
+  assert.equal(session.isValidSession('2026'), false);
+  assert.equal(session.isValidSession('abc-de'), false);
+  assert.equal(session.sessionStartDate('2026-27'), '2026-04-01');
+});
+
+test('session: promoteClass sirf enrolled classes ko aage bhejta hai', () => {
+  assert.equal(session.promoteClass('9'), '10');
+  assert.equal(session.promoteClass('10'), '11');
+  assert.equal(session.promoteClass('11'), '12');
+  // 12 ka koi aage nahi (pass out), N/A/unknown bhi nahi.
+  assert.equal(session.promoteClass('12'), null);
+  assert.equal(session.promoteClass('N/A'), null);
+  assert.equal(session.promoteClass(''), null);
+});
+
+test('session: baseSession sabse zyada milne wala session chunta hai', () => {
+  assert.equal(session.baseSession(['2025-26', '2025-26', '2024-25'], '2025-26'), '2025-26');
+  // Sab khali/invalid ho to fallback.
+  assert.equal(session.baseSession([], '2026-27'), '2026-27');
+  assert.equal(session.baseSession(['', 'nope'], '2026-27'), '2026-27');
+});
+
+// ----------------------------------------------------- attendance analytics
+
+const { summariseAttendance, genderSplit, percent } = require('../utils/analytics');
+
+test('analytics: percent kabhi 0-par bhram nahi deta', () => {
+  assert.equal(percent(0, 0), null);
+  assert.equal(percent(3, 4), 75);
+  assert.equal(percent(2, 3), 67);
+});
+
+test('analytics: genderSplit total aur boys/girls gin leta hai', () => {
+  const split = genderSplit([
+    { class: '9', gender: 'male' },
+    { class: '9', gender: 'female' },
+    { class: '9', gender: 'male' },
+    { class: '10', gender: 'female' }
+  ]);
+  assert.deepEqual(split['9'], { total: 3, boys: 2, girls: 1 });
+  assert.deepEqual(split['10'], { total: 1, boys: 0, girls: 1 });
+});
+
+test('analytics: per-student percentage aur range filter sahi', () => {
+  const attendance = [
+    ['Date', 'Class', 'StudentId', 'Name', 'Status', 'By', 'Id'],
+    ['2026-04-10', '9', 'S1', 'A', 'present', 'T1', 'r1'],
+    ['2026-04-11', '9', 'S1', 'A', 'absent', 'T1', 'r2'],
+    ['2026-04-12', '9', 'S1', 'A', 'present', 'T1', 'r3'],
+    ['2026-04-10', '9', 'S2', 'B', 'absent', 'T1', 'r4'],
+    ['2026-04-11', '10', 'S3', 'C', 'present', 'T1', 'r5']
+  ];
+  const students = [
+    { id: 'S1', name: 'A', class: '9', gender: 'male', section: 'A' },
+    { id: 'S2', name: 'B', class: '9', gender: 'female', section: 'A' },
+    { id: 'S3', name: 'C', class: '10', gender: 'male', section: 'A' },
+    { id: 'S4', name: 'D', class: '9', gender: 'male', section: 'A' }
+  ];
+
+  const report = summariseAttendance(attendance, students, {});
+  assert.equal(report.students.length, 4);
+  const s1 = report.students.find((s) => s.id === 'S1');
+  assert.equal(s1.marked, 3);
+  assert.equal(s1.percent, 67);
+  const s4 = report.students.find((s) => s.id === 'S4');
+  assert.equal(s4.marked, 0);
+  assert.equal(s4.percent, null);
+  assert.equal(report.summary.students, 4);
+  assert.equal(report.summary.withAttendance, 3);
+  assert.equal(report.summary.lowAttendance, 2); // S1=67%, S2=0% (dono < 75)
+
+  // Class filter
+  const only9 = summariseAttendance(attendance, students, { className: '9' });
+  assert.equal(only9.students.length, 3);
+  assert.ok(only9.students.every((s) => s.className === '9'));
+
+  // Date range filter — sirf 11 Apr.
+  const ranged = summariseAttendance(attendance, students, { from: '2026-04-11', to: '2026-04-11' });
+  assert.equal(ranged.students.find((s) => s.id === 'S1').marked, 1);
+  assert.equal(ranged.students.find((s) => s.id === 'S1').percent, 0);
+  assert.equal(ranged.summary.totalMarked, 2);
+});

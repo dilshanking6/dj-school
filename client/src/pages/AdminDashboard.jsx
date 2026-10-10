@@ -2,11 +2,13 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Users, ShieldCheck, Database, Activity, Search, Ban, RotateCcw,
-  Trash2, MessageSquare, Loader2, UserCheck, UserPlus
+  Users, ShieldCheck, Database, Search, Ban, RotateCcw,
+  Trash2, MessageSquare, Loader2, UserCheck, UserPlus, GraduationCap
 } from 'lucide-react';
 import DashboardShell from '../components/DashboardShell';
 import StudyHubCard from '../components/StudyHubCard';
+import AttendanceToday from '../components/AttendanceToday';
+import SessionPanel from '../components/SessionPanel';
 import OfficeCreateUser from '../components/OfficeCreateUser';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -15,6 +17,7 @@ const ChatPage = lazy(() => import('./ChatPage'));
 const EventsPage = lazy(() => import('./EventsPage'));
 const SettingsPage = lazy(() => import('./SettingsPage'));
 const StudyContentManager = lazy(() => import('./StudyContentManager'));
+const AttendanceReport = lazy(() => import('./AttendanceReport'));
 
 const ROLES = ['student', 'teacher', 'principal', 'admin'];
 const card = 'glass-effect rounded-3xl border border-white/5 p-5 sm:p-6';
@@ -89,7 +92,7 @@ const AdminHome = () => {
     { label: 'Students', value: stats.students ?? 0, icon: Users, tone: 'text-primary' },
     { label: 'Teachers', value: stats.teachers ?? 0, icon: Users, tone: 'text-amber-400' },
     { label: 'Administrators', value: stats.admins ?? 0, icon: Database, tone: 'text-emerald-400' },
-    { label: 'Total users', value: stats.totalUsers ?? 0, icon: Activity, tone: 'text-accent' }
+    { label: 'Passed out', value: stats.passedOut ?? 0, icon: GraduationCap, tone: 'text-slate-300' }
   ];
 
   const term = search.trim().toLowerCase();
@@ -100,7 +103,11 @@ const AdminHome = () => {
       (item.email || '').toLowerCase().includes(term)
   );
 
-  const classEntries = Object.entries(stats.classWiseStudents || {}).sort(([a], [b]) => a.localeCompare(b));
+  const breakdown = stats.classBreakdown
+    || Object.fromEntries(
+      Object.entries(stats.classWiseStudents || {}).map(([k, v]) => [k, { total: v, boys: 0, girls: 0 }])
+    );
+  const classEntries = Object.entries(breakdown).sort(([a], [b]) => a.localeCompare(b));
   const totalStudents = stats.students || 0;
 
   return (
@@ -133,6 +140,14 @@ const AdminHome = () => {
           </motion.div>
         ))}
       </div>
+
+      <div className="mt-5 lg:mt-6">
+        <SessionPanel onChanged={loadData} />
+      </div>
+
+      <section className={`${card} mt-5 lg:mt-6`}>
+        <AttendanceToday />
+      </section>
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:mt-6 lg:grid-cols-3 lg:gap-6">
         <section className={`${card} lg:col-span-2`}>
@@ -271,17 +286,21 @@ const AdminHome = () => {
             <p className="text-sm text-slate-500">No class data available yet.</p>
           ) : (
             <div className="space-y-5">
-              {classEntries.map(([cls, count]) => (
+              {classEntries.map(([cls, info]) => (
                 <div key={cls}>
                   <div className="mb-2 flex justify-between text-xs font-bold">
                     <span className="text-slate-400">Class {cls}</span>
-                    <span className="text-primary">{count}</span>
+                    <span className="text-primary">{info.total}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
                     <div
                       className="h-full rounded-full bg-primary transition-all duration-700"
-                      style={{ width: `${totalStudents ? (count / totalStudents) * 100 : 0}%` }}
+                      style={{ width: `${totalStudents ? (info.total / totalStudents) * 100 : 0}%` }}
                     />
+                  </div>
+                  <div className="mt-1.5 flex gap-3 text-[10px] font-bold text-slate-500">
+                    <span>👦 {info.boys} boys</span>
+                    <span>👧 {info.girls} girls</span>
                   </div>
                 </div>
               ))}
@@ -312,6 +331,7 @@ const AdminDashboard = () => (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<AdminHome />} />
+        <Route path="/attendance" element={<AttendanceReport />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/study" element={<StudyContentManager />} />

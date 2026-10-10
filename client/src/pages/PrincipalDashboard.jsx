@@ -1,10 +1,11 @@
 import React, { Suspense, lazy, useContext, useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, BookOpen, HelpCircle, UserCheck, Loader2, ShieldCheck } from 'lucide-react';
+import { Users, BookOpen, HelpCircle, UserCheck, Loader2, ShieldCheck, GraduationCap } from 'lucide-react';
 import DashboardShell from '../components/DashboardShell';
 import StudyHubCard from '../components/StudyHubCard';
 import AttendanceToday from '../components/AttendanceToday';
+import SessionPanel from '../components/SessionPanel';
 import OfficeCreateUser from '../components/OfficeCreateUser';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -14,6 +15,7 @@ const ChatPage = lazy(() => import('./ChatPage'));
 const PrincipalComplaints = lazy(() => import('./PrincipalComplaints'));
 const SettingsPage = lazy(() => import('./SettingsPage'));
 const AttendancePage = lazy(() => import('./AttendancePage'));
+const AttendanceReport = lazy(() => import('./AttendanceReport'));
 const ResultsPage = lazy(() => import('./ResultsPage'));
 const EventsPage = lazy(() => import('./EventsPage'));
 const StudyContentManager = lazy(() => import('./StudyContentManager'));
@@ -76,7 +78,8 @@ const PrincipalHome = () => {
     { label: 'Students', value: principal.students ?? 0, hint: 'Enrolled and active', icon: Users, tone: 'text-primary' },
     { label: 'Teaching staff', value: principal.teachers ?? 0, hint: 'Active teachers', icon: BookOpen, tone: 'text-accent' },
     { label: 'Open complaints', value: principal.pendingComplaints ?? 0, hint: 'Awaiting response', icon: HelpCircle, tone: 'text-rose-400' },
-    { label: 'Attendance today', value: principal.attendanceMarkedToday ?? 0, hint: 'Registers marked', icon: UserCheck, tone: 'text-emerald-400' }
+    { label: 'Attendance today', value: principal.attendanceMarkedToday ?? 0, hint: 'Registers marked', icon: UserCheck, tone: 'text-emerald-400' },
+    { label: 'Passed out', value: principal.passedOut ?? 0, hint: `Session ${principal.session || '—'}`, icon: GraduationCap, tone: 'text-slate-300' }
   ];
 
   const classAverages = dashboard?.stats?.classAverages || {};
@@ -107,6 +110,10 @@ const PrincipalHome = () => {
                 <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{hint}</p>
               </motion.div>
             ))}
+          </div>
+
+          <div className="mt-5 lg:mt-6">
+            <SessionPanel onChanged={loadDashboard} />
           </div>
 
           <section className={`${card} mt-5 lg:mt-6`}>
@@ -227,6 +234,7 @@ const PrincipalDashboard = () => (
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/complaints" element={<PrincipalComplaints />} />
         <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/attendance/report" element={<AttendanceReport />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/study" element={<StudyContentManager />} />

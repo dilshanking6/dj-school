@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { getSheetData, appendSheetData, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
+const { getSheetData, appendSheetData, appendVerified, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
 const { sendMail, mailConfigured, mailStatus } = require('../utils/mailer');
 const { sendSms, smsConfigured, smsStatus } = require('../utils/sms');
 const { HttpError, signToken, ROLES } = require('../middleware/auth');
@@ -8,8 +8,11 @@ const v = require('../middleware/validate');
 const otp = require('../utils/otp');
 
 const { userRows } = require('../utils/rows');
+const { currentSession } = require('../utils/session');
 
 const SELF_REGISTERABLE_ROLES = ['student', 'teacher'];
+
+const PASSED_OUT_MESSAGE = 'This student has passed out of school. Contact the school office for records.';
 
 const parseJson = (value, fallback = {}) => {
   try {
@@ -39,7 +42,11 @@ const toUser = (row) => {
     degree: row[10] && row[10] !== 'N/A' ? row[10] : '',
     experience: row[11] || '0',
     status: detail.status || 'active',
-    gender: detail.gender || ''
+    gender: detail.gender || '',
+    session: detail.session || '',
+    left: Boolean(detail.left),
+    leftOn: detail.leftOn || '',
+    leftClass: detail.leftClass || ''
   };
 };
 
@@ -322,6 +329,9 @@ const requestOtp = async (req, res) => {
   if (found.user.status === 'banned') {
     throw new HttpError(403, 'This account has been suspended. Contact the school office.');
   }
+  if (found.user.left) {
+    throw new HttpError(403, PASSED_OUT_MESSAGE);
+  }
 
   const code = await otp.create('phone', phone);
   const { delivered } = await deliverPhoneCode(phone, code, {
@@ -351,6 +361,9 @@ const login = async (req, res) => {
   if (found.user.status === 'pending') {
     throw new HttpError(403, 'Your account is awaiting approval by the school office.');
   }
+  if (found.user.left) {
+    throw new HttpError(403, PASSED_OUT_MESSAGE);
+  }
   if (role && found.user.role !== v.oneOf(role, ROLES, 'Role')) {
       throw new HttpError(403, 'This portal is not available for your account type');
     }
@@ -370,6 +383,9 @@ const login = async (req, res) => {
   }
   if (found.user.status === 'pending') {
     throw new HttpError(403, 'Your account is awaiting approval by the school office.');
+  }
+  if (found.user.left) {
+    throw new HttpError(403, PASSED_OUT_MESSAGE);
   }
 
   const valid = await bcrypt.compare(rawPassword, found.row[2]);
@@ -440,7 +456,8 @@ const register = async (req, res) => {
     rollNumber,
     isClassTeacher: isStudent ? false : !!req.body.isClassTeacher,
     gender,
-    status: initialStatus
+    status: initialStatus,
+    session: isStudent ? currentSession() : ''
   });
 
   await appendSheetData('Users', [
@@ -667,10 +684,11 @@ const createUserByOffice = async (req, res) => {
     rollNumber,
     isClassTeacher: role === 'teacher' ? !!req.body.isClassTeacher : false,
     gender,
-    status: 'active'
+    status: 'active',
+    session: role === 'student' ? currentSession() : ''
   });
 
-  await appendSheetData('Users', [
+  await appendVerified('Users', [
     fullName,
     email,
     await bcrypt.hash(password, 12),
@@ -688,7 +706,7 @@ const createUserByOffice = async (req, res) => {
     section || 'A',
     motherName,
     fatherName
-  ]);
+  ], (rows) => rows.some((r) => String(r[6] || '').trim() === id));
 
   res.status(201).json({
     message: `${role} account created for ${fullName} (${email}). Password office ke paas hai.`,

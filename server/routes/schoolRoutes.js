@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   getDashboard, listUsers, updateUserStatus, markAttendance, getAttendance, getTodayAttendance,
+  getAttendanceReport, getSessionOverview, promoteSession,
   uploadResult, getResults, createEvent, getEvents, createAnnouncement,
   getAnnouncements, deleteAnnouncement, deleteEvent, getPortalStats
 } = require('../controllers/schoolController');
@@ -34,6 +35,10 @@ router.patch('/users/:id', authorize(...OFFICE), writeLimiter, asyncRoute(update
 router.post('/attendance', authorize(...STAFF), writeLimiter, asyncRoute(markAttendance));
 router.get('/attendance', asyncRoute(getAttendance));
 router.get('/attendance/today', authorize(...STAFF), asyncRoute(getTodayAttendance));
+router.get('/attendance/report', authorize(...STAFF), asyncRoute(getAttendanceReport));
+
+router.get('/session', authorize(...OFFICE), asyncRoute(getSessionOverview));
+router.post('/session/promote', authorize(...OFFICE), writeLimiter, asyncRoute(promoteSession));
 
 router.post('/results', authorize(...STAFF), writeLimiter, asyncRoute(uploadResult));
 router.get('/results', asyncRoute(getResults));

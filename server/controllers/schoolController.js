@@ -1,9 +1,13 @@
-const { getSheetData, appendSheetData, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
+const { getSheetData, appendSheetData, appendVerified, updateSheetData, deleteSheetData } = require('../utils/googleSheets');
 const { HttpError } = require('../middleware/auth');
 const v = require('../middleware/validate');
 const asyncRoute = require('../utils/asyncRoute');
 const { toUser } = require('./authController');
 const { stripHeader, userRows, djDate } = require('../utils/rows');
+const {
+  currentSession, nextSession, promoteClass, baseSession, isValidSession
+} = require('../utils/session');
+const { summariseAttendance, genderSplit } = require('../utils/analytics');
 
 const CLASSES = ['9', '10', '11', '12', 'N/A'];
 const STAFF = ['teacher', 'principal', 'admin'];
@@ -49,7 +53,9 @@ const getDashboard = asyncRoute(async (req, res) => {
   ]);
 
   const active = users.filter((u) => u.status !== 'banned');
-  const students = active.filter((u) => u.role === 'student');
+  const allStudents = active.filter((u) => u.role === 'student');
+  const students = allStudents.filter((u) => !u.left);
+  const passedOut = allStudents.filter((u) => u.left);
   const teachers = active.filter((u) => u.role === 'teacher');
   const admins = active.filter((u) => u.role === 'admin');
   const principals = active.filter((u) => u.role === 'principal');
@@ -134,6 +140,8 @@ if (isStaff(req.user)) {
     const today = djDate(new Date());
     roleData.principal = {
       students: students.length,
+      passedOut: passedOut.length,
+      session: currentSession(),
       teachers: teachers.length,
       pendingComplaints: complaintRows.filter((r) => String(r[5] || '').toLowerCase() === 'pending').length,
       attendanceMarkedToday: attendanceRows.filter((r) => djDate(r[0]) === today).length
@@ -141,6 +149,8 @@ if (isStaff(req.user)) {
     roleData.admin = {
       totalUsers: users.length,
       students: students.length,
+      passedOut: passedOut.length,
+      session: currentSession(),
       teachers: teachers.length,
       principals: principals.length,
       suspended: users.filter((u) => u.status === 'banned').length,
@@ -160,11 +170,14 @@ if (isStaff(req.user)) {
     stats: {
       totalUsers: users.length,
       students: students.length,
+      passedOut: passedOut.length,
+      session: currentSession(),
       teachers: teachers.length,
       admins: admins.length,
       principals: principals.length,
       suspended: users.filter((u) => u.status === 'banned').length,
       classWiseStudents: classStats,
+      classBreakdown: genderSplit(students),
       classAverages,
       activeEvents: eventRows.length,
       totalComplaints: complaintRows.length,
@@ -212,9 +225,11 @@ const listUsers = asyncRoute(async (req, res) => {
 const updateUserStatus = asyncRoute(async (req, res) => {
   const bodyStatus = req.body.status;
   const bodyClass = req.body.className;
+  const bodyLeft = req.body.left;
+  const bodySession = req.body.session;
 
-  if (!bodyStatus && bodyClass === undefined) {
-    throw new HttpError(400, 'Send status and/or className to update');
+  if (!bodyStatus && bodyClass === undefined && bodyLeft === undefined && bodySession === undefined) {
+    throw new HttpError(400, 'Send status, className, session and/or left to update');
   }
 
   const hasStatus = bodyStatus !== undefined && bodyStatus !== null && String(bodyStatus).trim() !== '';
@@ -222,6 +237,18 @@ const updateUserStatus = asyncRoute(async (req, res) => {
   let className = null;
   if (bodyClass !== undefined && bodyClass !== null && String(bodyClass).trim() !== '') {
     className = v.oneOf(bodyClass, ['9', '10', '11', '12', 'N/A'], 'Class');
+  }
+  const hasLeft = bodyLeft !== undefined && bodyLeft !== null;
+  if (hasLeft && typeof bodyLeft !== 'boolean') {
+    throw new HttpError(400, 'left must be true or false');
+  }
+  let sessionVal = null;
+  if (bodySession !== undefined && bodySession !== null && String(bodySession).trim() !== '') {
+    const cleaned = String(bodySession).trim();
+    if (!isValidSession(cleaned)) {
+      throw new HttpError(400, 'Session "2026-27" jaise format me hona chahiye');
+    }
+    sessionVal = cleaned;
   }
 
   if (req.params.id === req.user.id) {
@@ -238,6 +265,9 @@ const updateUserStatus = asyncRoute(async (req, res) => {
   if (className && !['student', 'teacher'].includes(target.role)) {
     throw new HttpError(400, 'Class can only be assigned to students and teachers');
   }
+  if (hasLeft && target.role !== 'student') {
+    throw new HttpError(400, 'Only student accounts can be marked as passed out');
+  }
 
   const rows = await getSheetData('Users');
   const rowIndex = rows.findIndex((r) => String(r[6] || '').trim() === req.params.id);
@@ -251,11 +281,30 @@ const updateUserStatus = asyncRoute(async (req, res) => {
     detail = {};
   }
   if (status) detail.status = status;
+  if (sessionVal) detail.session = sessionVal;
+  if (hasLeft) {
+    if (bodyLeft) {
+      detail.left = true;
+      detail.leftOn = detail.leftOn || djDate(new Date());
+      detail.leftClass = detail.leftClass || String(updatedRow[4] || '');
+    } else {
+      delete detail.left;
+      delete detail.leftOn;
+      delete detail.leftClass;
+      if (!detail.session) detail.session = currentSession();
+    }
+  }
   updatedRow[5] = JSON.stringify(detail);
   if (className) updatedRow[4] = className;
 
   await updateSheetData('Users', req.params.id, updatedRow);
-  res.json({ success: true, status: status || detail.status, className: className || String(updatedRow[4] || '') });
+  res.json({
+    success: true,
+    status: status || detail.status,
+    className: className || String(updatedRow[4] || ''),
+    left: Boolean(detail.left),
+    session: sessionVal || detail.session || ''
+  });
 });
 
 const markAttendance = asyncRoute(async (req, res) => {
@@ -293,7 +342,9 @@ const existingRows = await getSheetData('Attendance');
       if (existingById.has(id)) {
         return updateSheetData('Attendance', id, values);
       }
-      return appendSheetData('Attendance', values);
+      return appendVerified('Attendance', values, (rows) =>
+        rows.some((r) => String(r[6] || '').trim() === id)
+      );
     })
   );
 
@@ -356,8 +407,15 @@ const getTodayAttendance = asyncRoute(async (req, res) => {
 
   const [rows, users] = await Promise.all([getSheetData('Attendance'), getUsers()]);
   const genderById = new Map(users.map((u) => [u.id, u.gender || '']));
+  // Sirf active students ka live board — deleted ya pass-out ho chuke students
+  // ke purane marks isme kabhi nahi aane chahiye.
+  const activeIds = new Set(
+    users.filter((u) => u.role === 'student' && u.status !== 'banned' && !u.left).map((u) => u.id)
+  );
 
-  let today = stripHeader(rows).filter((r) => djDate(r[0]) === date);
+  let today = stripHeader(rows).filter(
+    (r) => djDate(r[0]) === date && activeIds.has(String(r[2] || '').trim())
+  );
 
   if (req.user.role === 'teacher') {
     const own = String(req.user.class || 'N/A');
@@ -395,6 +453,152 @@ const getTodayAttendance = asyncRoute(async (req, res) => {
     present,
     absent: today.length - present,
     classes
+  });
+});
+
+/**
+ * Per-student attendance report — "kis bache ki kitni attendance".
+ * Principal/admin poora school dekh sakte hain, teacher sirf apni class.
+ * `className`, `from`, `to` (YYYY-MM-DD) optional filters hain.
+ */
+const getAttendanceReport = asyncRoute(async (req, res) => {
+  const from = req.query.from ? v.isoDate(req.query.from, 'From date') : '';
+  const to = req.query.to ? v.isoDate(req.query.to, 'To date') : '';
+  if (from && to && from > to) throw new HttpError(400, 'From date cannot be after To date');
+
+  let className = req.query.className ? String(req.query.className) : '';
+
+  if (req.user.role === 'teacher') {
+    const own = String(req.user.class || 'N/A');
+    if (own === 'N/A') throw new HttpError(403, 'Your account is not assigned to a class yet');
+    if (className && className !== own) throw new HttpError(403, 'You can only view your own class records');
+    className = own;
+  } else if (className) {
+    className = v.oneOf(className, ['9', '10', '11', '12', 'N/A'], 'Class');
+  }
+
+  const [attendance, users] = await Promise.all([getSheetData('Attendance'), getUsers()]);
+  const students = users.filter((u) => u.role === 'student' && u.status !== 'banned' && !u.left);
+
+  const report = summariseAttendance(attendance, students, { className, from, to });
+  res.json(report);
+});
+
+/**
+ * Promotion ka plan — kaun agle class me jaayega, kaun pass out hoga.
+ * Default target `currentSession()` hai (1 April par session badal jaata hai),
+ * isliye ye dobara chalane par no-op hota hai (jo students already naye
+ * session par hain unhe chhod dete hain).
+ */
+const buildPromotionPlan = (students, target) => {
+  const promote = [];
+  const passOut = [];
+  const byClass = {};
+  students.forEach((s) => {
+    if (isValidSession(s.session) && String(s.session).trim() === target) return;
+    const cls = String(s.class || 'N/A');
+    const dest = promoteClass(cls);
+    if (!byClass[cls]) byClass[cls] = { total: 0, to: dest || 'Passed out' };
+    byClass[cls].total += 1;
+    if (dest) promote.push(s);
+    else passOut.push(s);
+  });
+  return { target, promote, passOut, byClass };
+};
+
+/** Principal/admin ko dikhata hai: abhi kaunse session me hain, aur promotion me kya hoga. */
+const getSessionOverview = asyncRoute(async (req, res) => {
+  const users = await getUsers();
+  const students = users.filter((u) => u.role === 'student' && u.status !== 'banned');
+  const active = students.filter((s) => !s.left);
+  const passedOut = students.filter((s) => s.left);
+
+  const target = currentSession();
+  const plan = buildPromotionPlan(active, target);
+
+  res.json({
+    currentSession: target,
+    mostStudentsOn: baseSession(active.map((s) => s.session), target),
+    activeStudents: active.length,
+    passedOut: passedOut.length,
+    classBreakdown: genderSplit(active),
+    pending: plan.promote.length + plan.passOut.length > 0,
+    preview: {
+      session: target,
+      promote: plan.promote.length,
+      passOut: plan.passOut.length,
+      byClass: plan.byClass
+    }
+  });
+});
+
+/**
+ * Session promotion — 9->10, 10->11, 11->12, 12 -> pass out (record rehta hai,
+ * delete nahi hota). Sirf principal/admin, aur `confirm: true` ke bina nahi.
+ * Idempotent hai: dobara chalane par already-promoted students skip ho jaate hain.
+ */
+const promoteSession = asyncRoute(async (req, res) => {
+  if (req.body.confirm !== true) {
+    throw new HttpError(400, 'Promotion confirm karne ke liye confirm: true bhejna zaroori hai');
+  }
+
+  let target = currentSession();
+  if (req.body.session !== undefined && String(req.body.session).trim() !== '') {
+    target = String(req.body.session).trim();
+  }
+  if (!isValidSession(target)) {
+    throw new HttpError(400, 'Session "2026-27" jaise format me hona chahiye');
+  }
+
+  const rows = await getSheetData('Users');
+  const today = djDate(new Date());
+  const targetRows = userRows(rows);
+
+  let promoted = 0;
+  let passedOut = 0;
+  let skipped = 0;
+  const writes = [];
+
+  targetRows.forEach((row) => {
+    const user = toUser(row);
+    if (user.role !== 'student' || user.status === 'banned' || user.left) return;
+    if (isValidSession(user.session) && String(user.session).trim() === target) {
+      skipped += 1;
+      return;
+    }
+
+    const updatedRow = [...row];
+    let detail = {};
+    try {
+      detail = updatedRow[5] ? JSON.parse(updatedRow[5]) : {};
+    } catch {
+      detail = {};
+    }
+    detail.session = target;
+
+    const dest = promoteClass(user.class);
+if (dest) {
+      updatedRow[4] = dest;
+      promoted += 1;
+    } else {
+      detail.left = true;
+      detail.leftOn = today;
+      detail.leftClass = String(updatedRow[4] || '');
+      passedOut += 1;
+    }
+    updatedRow[5] = JSON.stringify(detail);
+    writes.push(updateSheetData('Users', user.id, updatedRow));
+  });
+
+  await Promise.all(writes);
+
+  res.json({
+    success: true,
+    session: target,
+    promoted,
+    passedOut,
+    skipped,
+    changed: writes.length
   });
 });
 
@@ -579,7 +783,7 @@ const getPortalStats = asyncRoute(async (req, res) => {
   const [users, results] = await Promise.all([getUsers(), getSheetData('Results')]);
 
   const active = users.filter((u) => u.status !== 'banned');
-  const students = active.filter((u) => u.role === 'student');
+  const students = active.filter((u) => u.role === 'student' && !u.left);
   const teachers = active.filter((u) => u.role === 'teacher');
 
   const studentIds = new Set(students.map((s) => s.id));
@@ -602,6 +806,7 @@ const getPortalStats = asyncRoute(async (req, res) => {
 
 module.exports = {
   getDashboard, listUsers, updateUserStatus, markAttendance, getAttendance, getTodayAttendance,
+  getAttendanceReport, getSessionOverview, promoteSession,
   uploadResult, getResults, createEvent, getEvents, deleteEvent,
   createAnnouncement, getAnnouncements, deleteAnnouncement, getPortalStats
 };

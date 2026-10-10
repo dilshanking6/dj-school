@@ -53,7 +53,8 @@ const NAV = {
     studyItem('Study Hub', cls),
     { name: 'Manage Content', path: '/principal/study', icon: BookOpen },
     { name: 'Complaints', path: '/principal/complaints', icon: HelpCircle },
-    { name: 'Attendance', path: '/principal/attendance', icon: Users },
+    { name: 'Attendance', path: '/principal/attendance', icon: Users, end: true },
+    { name: 'Attendance report', path: '/principal/attendance/report', icon: ClipboardList },
     { name: 'Results', path: '/principal/results', icon: ClipboardList },
     { name: 'Messages', path: '/principal/chat', icon: MessageSquare },
     { name: 'Events', path: '/principal/events', icon: Calendar },
@@ -63,6 +64,7 @@ const NAV = {
     { name: 'Users', path: '/admin', icon: ShieldCheck, end: true },
     studyItem('Study Hub', cls),
     { name: 'Manage Content', path: '/admin/study', icon: BookOpen },
+    { name: 'Attendance', path: '/admin/attendance', icon: Users },
     { name: 'Messages', path: '/admin/chat', icon: MessageSquare },
     { name: 'Events', path: '/admin/events', icon: Calendar },
     { name: 'Settings', path: '/admin/settings', icon: Settings }

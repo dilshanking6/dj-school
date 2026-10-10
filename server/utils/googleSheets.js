@@ -9,6 +9,9 @@ const appsScriptUrl = () => process.env.APPS_SCRIPT_URL;
 const appsScriptToken = () => String(process.env.APPS_SCRIPT_TOKEN || '').trim();
 const readTimeout = () => Number(process.env.SHEET_READ_TIMEOUT || 30000);
 const writeTimeout = () => Number(process.env.SHEET_WRITE_TIMEOUT || 30000);
+// Idempotent writes (update/delete) ke liye attempts. Append kabhi retry
+// nahi hota — duplicate row ban jaati.
+const writeAttempts = () => Number(process.env.SHEET_WRITE_ATTEMPTS || 2);
 
 class SheetError extends Error {
   constructor(message, cause, { status = 502, expose = false, retryable = false } = {}) {
@@ -118,9 +121,12 @@ const post = async (payload, timeout) => {
     if (error.response) {
       const httpStatus = Number(error.response.status) || 0;
       const body = publicDetail(error.response.data, 140);
-      // 429/5xx = Google ka server ya quota ka jhatka, apne aap theek ho
-      // sakta hai. 401/403/404 = deployment galat hai, retry ka koi fayda nahi.
-      const transient = [408, 429, 500, 502, 503, 504].includes(httpStatus);
+      // 429/5xx = Google ka server ya quota ka jhatka, apne aap theek ho sakta
+      // hai. 404 bhi yahan aam hai — Apps Script kabhi kabhi apna /exec call
+      // user_content redirect par 404 "unable to open the file" bhej deta hai
+      // (ek waqt ka Google-side cold-start blip). Isliye 404 bhi retryable.
+      // 401/403 = deployment ya token galat, retry ka koi fayda nahi.
+      const transient = [404, 408, 429, 500, 502, 503, 504].includes(httpStatus);
       throw new SheetError(
         `Storage service rejected the request (HTTP ${httpStatus}${body ? `: ${body}` : ''})`,
         error,
@@ -179,7 +185,9 @@ const post = async (payload, timeout) => {
         ? 'The storage service sent a web page instead of data. The Apps Script deployment access must be set to "Anyone" (Deploy → Manage deployments → edit).'
         : `The storage service sent an unexpected answer (${publicDetail(data, 120)})`,
       null,
-      { status: 503, expose: true }
+      // Web page aane ki wajah aksar Google ka ek waqt ka blip hoti hai
+      // (fir agle hi second proper JSON aa jata hai), isliye retry ke laayak.
+      { status: 503, expose: true, retryable: true }
     );
   }
 
@@ -311,19 +319,54 @@ async function getSheetData(sheetName) {
 }
 
 async function appendSheetData(sheetName, values) {
+  // Append (row jode) kabhi khud retry NAHI hota — innocent retry se paper
+  // sheets me duplicate row ban jaati. Flaky jawab (web page wala) ke liye
+  // `appendVerified` use karo jo pehle fresh read karke bataata hai ki row
+  // laga ya nahi, phir hi dupliclare karta hai.
   await post({ action: 'append', sheetName, values }, writeTimeout());
   bustSheetCache(sheetName);
   return true;
 }
 
+/**
+ * `verify(rows)` ko append failure me bulaya jaata hai — agar row sheet me
+ * mil jaati hai to append sach me ho chuka tha (sirf Google ka jawab khoya
+ * tha) aur kuch karna nahi padta. Nahi to ek aur baar append karte hain.
+ * Ye ensure karta hai ki flaky response se na duplicate bane, na kaam ruke.
+ */
+async function appendVerified(sheetName, values, verify) {
+  try {
+    await post({ action: 'append', sheetName, values }, writeTimeout());
+  } catch (error) {
+    if (!(error instanceof SheetError) || !error.retryable) throw error;
+    bustSheetCache(sheetName);
+    const rows = await getSheetData(sheetName);
+    if (verify(rows)) {
+      return true;
+    }
+    await post({ action: 'append', sheetName, values }, writeTimeout());
+  }
+  bustSheetCache(sheetName);
+  return true;
+}
+
 async function updateSheetData(sheetName, id, values) {
-  await post({ action: 'update', sheetName, id, values }, writeTimeout());
+  // update/delete idempotent hain (wohi id same jawab deta hai), isliye ek
+  // extra retry safe aur bahut madadgaar hai — Apps Script ke web-page waale
+  // chhote jhatke is se ghis jaate hain.
+  await withRetry(() => post({ action: 'update', sheetName, id, values }, writeTimeout()), {
+    attempts: writeAttempts(),
+    baseDelay: 800
+  });
   bustSheetCache(sheetName);
   return true;
 }
 
 async function deleteSheetData(sheetName, id) {
-  await post({ action: 'delete', sheetName, id }, writeTimeout());
+  await withRetry(() => post({ action: 'delete', sheetName, id }, writeTimeout()), {
+    attempts: writeAttempts(),
+    baseDelay: 800
+  });
   bustSheetCache(sheetName);
   return true;
 }
@@ -333,6 +376,7 @@ const storageConfigured = () => Boolean(appsScriptUrl());
 module.exports = {
   getSheetData,
   appendSheetData,
+  appendVerified,
   updateSheetData,
   deleteSheetData,
   bustSheetCache,
