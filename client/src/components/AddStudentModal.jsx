@@ -26,7 +26,7 @@ const AddStudentModal = ({ className, open, onClose, onCreated }) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     if (!form.fatherName.trim() && !form.motherName.trim()) {
-      toast.error('Kisi ek parent (father ya mother) ka naam zaroori hai');
+      toast.error('At least one parent name is required');
       return;
     }
     setSaving(true);
@@ -40,7 +40,7 @@ const AddStudentModal = ({ className, open, onClose, onCreated }) => {
       const created = res.data?.user;
       toast.success(
         created?.email
-          ? `Student added — login: ${created.email} / ${created.password || form.password || 'password set karo'}`
+          ? `Student added — login: ${created.email} / ${created.password || form.password || 'set a password'}`
           : 'Student added',
         { id: loadingToast, duration: 6000 }
       );
@@ -83,7 +83,7 @@ const AddStudentModal = ({ className, open, onClose, onCreated }) => {
                 <div>
                   <h2 className="text-lg font-black">Add student · Class {className}</h2>
                   <p className="mt-0.5 text-xs font-bold text-slate-500">
-                    Naam + parents ke naam se duplicate account nahi banega
+                    Name plus parent names keep the student unique
                   </p>
                 </div>
               </div>
@@ -131,7 +131,7 @@ const AddStudentModal = ({ className, open, onClose, onCreated }) => {
 
               <div>
                 <label className={label} htmlFor="as-email">Email (optional)</label>
-                <input id="as-email" type="email" className={field} value={form.email} onChange={set('email')} placeholder="auto banega" maxLength={254} />
+                <input id="as-email" type="email" className={field} value={form.email} onChange={set('email')} placeholder="auto-generated" maxLength={254} />
               </div>
 
               <div className="sm:col-span-2">
@@ -144,7 +144,7 @@ const AddStudentModal = ({ className, open, onClose, onCreated }) => {
               <div className="flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 sm:col-span-2">
                 <ShieldAlert size={16} className="mt-0.5 shrink-0 text-amber-400" />
                 <p className="text-xs font-bold text-amber-200/90">
-                  Agar is naam aur same parents ke naam ka student pehle se add hai, to duplicate nahi banta — wahi account use hota hai.
+                  If a student with the same name and parents already exists, no duplicate is created — the existing account is reused.
                 </p>
               </div>
 

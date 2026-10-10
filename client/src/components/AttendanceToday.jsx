@@ -88,8 +88,8 @@ const AttendanceToday = ({ date: fixedDate }) => {
           {data.classes.length === 0 ? (
             <p className="mt-6 rounded-2xl border border-white/5 bg-white/5 px-4 py-8 text-center text-sm text-slate-500">
               {date === new Date().toISOString().split('T')[0]
-                ? 'Aaj abhi tak koi attendance mark nahi hui hai.'
-                : 'Is din ki koi attendance mark nahi hui.'}
+                ? 'No attendance has been marked yet today.'
+                : 'No attendance was marked for this date.'}
             </p>
           ) : (
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">

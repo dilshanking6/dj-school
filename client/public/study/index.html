@@ -132,11 +132,7 @@ function renderHome() {
       : 'हर विषय के अध्याय, सारांश नोट्स और अभ्यास प्रश्न';
 
   const note = document.getElementById('sourceNote');
-  if (note) {
-    note.textContent = cls === 10
-      ? 'कक्षा 10 की सामग्री JAC बोर्ड प्रश्न-बैंक (3000 प्रश्न) पर आधारित है।'
-      : 'कक्षा ' + cls + ' की प्रैक्टिस प्रश्न इस साइट पर बनाए गए हैं — परीक्षा में बोर्ड प्रश्न-पत्र ही आएँगे।';
-  }
+  if (note) note.remove();
 }
 
 // common.js content-ready ke baad onHubReady ko pahle hi call kar deta hai,

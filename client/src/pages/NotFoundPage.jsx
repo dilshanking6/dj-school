@@ -24,9 +24,9 @@ export default function NotFoundPage() {
       <div className="w-full max-w-xl text-center">
         <p className="mb-3 text-7xl font-black tracking-tight text-primary/25 sm:text-8xl">404</p>
 
-        <h1 className="mb-3 text-2xl font-bold sm:text-3xl">Ye page nahi mila</h1>
+        <h1 className="mb-3 text-2xl font-bold sm:text-3xl">This page was not found</h1>
         <p className="mb-2 text-sm leading-relaxed text-slate-400 sm:text-base">
-          Jo link aapne khola wo ya to galat type hua, ya wo page hataya gaya hai.
+          The link you opened was typed wrong, or the page has been removed.
         </p>
 
         <p className="mb-8 inline-block max-w-full break-all rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate-400">
@@ -40,7 +40,7 @@ export default function NotFoundPage() {
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               <LayoutDashboard size={16} />
-              Mere dashboard par jayein
+              Go to my dashboard
             </Link>
           ) : (
             <Link
@@ -48,7 +48,7 @@ export default function NotFoundPage() {
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               <Home size={16} />
-              Home par jayein
+              Go to home
             </Link>
           )}
 
@@ -58,12 +58,12 @@ export default function NotFoundPage() {
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold transition-colors hover:bg-white/5"
           >
             <ArrowLeft size={16} />
-            Wapas jayein
+            Go back
           </button>
         </div>
 
         <div className="mt-10 border-t border-white/10 pt-6">
-          <p className="mb-3 text-sm font-semibold text-slate-300">Aap yeh dekh sakte hain</p>
+          <p className="mb-3 text-sm font-semibold text-slate-300">You can try these</p>
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
             <Link to="/" className="rounded-xl border border-white/10 px-3 py-2 transition-colors hover:bg-white/5">
               <Search size={13} className="mr-1.5 inline" />Home

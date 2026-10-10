@@ -1117,11 +1117,8 @@ async function renderSubjectNotes(containerId, subject) {
   if (!el) return;
   el.innerHTML = '<p class="muted">नोट्स लोड हो रहे हैं…</p>';
   const notes = await getSubjectNotes(subject);
-  if (!notes || !notes.length) { el.innerHTML = '<p class="muted">इस विषय के नोट्स अभी उपलब्ध नहीं हैं।</p>'; return; }
+  if (!notes || !notes.length) { el.innerHTML = '<p class="muted">इस विषय में कोई नोट नहीं है।</p>'; return; }
   const sub = SUBJECTS[subject];
-  const source = (window.HUB && window.HUB.class !== 10)
-    ? `<div class="callout callout-warn mb-20">📝 ये सारांश नोट्स हैं — परीक्षा में पूरे अध्याय की पुस्तिका व नोट्स पढ़ें।</div>`
-    : '';
   let html = '';
   notes.forEach(n => {
     const c = n.colors || { title: '#6366f1', points: '#334155' };
@@ -1134,7 +1131,7 @@ async function renderSubjectNotes(containerId, subject) {
       ${(n.details || []).map(d => `<div class="note-detail">${escapeHtml(d)}</div>`).join('')}
     </div>`;
   });
-  el.innerHTML = (sub ? `<div class="callout callout-info mb-20">${sub.emoji} <b>${escapeHtml(sub.name)}</b> — हर टॉपिक आसान भाषा में।</div>` : '') + source + html;
+  el.innerHTML = (sub ? `<div class="callout callout-info mb-20">${sub.emoji} <b>${escapeHtml(sub.name)}</b> — हर टॉपिक आसान भाषा में।</div>` : '') + html;
 }
 
 // Render all subjects as note-cards grid

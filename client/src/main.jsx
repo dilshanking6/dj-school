@@ -37,7 +37,7 @@ const showBootError = () => {
   const ring = node.querySelector('.ring')
   if (ring) ring.remove()
 
-  msg.textContent = 'Site load nahi ho payi. Ye network ya server ki problem ho sakti hai.'
+  msg.textContent = 'The site could not load. This is usually a network or server problem.'
   msg.style.maxWidth = '22rem'
   msg.style.textAlign = 'center'
   msg.style.opacity = '1'

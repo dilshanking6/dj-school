@@ -280,7 +280,7 @@ const ChatPage = () => {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-bold">{room.name}</span>
                       <span className="block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
-                        {room.type} · {room.members} members
+                        {room.type === 'private' ? 'Direct message' : `${room.members} members`}
                       </span>
                     </span>
                   </button>
@@ -317,7 +317,7 @@ const ChatPage = () => {
               <div className="min-w-0">
                 <h2 className="truncate font-bold">{activeRoom.name}</h2>
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
-                  {activeRoom.type} · {activeRoom.members} members
+                  {activeRoom.type === 'private' ? 'Direct message' : `${activeRoom.members} members`}
                 </p>
               </div>
             </header>

@@ -138,7 +138,7 @@ const otpHtml = (code) =>
  * padh sakta hai — ek student ko `SMTP_PASS` dikhane ka koi matlab nahi,
  * wo sirf confuse hoga. Pehle yahi env var ka naam browser par aa raha tha.
  */
-const EMAIL_UNAVAILABLE = 'Abhi email par code nahi bhej pa rahe. Mobile number se verify karo.';
+const EMAIL_UNAVAILABLE = "We can't send a code by email right now. Verify with your mobile number instead.";
 
 const deliverEmailCode = async (email, code) => {
   if (!mailConfigured()) {
@@ -155,7 +155,7 @@ const deliverEmailCode = async (email, code) => {
   } catch (error) {
     console.error(`[email-otp] send failed to ${email}:`, error.message);
     if (!codeExposed()) {
-      throw new HttpError(503, 'Email par code nahi bhej paaye. Thodi der baad try karo, ya mobile number use karo.', { expose: true });
+      throw new HttpError(503, "Couldn't send the email code. Try again shortly, or use your mobile number instead.", { expose: true });
     }
     return { delivered: false };
   }
@@ -166,11 +166,11 @@ const deliverEmailCode = async (email, code) => {
  * error text choose karta hai (registration vs login). Wajah bhi hamesha log
  * me jaati hai, browser text me nahi.
  */
-const PHONE_UNAVAILABLE = 'Abhi mobile par code nahi bhej pa rahe. Email se verify karo.';
+const PHONE_UNAVAILABLE = "We can't send a code to your mobile right now. Verify with your email instead.";
 
 const deliverPhoneCode = async (phone, code, messages = {}) => {
   const notConfigured = messages.notConfigured || PHONE_UNAVAILABLE;
-  const failed = messages.failed || 'Mobile par code nahi bhej paaye. Thodi der baad try karo.';
+  const failed = messages.failed || "Couldn't send the mobile code. Try again shortly.";
 
   if (!smsConfigured()) {
     console.warn(`[phone-otp] not configured: ${smsStatus().reason}`);
@@ -289,8 +289,8 @@ const requestPhoneOtp = async (req, res) => {
   const phone = v.phone(req.body.phone);
   const code = await otp.create('phone', phone);
   const { delivered } = await deliverPhoneCode(phone, code, {
-    notConfigured: 'Abhi mobile par code nahi bhej pa rahe. Email se verify karo.',
-    failed: 'Mobile par code nahi bhej paaye. Thodi der baad try karo.'
+    notConfigured: "We can't send a code to your mobile right now. Verify with your email instead.",
+    failed: "Couldn't send the mobile code. Try again shortly."
   });
 
   res.json({
@@ -335,8 +335,8 @@ const requestOtp = async (req, res) => {
 
   const code = await otp.create('phone', phone);
   const { delivered } = await deliverPhoneCode(phone, code, {
-    notConfigured: 'Abhi mobile par code nahi bhej pa rahe. Password se sign in karo.',
-    failed: 'Mobile par code nahi bhej paaye. Thodi der baad try karo.'
+    notConfigured: "We can't send a code to your mobile right now. Sign in with your password instead.",
+    failed: "Couldn't send the mobile code. Try again shortly."
   });
 
   res.json({
@@ -446,7 +446,7 @@ const register = async (req, res) => {
     });
     if (dupes.length) {
       const dup = dupes[0];
-      throw new HttpError(409, `Is naam ${dup.name || ''} aur parents ke naam se ek student pehle se registered hai (Class ${dup.class || '?'}). Ek student ka ek hi account banta hai — login karke use karo.`);
+      throw new HttpError(409, `A student with the name ${dup.name || ''} and these parent names is already registered (Class ${dup.class || '?'}). Each student has one account — sign in and use it.`);
     }
   }
 
@@ -616,13 +616,13 @@ const createUserByOffice = async (req, res) => {
   let email = req.body.email ? v.emailFormat(req.body.email) : '';
   let password = String(req.body.password || '').trim();
   if (!password) {
-    if (role !== 'student') throw new HttpError(400, 'Password chahiye student/teacher account ke liye');
+    if (role !== 'student') throw new HttpError(400, 'A password is required for student/teacher accounts');
     password = 'Student@123';
   } else {
     password = v.password(password);
   }
   if (!email) {
-    if (role !== 'student') throw new HttpError(400, 'Email address chahiye');
+    if (role !== 'student') throw new HttpError(400, 'An email address is required');
     // Roll/class se slug banake ek local email. `findUserByEmail` se takraav
     // (do students, ek hi roll, ek hi second) par dobara try karte hain —
     // pehle sirf 6 digit timestamp tha, jisse clash sambhav tha aur tab
@@ -647,7 +647,7 @@ const createUserByOffice = async (req, res) => {
     needsClass = false;
     className = String(req.user.class || 'N/A');
     if (className === 'N/A') {
-      throw new HttpError(403, 'Aapke account ko pehle ek class assign honi chahiye');
+      throw new HttpError(403, 'Your account needs a class assigned before you can do this');
     }
   } else {
     className = needsClass
@@ -667,7 +667,7 @@ const createUserByOffice = async (req, res) => {
     const dupes = await findStudentDuplicate({ name: fullName, fatherName, motherName });
     if (dupes.length) {
       const dup = dupes[0];
-      throw new HttpError(409, `Ye student already registered hai (${dup.name}, Class ${dup.class}). Wahi account hi use hoga — duplicate nahi banta.`);
+      throw new HttpError(409, `This student is already registered (${dup.name}, Class ${dup.class}). The existing account is reused — no duplicate is created.`);
     }
   }
 

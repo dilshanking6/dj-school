@@ -100,12 +100,12 @@ const StudyHubCard = ({ className = '', compact = false }) => {
       {loading ? (
         <div className="relative mt-6 flex items-center gap-2 text-sm text-slate-500">
           <Loader2 size={16} className="animate-spin" />
-          Study material load ho raha hai…
+          Loading study material…
         </div>
       ) : failed ? (
         <p className="relative mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-300">
-          Numbers abhi load nahi hue (backend server bhad hai), lekin Study Hub khulne par apni
-          offline notes aur questions dikha deta hai.
+          Live counts are unavailable right now, but Study Hub still opens with the notes and
+          questions saved on this device.
         </p>
       ) : (
         <>
@@ -149,11 +149,6 @@ const StudyHubCard = ({ className = '', compact = false }) => {
         <ArrowRight size={16} />
       </a>
 
-      <p className="relative mt-3 text-[11px] leading-relaxed text-slate-600">
-        {activeClass === 10
-          ? 'कक्षा 10 की सामग्री JAC बोर्ड प्रश्न-बैंक (3000 प्रश्न) पर आधारित है।'
-          : `कक्षा ${activeClass} के अभ्यास प्रश इस साइट पर बनाए गए हैं — परीक्षा में बोर्ड प्रश्न-पत्र ही आएँगे।`}
-      </p>
     </section>
   );
 };

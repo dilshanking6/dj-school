@@ -16,11 +16,11 @@ const field =
 
 const CLASSES = [9, 10, 11, 12];
 
-/** Class 10 board content, baaki classes practice notes. */
+/** Class 10 uses board content, the rest use practice notes. */
 const sourceLabel = (classNo) =>
   classNo === 10
-    ? 'कक्षा 10 — JAC बोर्ड प्रश्न-बैंक (3000 प्रश्न)। यहाँ edits school notes par lagte hain.'
-    : `कक्षा ${classNo} — यहाँ के अभ्यास प्रश इस साइट पर बने हैं। परीक्षा में बोर्ड प्रश्न-पत्र आएँगे।`;
+    ? 'कक्षा 10 — JAC बोर्ड प्रश्न-बैंक'
+    : `कक्षा ${classNo} — अभ्यास प्रश्न और नोट्स`;
 
 /**
  * Principal / admin ke liye study content manager.
@@ -141,12 +141,12 @@ const StudyContentManager = () => {
     if (!draft) return;
     const title = draft.title.trim();
     if (!title) {
-      toast.error('Note ka title लिखें');
+      toast.error('Note title is empty');
       return;
     }
     const points = draft.points.map((p) => p.trim()).filter(Boolean);
     if (!points.length) {
-      toast.error('Kam se kam ek point likhein');
+      toast.error('Add at least one point');
       return;
     }
     setSaving(true);
@@ -158,11 +158,11 @@ const StudyContentManager = () => {
         points,
         details: draft.details
       });
-      toast.success(`"${draft.title}" सहेज दिया गया`);
+      toast.success(`Saved "${draft.title}"`);
       setDraft(null);
       await Promise.all([loadNotes(), loadOverrides()]);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Save नहीं हो पाया');
+      toast.error(err.response?.data?.error || "Couldn't save");
     } finally {
       setSaving(false);
     }
@@ -171,13 +171,13 @@ const StudyContentManager = () => {
   const reset = async (title) => {
     const match = overrides.find((row) => row.title === title);
     if (!match) return;
-    if (!window.confirm(`"${title}" ke school edits हटा दें? Base content वापस आ जाएगा।`)) return;
+    if (!window.confirm(`Remove the school changes for "${title}"? The base content will be restored.`)) return;
     try {
       await axios.delete(`/api/study/notes/${encodeURIComponent(match.id)}`);
-      toast.success('School edit हटा दिया गया');
+      toast.success('School change removed');
       await Promise.all([loadNotes(), loadOverrides()]);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Delete नहीं हो पाया');
+      toast.error(err.response?.data?.error || "Couldn't delete");
     }
   };
 
@@ -286,7 +286,7 @@ const StudyContentManager = () => {
                 <input
                   value={draft.title}
                   onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-                  placeholder="Chapter / note ka title…"
+                  placeholder="Chapter or note title…"
                   aria-label="Note title"
                   className={`${field} flex-1 min-w-[12rem]`}
                 />
@@ -321,7 +321,7 @@ const StudyContentManager = () => {
                       addPoint();
                     }
                   }}
-                  placeholder="नया point लिखें…"
+                  placeholder="Add a point…"
                   className={`${field} flex-1 min-w-[12rem]`}
                 />
                 <button type="button" onClick={addPoint} className={btnGhost}>
@@ -331,7 +331,7 @@ const StudyContentManager = () => {
               <div className="mt-5 flex flex-wrap gap-2">
                 <button type="button" onClick={save} disabled={saving} className={btnPrimary}>
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  Save करें
+                  Save
                 </button>
                 <button type="button" onClick={() => setDraft(null)} className={btnGhost}>
                   रद्द करें
@@ -360,7 +360,7 @@ const StudyContentManager = () => {
                 <Loader2 className="animate-spin text-primary" size={24} />
               </div>
             ) : notes.length === 0 ? (
-              <p className="text-sm text-slate-500">इस विषय के नोट्स अभी उपलब्ध नहीं हैं।</p>
+              <p className="text-sm text-slate-500">इस विषय में अभी कोई नोट नहीं है।</p>
             ) : (
               <ul className="space-y-2.5">
                 {notes.map((note) => {
@@ -399,7 +399,7 @@ const StudyContentManager = () => {
                           <li key={i}>{p}</li>
                         ))}
                         {note.points.length > 4 && (
-                          <li className="text-xs text-slate-600">+{note.points.length - 4} और points</li>
+                          <li className="text-xs text-slate-600">+{note.points.length - 4} more</li>
                         )}
                       </ul>
                       {saved?.updatedBy && (
@@ -416,11 +416,11 @@ const StudyContentManager = () => {
 
           <section className={card}>
             <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-400">
-              School edits ({overridesLoading ? '…' : overrides.length})
+              School changes ({overridesLoading ? '…' : overrides.length})
             </h2>
             {overrides.length === 0 && !overridesLoading ? (
               <p className="text-sm text-slate-500">
-                कक्षा {classNo} में अभी कोई school edit नहीं है।
+                No school changes for class {classNo} yet.
               </p>
             ) : (
               <ul className="space-y-2">

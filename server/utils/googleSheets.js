@@ -319,10 +319,10 @@ async function getSheetData(sheetName) {
 }
 
 async function appendSheetData(sheetName, values) {
-  // Append (row jode) kabhi khud retry NAHI hota — innocent retry se paper
-  // sheets me duplicate row ban jaati. Flaky jawab (web page wala) ke liye
-  // `appendVerified` use karo jo pehle fresh read karke bataata hai ki row
-  // laga ya nahi, phir hi dupliclare karta hai.
+  // Append (row jode) kabhi khud retry NAHI hota — innocent retry se
+  // duplicate row ban jaati. Flaky jawab (web page wala) ke liye
+  // `appendVerified` use karo jo pehle fresh read karke dekhta hai ki row
+  // laga ya nahi, phir hi dobara append karta hai.
   await post({ action: 'append', sheetName, values }, writeTimeout());
   bustSheetCache(sheetName);
   return true;

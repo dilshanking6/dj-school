@@ -773,7 +773,7 @@ const ask = async ({ message, history = [], user = null, classNo = null, ip = nu
   const rateKey = user?.id || (ip ? `ip:${ip}` : 'anon');
 
   if (!rateAllow(rateKey)) {
-    const error = new Error('Too many messages. Ek minute ruko phir try karo.');
+    const error = new Error('Too many messages. Wait a minute and try again.');
     error.status = 429;
     throw error;
   }

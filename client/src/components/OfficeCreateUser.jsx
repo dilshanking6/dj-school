@@ -123,7 +123,7 @@ const OfficeCreateUser = ({ role, onCreated, compact }) => {
                 {showPwd ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
-            <p className="mt-1 text-[10px] text-slate-500">Ye password person ko batana hai — login isi se hoga.</p>
+            <p className="mt-1 text-[10px] text-slate-500">Share this password with them — it is what they sign in with.</p>
           </div>
 
           {needsClass && (

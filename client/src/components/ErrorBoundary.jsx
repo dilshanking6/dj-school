@@ -60,14 +60,13 @@ class ErrorBoundary extends React.Component {
             <AlertTriangle size={32} />
           </div>
 
-          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Page kuch galat dikha raha hai</h1>
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Something went wrong</h1>
           <p className="mb-6 text-sm leading-relaxed text-slate-400 sm:text-base">
-            Ye aapki galti nahi hai — app me kuch load nahi paya. Neeche se try karein, aur
-            agar phir bhi na ho to page ko dobara reload kar dein. Aapka koi data delete
-            nahi hua hai.
+            This is not your fault — the page failed to load. Try the button below, and if the
+            problem stays, reload the page. None of your data has been deleted.
           </p>
 
-          {/* Production me exact error user ko nahi dikhana — sirf console me. */}
+          {/* Show the exact error only in development, not in production. */}
           {import.meta.env.DEV && this.state.error ? (
             <pre className="mb-6 max-h-48 overflow-auto rounded-2xl border border-white/10 bg-black/40 p-4 text-left text-xs text-red-300">
               {String(this.state.error?.stack || this.state.error?.message || this.state.error)}
@@ -81,7 +80,7 @@ class ErrorBoundary extends React.Component {
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               <RefreshCw size={16} />
-              Dobara try karein
+              Try again
             </button>
             <button
               type="button"
@@ -89,7 +88,7 @@ class ErrorBoundary extends React.Component {
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold transition-colors hover:bg-white/5"
             >
               <Home size={16} />
-              Home par jayein
+              Go to home
             </button>
           </div>
         </div>

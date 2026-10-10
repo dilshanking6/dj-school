@@ -136,7 +136,7 @@ const getDashboard = asyncRoute(async (req, res) => {
     };
   }
 
-if (isStaff(req.user)) {
+  if (isStaff(req.user)) {
     const today = djDate(new Date());
     roleData.principal = {
       students: students.length,
@@ -246,7 +246,7 @@ const updateUserStatus = asyncRoute(async (req, res) => {
   if (bodySession !== undefined && bodySession !== null && String(bodySession).trim() !== '') {
     const cleaned = String(bodySession).trim();
     if (!isValidSession(cleaned)) {
-      throw new HttpError(400, 'Session "2026-27" jaise format me hona chahiye');
+      throw new HttpError(400, 'Session must be in a format like "2026-27"');
     }
     sessionVal = cleaned;
   }
@@ -330,7 +330,7 @@ const markAttendance = asyncRoute(async (req, res) => {
     };
   });
 
-const existingRows = await getSheetData('Attendance');
+  const existingRows = await getSheetData('Attendance');
   const existingById = new Map(
     existingRows.map((r) => [String(r[6] || '').trim(), r])
   );
@@ -379,7 +379,7 @@ const getAttendance = asyncRoute(async (req, res) => {
     filtered = filtered.filter((row) => String(row[1] || '').trim() === own);
   }
 
-res.json(
+  res.json(
     filtered
       .map((row, index) => ({
         sr: index + 1,
@@ -539,7 +539,7 @@ const getSessionOverview = asyncRoute(async (req, res) => {
  */
 const promoteSession = asyncRoute(async (req, res) => {
   if (req.body.confirm !== true) {
-    throw new HttpError(400, 'Promotion confirm karne ke liye confirm: true bhejna zaroori hai');
+    throw new HttpError(400, 'Set confirm: true to run the promotion');
   }
 
   let target = currentSession();
@@ -547,7 +547,7 @@ const promoteSession = asyncRoute(async (req, res) => {
     target = String(req.body.session).trim();
   }
   if (!isValidSession(target)) {
-    throw new HttpError(400, 'Session "2026-27" jaise format me hona chahiye');
+    throw new HttpError(400, 'Session must be in a format like "2026-27"');
   }
 
   const rows = await getSheetData('Users');
@@ -577,7 +577,7 @@ const promoteSession = asyncRoute(async (req, res) => {
     detail.session = target;
 
     const dest = promoteClass(user.class);
-if (dest) {
+    if (dest) {
       updatedRow[4] = dest;
       promoted += 1;
     } else {

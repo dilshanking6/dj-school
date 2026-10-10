@@ -122,11 +122,11 @@ const RegisterPage = ({ role = 'student' }) => {
 
   const sendOtp = async () => {
     if (channelBlocked) {
-      setError('Ye option abhi kaam nahi kar raha. Doosra try karo.');
+      setError('This option is not available right now. Try the other one.');
       return;
     }
     if (!otpTarget.value.trim()) {
-      setError(channel === 'email' ? 'Pehle email address likho.' : 'Pehle mobile number likho.');
+      setError(channel === 'email' ? 'Enter your email address first.' : 'Enter your mobile number first.');
       return;
     }
     setOtpLoading(true);
@@ -143,7 +143,7 @@ const RegisterPage = ({ role = 'student' }) => {
       setDevCode(data.devCode || '');
       otpInputRef.current?.focus();
     } catch (err) {
-      setError(err.response?.data?.error || 'Code bhej nahi paaya. Dobara try karo.');
+      setError(err.response?.data?.error || "Couldn't send the code. Try again.");
     } finally {
       setOtpLoading(false);
     }
@@ -154,7 +154,7 @@ const RegisterPage = ({ role = 'student' }) => {
   const verifyOtp = async (codeArg) => {
     const code = String(codeArg ?? otpCode);
     if (code.length !== 6) {
-      setError('6 digit ka code likho.');
+      setError('Enter the 6-digit code.');
       return;
     }
     setVerifying(true);
@@ -177,7 +177,7 @@ const RegisterPage = ({ role = 'student' }) => {
   const submit = async (event) => {
     event.preventDefault();
     if (!verified) {
-      setError('Account banne se pehle email ya mobile verify karo.');
+      setError('Verify your email or mobile before creating the account.');
       return;
     }
     setLoading(true);
@@ -284,7 +284,7 @@ const RegisterPage = ({ role = 'student' }) => {
                   required
                 />
                 <p className="mt-1.5 text-[11px] text-slate-500">
-                  Sirf asli Gmail chalega — account banne se pehle verify bhi karna hoga.
+                  Only a real Gmail address works — you verify it before the account is created.
                 </p>
               </div>
               <div>
@@ -356,10 +356,10 @@ const RegisterPage = ({ role = 'student' }) => {
                   />
                   <p className="mt-1.5 text-[11px] text-slate-500">
                     {verified
-                      ? `${channel === 'email' ? 'Email' : 'Mobile'} verify ho gaya.`
+                      ? `${channel === 'email' ? 'Email' : 'Mobile'} verified.`
                       : codeLive
-                        ? `Code ${otpTarget.value.trim()} pe bheja gaya hai — yahan likho.`
-                        : `Pehle ${channel === 'email' ? 'email pe' : 'mobile pe'} code bhejo.`}
+                        ? `Code sent to ${otpTarget.value.trim()} — enter it here.`
+                        : `Send the code to your ${channel === 'email' ? 'email' : 'mobile'} first.`}
                   </p>
                 </div>
                 <div className="flex gap-2">

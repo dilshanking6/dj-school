@@ -149,12 +149,12 @@ const AIAssistant = () => {
         fallback =
           (fallback ? fallback + '\n\n' : '') +
           (status === 429
-            ? 'Bahut saare messages aa gaye — ek minute ruk kar phir try karo.'
-            : (serverMessage || `Abhi server ne jawab nahi diya (${status}). Thodi der baad try karo.`));
+            ? 'Too many messages — wait a minute and try again.'
+            : (serverMessage || `The server did not respond (${status}). Please try again shortly.`));
       } else {
         fallback =
           (fallback ? fallback + '\n\n' : '') +
-          'Server tak baat nahi pahunchi. Agar app chal raha hai to backend server bhi on hona chahiye (npm run dev ya npm start se).';
+          'Could not reach the server. The backend has to be running for this to work.';
       }
       setChat((prev) => {
         const copy = prev.slice(0, -1);

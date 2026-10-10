@@ -74,7 +74,7 @@ const normaliseFields = (value) => {
       .replace(/[^a-z0-9_]/g, '');
 
     if (!key) throw new HttpError(400, `Field ${index + 1} key is not valid`);
-    if (seen.has(key)) throw new HttpError(400, `Duplicate field key "${key}" — har field ka key alag hona chahiye`);
+    if (seen.has(key)) throw new HttpError(400, `Duplicate field key "${key}" — each field needs its own key`);
     seen.add(key);
 
     const required = Boolean(raw.required);
